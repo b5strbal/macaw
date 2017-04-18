@@ -19,7 +19,7 @@ class TrainTrack(DiGraph):
     right sides are glued together or left is glued to right. This
     allows us to represent train tracks on nonorientable surfaces. 
     """
-    def __init__(self,list_of_switches,list_of_branches):
+    def __init__(self,list_of_branches,labels=None):
         """
         
         Every branch 
@@ -189,9 +189,8 @@ class TrainTrackLamination(SageObject):
     A measured lamination represented with respect to a train track.
 
     The lamination may be carried, may be tranverse, or may even be a
-    combination of the two. Also, it need not be in minimal position
-    with the train track. However, there should be a method that puts
-    the lamination in minimal position. 
+    combination of the two, but in minimal position
+    with the train track. 
 
     There is a finite collection of arcs such that every lamination
     can be composed by these arcs. These arcs are either:
@@ -206,10 +205,7 @@ class TrainTrackLamination(SageObject):
     region to either a branch or a cusp
 
 
-    There are multiple uses for this class:
-    - when we compute the action of a Dehn twist on standard train
-    tracks, we need to make the image of the marking curves transverse
-    to the train track by splitting the train track
+    The main use of this class is the following:
     - when we find the flat structure of a pA, we put the repelling
     lamination in minimal position, and split towards the attracting
     lamination until the repelling lamination becomes transverse.
@@ -272,3 +268,7 @@ class TrainTrackLamination(SageObject):
         transverse, then try the case when they are almost transverse
         but not quite.
         """
+
+
+
+

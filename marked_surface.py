@@ -69,6 +69,17 @@ class MarkedSurface(Surface):
         """
 
 
+    def template(self):
+        """
+        Return the template for the marking that guides the standard
+        train tracks.
+
+        OUTPUT:
+
+        - a Template object.
+
+        """
+
     def image_of_marking_curve(self,marking_curve,mapping_class):
         """
         Return the image of a marking curve under a (simple) mapping
