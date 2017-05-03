@@ -1,43 +1,30 @@
+r"""
+
+Pants decomposition specific implementation of marked surfaces.
+
+AUTHORS:
+
+- BALAZS STRENNER (2017-05-02): initial version
+
+EXAMPLES::
+
+<Lots and lots of examples>
+
+
+"""
+
+#*****************************************************************************
+#       Copyright (C) 2017 Balazs Strenner <strennerb@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#                  http://www.gnu.org/licenses/
+#*****************************************************************************
+
+
 from marked_surface import MarkedSurface
-
-#
-#
-#
-#
-# Dehn-Thurston specific implementation
-#
-#
-#
-
-
-# Do we need this class ????? It's like introducing an Edge or Vertex
-# class for a Graph class.
-
-# class MarkedPants(SageObject):
-#     """ 
-#     A pair of pants marked cut into two hexagons using three arcs.
-
-#     One of the hexagons is red, the other white. There are 6 arcs
-#     connecting pairs of boundaries and the endpoints are always
-#     required to be in the red parts.
-
-#     Boundaries are labelled by 0,1,2.
-
-#     Arcs are labelled by 00,01,02,11,12,22. 
-
-#     The red parts of the boundaries are 0+, 1+, 2+, the white parts
-#     are 0-,1-,2-. This is done in a way that 0+, 1+, 2+ follow in the
-#     clockwise direction, whereas 0-,1-,2- follow in this order in the
-#     counterclockwise direction.
-#     """
-
-#     def __init__(self):
-#         self._punctures
-
-#     def is_boundary_a_pucture(self,i):
-#         """
-#         Decide if the ith boundary (i=0,1,2) is a puncture.
-#         """
 
 
 
