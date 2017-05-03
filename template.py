@@ -33,8 +33,7 @@ class Template(Graph):
     Every vertex is thought of as a small oriented disk in a surface,
     and each edge is a strip in the surface connecting the disks which
     may be orientable. The graph may not be embedded, that is, the
-    strips can cross each other in the surface. This is the case for
-    pi_1-train tracks.
+    strips can cross each other in the surface. 
 
     We keep track of the cyclic ordering of outgoing edges at each
     vertex. For a vertex of valence n, the n outgoing edges are
@@ -43,27 +42,22 @@ class Template(Graph):
     [starting_vertex,index_of_edge,ending_vertex,index_of_edge] If the
     strip is twisted a '-' is added as a fifth argument.
 
-    There is more. There certain "illegal paths" which can be replaced
+    There is more. There are certain "illegal paths" which can be replaced
     with equivalent "legal paths". For example, for pi_1-train tracks,
     a path consisting of two paths where the second edge bounces back
     from the side is illegal, and it can be replaced by a single edge.
     For pants decompositions, a path which hits a pants
-    curve, goes around and turns back in illegal is many cases.
+    curve and turns back, or first goes around and turns back is illegal.
 
     EXAMPLES:
 
-    1. The template for the pants decomposition of the torus
-    PantsMarkedSurface([ [0,0,0,1] ]) ala Luo.
-
-    sage: Template( [((0,0),0,(0,1),0), ((0,0),1,(0,1),1),
-    ((0,0),2,(0,1),2)] )
-
-    2. The template for the pants decomposition of the torus s =
-    PantsMarkedSurface([ [0,0,0,1] ]) ala Penner-Harer.
+    1. The template for the pants decomposition of the torus s =
+    PantsMarkedSurface([ [0,0,0,1] ]) ala Penner-Harer. Why are there
+    no edges here connecting boundaries with themselves?
 
     sage: Template( [((0,0),0,(0,0),2), ((0,0),1,(0,0),3)] )
     
-    3. A template of the pi_1-train track of the square torus. Here
+    2. A template of the pi_1-train track of the square torus. Here
     the template is not embedded in the torus, only immersed.
     
     sage: Template( [(0,0,1,2), (0,1,0,4), (0,2,1,3), (0,3,1,5),
