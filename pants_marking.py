@@ -30,20 +30,16 @@ from marked_surface import MarkedSurface
 
         
 class PantsMarkedSurface(MarkedSurface):
-    """
-    A marked pants decomposition of the surface.
+    """A marked pants decomposition of the surface.
 
-    A list of MarkedPants, together with some gluing data: which
-    boundaries are glued together. It is required that white and red
-    hexagons are adjacent for adjacent pants. 
-
+    A bunch of pair of pants, glued together along their boundaries.
     The gluing is specified in the format
     [pants1,boundary1,pants2,boundary2]. If a gluing is done in an
     orientation-reversing way, '-' is added as a fifth argument.
 
-    Boundaries not identified are automatically punctures.
+    Boundaries not identified are the boundaries of the big surface.
 
-    EXAMPLES:
+    EXAMPLES::
 
     1. The once-punctured torus.
 
@@ -75,28 +71,25 @@ class PantsMarkedSurface(MarkedSurface):
 
 
     def template(self):
-        """
-        Return the template for the pants decomposition.
+        """Return the template for the pants decomposition.
         
-        There are more ways to do this depending on the details of
-        defining Dehn-Thurston coordinates. Penner-Harer has a marked
-        point on each pants curve which are connected to a
-        triangle inside each pair of pants. Luo's setting is similar,
-        but a half-twisted version of this along each boundary pants
-        curve. Therefore there are twice as many vertices in this
-        case, and also more edges.
+        There is a marked point on each pants curve which are
+        connected to a triangle inside each pair of pants. Also, for
+        each boundary component in a pair of pants, there is edge of
+        the template connecting the marked point on that boundary with
+        itself. There are two ways to do this, so we make the
+        following choice. The edge with endpoints on boundary 0,1,2
+        surrounds boundary 1,2,0, respectively.
 
-        For now, we deal with Penner-Harer's version. There are three
-        types of illegal paths:
-        - an edge hitting a pants curve and bounding back along
-        another edge of the traingle
-        - an edge hitting a pants curve, going around the pants curve
-        and coming back on the other edge of the triangle.
-        - an edge hittin a pants curve, going around a pants curve and
-        coming back on the same edge IF the first edge connects
-        boundaries 0->2, 1->0, or 2->1. The other three combinations,
-        0->1, 1->2, 2->0 are fine.
-
+        There are three types of illegal paths:
+        - a path hitting a pants curve and bouncing right back 
+        - a path hitting a pants curve, going around the pants curve
+        and coming back into the same pair of pants.
+        
+        (Basically when a path hits a pants curve, it has to go
+        into the neighboring pair of pants, possibly going around the
+        puncture any number of times before that.)
+        
         OUTPUT:
 
         - a Template object, the template of the pants marking.
