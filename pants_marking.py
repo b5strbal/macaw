@@ -67,7 +67,40 @@ class PantsMarkedSurface(MarkedSurface):
 
     """
     def __init__(self,gluing_list):
-    
+        pass
+
+        def measured_train_track_to_global(self,measured_tt):
+        """
+        Return the global coordinates of a measured standard train
+        track.
+
+        (Pants specific implementation of the method of the abstract
+        base class with the same name. The description of the method
+        there.)
+        
+        There are 12g-12 natural curves that are transverse to all
+        standard train tracks, but 9g-9 should be enough for an
+        injective representation. There are 3g-3 pants curves, and for
+        each pants curve, there are three curves intersecting only
+        this curve that are transverse to all standard train tracks.
+        Considering only two out of these three should be enough.
+
+        """
+        raise NotImplementedError
+
+
+        def global_to_measured_train_track(self,curve,all_reps = False):
+        """
+        Represent a curve as a standard measured train track.
+
+        (Pants specific implementation of the method of the abstract
+        base class with the same name. The description of the method
+        there.)
+
+        """
+        raise NotImplementedError
+        
+
 
 
     def template(self):
@@ -81,14 +114,11 @@ class PantsMarkedSurface(MarkedSurface):
         following choice. The edge with endpoints on boundary 0,1,2
         surrounds boundary 1,2,0, respectively.
 
-        There are three types of illegal paths:
-        - a path hitting a pants curve and bouncing right back 
-        - a path hitting a pants curve, going around the pants curve
-        and coming back into the same pair of pants.
+        The illegal paths are paths that approach a pants curve, maybe
+        go around it, and instead of going into the neighboring pair
+        of pants, they turn back to the original pair of pants.
+
         
-        (Basically when a path hits a pants curve, it has to go
-        into the neighboring pair of pants, possibly going around the
-        puncture any number of times before that.)
         
         OUTPUT:
 

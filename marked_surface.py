@@ -29,7 +29,11 @@ class Surface(SageObject):
     """
     A finite type surface.
     """
-    def __init__(self):
+    def __init__(self, genus, num_punctures, 
+                 is_orientable = True, euler_char = None):
+        """
+        Specifying euler_char overrides genus.
+        """
 
     def topological_type(self):
         
@@ -55,47 +59,51 @@ class MarkedSurface(Surface):
     decompositions.
     """
 
-    def global_to_measured_train_track(self,curve,all_reps = False):
+    def measured_train_track_to_global(self,measured_tt):
+        """Return the global coordinates of a measured lamination,
+        represented as a measured standard train track.
+
+        Usually global coordinates are computed by taking a set of
+        curves or arcs transverse to all standrard train tracks, and
+        defining global coordinates as the vector of the intersection
+        numbers of these curves with the train track. Sometimes (for
+        example, for Dynnikov coordinates), the global coordinates are
+        some linear function of the above intersection vector. This
+        approach may be useful to decreasing the size of the global
+        coordinate vector.
+
+        INPUT: a measured standard train track in the template of the
+        marked surface.
+
+        OUTPUT: the global coordiantes of the measured lamination
+
         """
-        Represent a curve as a standard measured train track.
+        raise NotImplementedError
+
+    
+    def global_to_measured_train_track(self,curve,all_reps = False):
+        """Represent a measured lamination as a standard measured
+        train track.
 
         INPUT: a curve in global coordinates.
 
-        OUTPUT: a standard train track with a measure. If
-        all_reps=True, then all stardard measured train tracks are
-        returned.
-        """
-
-    def measured_train_track_to_global(self,measured_tt):
-        """
-        Return the global coordinates of a measured standard train
-        track.
-
-        INPUT: a measured standard train track
-
-        OUTPUT: a curve in global coordiantes.
+        OUTPUT: a standard train track with a measure in the template
+        of the marked surface. If all_reps=True, then all stardard
+        measured train tracks are returned.
 
         """
+        raise NotImplementedError
+        
         
     def example_curve(self):
         """
         Return a curve that can be used to start the iteration.
         """
+        raise NotImplementedError
 
-    def marking_curves(self,standard_train_track):
-        """
-        Return the marking curves.
+    
 
-        The marking curves should have the property that any train
-        track transverse to all marking curves is carried on a
-        standard train track.
-
-        The marking curves are returned as TrainTrackLamination
-        objects relative to the specified standard train track.
-        
-        """
-
-
+    
     def template(self):
         """
         Return the template for the marking that guides the standard
@@ -106,29 +114,15 @@ class MarkedSurface(Surface):
         - a Template object.
 
         """
+        raise NotImplementedError
 
-    def image_of_marking_curve(self,marking_curve,mapping_class):
-        """
-        Return the image of a marking curve under a (simple) mapping
-        class. 
-
-        The marking curve is input as a TrainTrackLamination relative
-        to some standard train track, and the output the a
-        TrainTrackLamination relative to the the same train track.
-
-        The input, the marking curve is by definition transverse to
-        the standard train track, but the output may not be. The
-        splittings that make it transverse can be used to determine
-        the acting matrix of our simple mapping class.
-
-        This function probably needs to be implemented for simple
-        mapping classes on a case by case basis, depending on the type
-        of marking and the mapping class.
-        """
+    
 
     def splitting_tree(self,standard_train_track,mapping_class):
-        
+        raise NotImplementedError
 
+
+    
     
 class MFcomputation(SageObject):
     """

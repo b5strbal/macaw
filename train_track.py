@@ -24,7 +24,7 @@ EXAMPLES::
 #*****************************************************************************
 
     
-class TrainTrack(DiGraph):
+class TrainTrack(SageObject):
     """
     Represent it as a directed graph so that vertices are directed
     branches and switches, and there is a directed edge between two
