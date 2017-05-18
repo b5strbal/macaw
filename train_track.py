@@ -118,8 +118,21 @@ class TrainTrack(SageObject):
         """
         Split the train track at a given switch or branch.
 
-        how_to_split: between which branches do we cut, left or right
-        or central split.
+        INPUT: 
+        
+        - split_at: an oriented switch or branch that has at least two
+          incident branches on each side. 
+
+        - how_to_split: we look at the two rightmost branches near the
+        switch or branch in the forward and backward directions. There
+        are three ways to split: "down" - peels down the branch in the
+        forward direction, "up" - peels up the branch in the backward
+        direction, "central" - peels both branches off.
+
+        OUTPUT: 
+
+        - a Splitting object containing the original train track, the
+          new train track and the way of splitting
 
         """
         pass
