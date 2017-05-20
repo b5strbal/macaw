@@ -103,3 +103,35 @@ class TrainTrackInTemplate(TrainTrack):
 
     """
     def __init__(self,train_track,template,mapping):
+        pass
+
+
+class TrainTrackInPantsTemplate(TrainTrack):
+    """
+
+    There is a marked point on each pants curve which are
+    connected to a triangle inside each pair of pants. Also, for
+    each boundary component in a pair of pants, there is edge of
+    the template connecting the marked point on that boundary with
+    itself. There are two ways to do this, so we make the
+    following choice. The edge with endpoints on boundary 0,1,2
+    surrounds boundary 1,2,0, respectively.
+
+    The illegal paths are paths that approach a pants curve, maybe
+    go around it, and instead of going into the neighboring pair
+    of pants, they turn back to the original pair of pants.
+
+
+
+    EXAMPLES:
+
+    1. A standard train track for the once-punctured torus.
+
+    sage: s = PantsMarkedSurface([ [0,0,0,1] ])
+    sage: tt = TrainTrack([[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]])
+    sage: TrainTrackInPantsTemplate(s,[ [[0,0],'+',0,  [0,1],'-',0], )
+
+    """
+    def __init__(self):
+        pass
+

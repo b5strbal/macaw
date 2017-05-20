@@ -72,8 +72,7 @@ class MarkedSurface(Surface):
         approach may be useful to decreasing the size of the global
         coordinate vector.
 
-        INPUT: a measured standard train track in the template of the
-        marked surface.
+        INPUT: a measured standard train track.
 
         OUTPUT: the global coordiantes of the measured lamination
 
@@ -87,9 +86,9 @@ class MarkedSurface(Surface):
 
         INPUT: a curve in global coordinates.
 
-        OUTPUT: a standard train track with a measure in the template
-        of the marked surface. If all_reps=True, then all stardard
-        measured train tracks are returned.
+        OUTPUT: a standard train track with a measure. If
+        all_reps=True, then all stardard measured train tracks are
+        returned.
 
         """
         raise NotImplementedError
@@ -103,18 +102,6 @@ class MarkedSurface(Surface):
 
     
 
-    
-    def template(self):
-        """
-        Return the template for the marking that guides the standard
-        train tracks.
-
-        OUTPUT:
-
-        - a Template object.
-
-        """
-        raise NotImplementedError
 
     
 
