@@ -5,6 +5,7 @@ Surfaces and surfaces with markings.
 AUTHORS:
 
 - BALAZS STRENNER (2017-05-02): initial version
+- YIHAN ZHOU 
 
 EXAMPLES::
 
@@ -35,20 +36,41 @@ class Surface(SageObject):
         Specifying euler_char overrides genus.
         """
 
-    def topological_type(self):
+        self.genus = genus
+        self.num_punctures = num_punctures
+        self.is_orientable = is_orientable
+        self.euler_char = euler_char
+
+    def __repr__(self):
+        #TODO: notation for non-orientable surface???
+        return 'S_{' + str(self.genus) + ',' + str(self.num_punctures) + '}'
+
+    def _latex_(self):
+        return 'S_\\{' + str(self.genus) + ',' + str(self.num_punctures) + '\\}'
+
         
     def is_orientable(self):
+        return self.is_orientable
 
     def num_punctures(self):
+        return self.num_punctures
 
     def genus(self):
+        return self.genus
 
     def euler_char(self):
+        if euler_char_char != None:
+            return self.euler_char
+        elif self.is_orientable:
+            return 2-2*self.genus-self.num_punctures
+        else:
+            return 2-self.genus-self.num_punctures
 
     def teich_space_dim(self):
-
-
-        
+        if self.is_orientable:
+            return 6*self.genus-6+2*self.num_punctures
+        else:
+            return 4*self.genus-3+2*self.num_punctures        
 
 
 class MarkedSurface(Surface):
