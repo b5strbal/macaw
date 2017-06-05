@@ -51,7 +51,7 @@ class Surface(SageObject):
             temp = 2-num_punctures-euler_char
             if is_orientable:
                 if temp % 2 == 1:
-                    raise ValueError('wrong value with puncture number or euler characteristic')
+                    raise ValueError('invalid puncture number or euler characteristic')
                 else:
                     self._genus = temp/2
             else:
@@ -86,11 +86,11 @@ class Surface(SageObject):
         sage: K
         the Klein bottle
         sage: Surface(10, 2, False)
-        The genus 10 non-orientable surface with 2 punctures.
+        the genus 10 non-orientable surface with 2 punctures
         sage: Surface(50, 23, True)
-        The genus 50 orientable surface with 23 punctures.
+        the genus 50 orientable surface with 23 punctures
         sage: Surface(23, True, -121)
-        The genus 50 orientable surface with 23 punctures.
+        the genus 50 orientable surface with 23 punctures
 
         """
         if self.is_orientable == True:
@@ -129,28 +129,28 @@ class Surface(SageObject):
 
         sage: S_2 = Surface(0, 0)
         sage: S_2
-        the sphere
+        the genus 0 orientable surface with 0 punctures
         sage: D = Surface(0, 1)
         sage: D
-        the disk
+        the genus 0 orientable surface with 1 punctures
         sage: M = Surface(0, 0, False)
         sage: M
-        the Mobius strip
+        the genus 0 nonorientable surface with 0 punctures 
         sage: T_2 = Surface(1, 0)
         sage: T_2
-        the torus
+        the genus 1 orientable surface with 0 punctures
         sage: K = Surface(1, 0, False)
         sage: K
-        the Klein bottle
+        the genus 1 nonorientable surface with 0 punctures
         sage: Surface(10, 2, False)
-        The genus 10 non-orientable surface with 2 punctures.
+        the genus 10 non-orientable surface with 2 punctures
         sage: Surface(50, 23, True)
-        The genus 50 orientable surface with 23 punctures.
+        the genus 50 orientable surface with 23 punctures
         sage: Surface(23, True, -121)
-        The genus 50 orientable surface with 23 punctures.
+        the genus 50 orientable surface with 23 punctures
         """
 
-        return 'the genus %d %s surface with %d puncture' % (self._genus, 'orientable' if self.is_orientable else 'nonorientable', self._num_punctures)
+        return 'the genus %d %s surface with %d punctures' % (self._genus, 'orientable' if self.is_orientable else 'nonorientable', self._num_punctures)
 
         
     def is_orientable(self):
