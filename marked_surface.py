@@ -30,47 +30,57 @@ class Surface(SageObject):
     """
     A finite type surface.
     """
-    def __init__(self, genus, num_punctures, 
+    def __init__(self, genus = None, num_punctures, 
                  is_orientable = True, euler_char = None):
         """
         Specifying euler_char overrides genus.
         """
 
-        self.genus = genus
-        self.num_punctures = num_punctures
-        self.is_orientable = is_orientable
-        self.euler_char = euler_char
+        self._num_punctures = num_punctures
+        self._is_orientable = is_orientable
+
+        if genus == None and euler_char == None:
+            raise AttributeError('at least one of genus number and euler characteristic should be given. Not able to specify the surface')
+        elif euler_char == None:
+            if is_orientable:
+                self._euler_char = 2-2*genus-num_punctures
+            else:
+                self._euler_char = 2-genus-num_punctures
+        else:            
+            temp = 2-num_punctures-euler_char
+            if is_orientable:
+                if temp % 2 == 1:
+                    raise ValueError('wrong value with puncture number or euler characteristic')
+                else:
+                    self._genus = temp/2
+            else:
+                self._genus = temp
+
 
     def __repr__(self):
-        #TODO: notation for non-orientable surface???
-        return 'S_{' + str(self.genus) + ',' + str(self.num_punctures) + '}'
+        return 'the genus %d %s surface with %d puncture' % (self._genus, 'orientable' if self.is_orientable else 'nonorientable', self._num_punctures)
 
     def _latex_(self):
-        return 'S_\\{' + str(self.genus) + ',' + str(self.num_punctures) + '\\}'
+        return 'the genus %d %s surface with %d puncture' % (self._genus, 'orientable' if self.is_orientable else 'nonorientable', self._num_punctures)
 
         
     def is_orientable(self):
-        return self.is_orientable
+        return self._is_orientable
 
     def num_punctures(self):
-        return self.num_punctures
+        return self._num_punctures
 
     def genus(self):
-        return self.genus
+        return self._genus
 
     def euler_char(self):
-        if euler_char_char != None:
-            return self.euler_char
-        elif self.is_orientable:
-            return 2-2*self.genus-self.num_punctures
-        else:
-            return 2-self.genus-self.num_punctures
+        return self._euler_char
 
     def teich_space_dim(self):
         if self.is_orientable:
-            return 6*self.genus-6+2*self.num_punctures
+            return 6*self._genus-6+2*self._num_punctures
         else:
-            return 4*self.genus-3+2*self.num_punctures        
+            return 4*self._genus-3+2*self._num_punctures        
 
 
 class MarkedSurface(Surface):
