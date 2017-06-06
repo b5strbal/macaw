@@ -31,8 +31,8 @@ class Surface(SageObject):
     """
     A finite type surface.
     """
-    def __init__(self, genus = None, num_punctures, 
-                 is_orientable = True, euler_char = None):
+    def __init__(self, num_punctures, 
+                 is_orientable = True, genus = None, euler_char = None):
         """
         Specifying euler_char overrides genus.
         """

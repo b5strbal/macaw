@@ -5,6 +5,7 @@ Pants decomposition specific implementation of marked surfaces.
 AUTHORS:
 
 - BALAZS STRENNER (2017-05-02): initial version
+- YIHAN ZHOU
 
 EXAMPLES::
 
@@ -67,6 +68,61 @@ class PantsMarkedSurface(MarkedSurface):
 
     """
     def __init__(self,gluing_list):
+
+
+        if len(gluing_list) == 0:
+            self.surface = MarkedSurface(num_puncture = 3, genus=0)
+        else:
+            pantdict = {}
+            uniondict = {}
+            orientable = True
+
+            #Initialize
+            for pair in gluing_list:
+                if len(pair) < 4 or len(pair) > 5 or (len(pair) == 5 and not (pair[4] == '-' or pair[4] == '+')):
+                    raise AttributeError('invalid input')
+                if pair[0] == None or pair[2] == None:
+                    raise ValueError('pants cannot be Nonetype')
+                if len(pair) == 5 and pair[4] == '-':
+                    orientable = False
+                if pair[0] not in pantdict:
+                    pantdict[pair[0]] = [False, False, False]
+                if pair[2] not in pantdict:
+                    pantdict[pair[2]] = [False, False, False]
+
+            #Boundary can only be connected once 
+            for pair in gluing_list:
+                if pantdict[pair[0]][pair[1]] or pantdict[pair[2]][pair[3]]:
+                    raise AttributeError('puncture could not be glued twice')
+                pantdict[pair[0]][pair[1]] = True
+                pantdict[pair[2]][pair[3]] = True
+
+            #Union Find Algorithm, check connectivity.            
+            for entry in pantdict.keys():
+                uniondict[entry] = None
+            for pair in gluing_list:
+                nodea = pair[0]
+                while uniondict[nodea] != None:
+                    nodea = uniondict[nodea]
+                nodeb = pair[2]
+                while uniondict[nodeb] != None:
+                    nodeb = uniondict[nodeb]
+                if nodea != nodeb or (nodeb == None and nodea == None):
+                    uniondict[nodea] = nodeb
+            if uniondict.values().count(None) > 1:
+                raise AttributeError('Surface should be connected')
+
+            num_puncture = len(pantdict.keys())*3 - len(gluing_list)
+
+            if orientable:
+                euler_char = -1 * len(pantdict.keys())
+            else:
+                euler_char = 0 ####TODO: need to change to exact formula
+
+            self.surface = MarkedSurface(num_puncture=num_puncture, orientable = orientable, euler_char = euler_char)
+
+            return self.surface.__repr__() #just for testing
+
         pass
 
         def measured_train_track_to_global(self,measured_tt):
