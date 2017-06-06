@@ -25,14 +25,12 @@ EXAMPLES::
 #                  http://www.gnu.org/licenses/
 #*****************************************************************************
 
-#test
-
 class Surface(SageObject):
     """
     A finite type surface.
     """
-    def __init__(self, num_punctures, 
-                 is_orientable = True, genus = None, euler_char = None):
+    def __init__(self, genus = None, num_punctures = None, 
+                 is_orientable = True, euler_char = None):
         """
         Specifying euler_char overrides genus.
         """
@@ -70,48 +68,56 @@ class Surface(SageObject):
 
         EXAMPLES::
 
-        sage: S_2 = Surface(0, 0)
-        sage: S_2
+        sage: Surface(0, 0)
         the sphere
-        sage: D = Surface(0, 1)
-        sage: D
+        sage: Surface(0, 1)
         the disk
-        sage: M = Surface(0, 0, False)
-        sage: M
+        sage: Surface(0, 0, False)
         the Mobius strip
-        sage: T_2 = Surface(1, 0)
-        sage: T_2
+        sage: Surface(1, 0)
         the torus
-        sage: K = Surface(1, 0, False)
-        sage: K
+        sage: Surface(1, 0, False)
         the Klein bottle
+        sage: Surface()
+        None
+        sage: Surface(5)
+        the genus 5 orientable closed surface 
         sage: Surface(10, 2, False)
         the genus 10 non-orientable surface with 2 punctures
         sage: Surface(50, 23, True)
         the genus 50 orientable surface with 23 punctures
-        sage: Surface(23, True, -121)
+        sage: Surface(num_punctures = 23, True, euler_char = -121)
         the genus 50 orientable surface with 23 punctures
+        sage: Surface(num_punctures = 1, euler_char = -1)
+        the genus 1 orientable surface with 1 puncture
 
         """
         if self.is_orientable == True:
-            if self.num_punctures == 0 and self.genus <= 3:
+            if self.num_punctures == 0:
                 if self.genus == 0:
                     return 'the sphere'
                 elif self.genus == 1:
                     return 'the torus'
-                elif self.genus == 2:
-                    return 'the double torus'
                 else:
-                    return 'the triple torus'
-            elif self.genus == 0 and self.num_punctures == 1:
-                return 'the disk'
+                    return 'the genus %d orientable closed surface' % (self._genus) #surface with 0 punctures is closed
+            elif self.num_punctures == 1:
+                if self.genus == 0:
+                    return 'the disk'
+                else:
+                    return 'the genus %d orientable surface with 1 puncture' % (self._genus) #grammar fix
             else:
                 return 'the genus %d orientable surface with %d puncture' % (self._genus, self._num_punctures)
         else:
-            if self.genus == 0 and self.num_punctures == 0:
-                return 'the Mobius strip'
-            elif self.genus == 1 and self.num_punctures == 0:
-                return 'the Klein bottle'
+            if self.num_punctures == 0:
+                if self.genus == 0:
+                    return 'the Mobius strip'
+                else:
+                    return 'the genus %d nonorientable closed surface'
+            elif self.num_punctures == 1:
+                if self.genus == 1:
+                    return 'the Klein bottle'
+                else:
+                    return 'the genus %d nonorientable surface with 1 puncture'
             else:
                 return 'the genus %d nonorientable surface with %d puncture' % (self._genus, self._num_punctures)
 
@@ -128,26 +134,27 @@ class Surface(SageObject):
         EXAMPLES::
 
         sage: S_2 = Surface(0, 0)
-        sage: S_2
         the genus 0 orientable surface with 0 punctures
         sage: D = Surface(0, 1)
-        sage: D
         the genus 0 orientable surface with 1 punctures
         sage: M = Surface(0, 0, False)
-        sage: M
         the genus 0 nonorientable surface with 0 punctures 
         sage: T_2 = Surface(1, 0)
-        sage: T_2
         the genus 1 orientable surface with 0 punctures
         sage: K = Surface(1, 0, False)
-        sage: K
         the genus 1 nonorientable surface with 0 punctures
+        sage: Surface()
+        None
+        sage: Surface(5)
+        the genus 5 orientable surface with 0 punctures
         sage: Surface(10, 2, False)
         the genus 10 non-orientable surface with 2 punctures
         sage: Surface(50, 23, True)
         the genus 50 orientable surface with 23 punctures
-        sage: Surface(23, True, -121)
+        sage: Surface(num_punctures = 23, True, euler_char = -121)
         the genus 50 orientable surface with 23 punctures
+        sage: Surface(num_punctures = 1, euler_char = -1)
+        the genus 1 orientable surface with 1 punctures
         """
 
         return 'the genus %d %s surface with %d punctures' % (self._genus, 'orientable' if self.is_orientable else 'nonorientable', self._num_punctures)
@@ -157,42 +164,25 @@ class Surface(SageObject):
 
         r"""
 
-        Return orientability. 
+        Return if the surface is orientable. 
 
         OUTPUT: 
 
-        - string specifying whether the surface is orientable 
+        - "True" if orientable
+        - "False" if nonorientable 
 
         EXAMPLES::
 
         sage: S_2 = Surface(0, 0)
         sage: S_2.is_orientable()
-        is_orientable = True 
-        sage: D = Surface(0, 1)
-        sage: D.is_orientable()
-        is_orientable = True
+        True 
         sage: M = Surface(0, 0, False)
         sage: M.is_orientable()
-        is_orientable = False
-        sage: T_2 = Surface(1, 0)
-        sage: T_2.is_orientable()
-        is_orientable = True
-        sage: K = Surface(1, 0, False)
-        sage: K.is_orientable()
-        is_orientable = False 
-        sage: s = Surface(10, 2, False)
-        sage: s.is_orientable()
-        is_orientable = False
-        sage: m = Surface(50, 23, True)
-        sage: m.is_orientable()
-        is_orientable = True
-        sage: E = Surface(23, True, -121)
-        sage: E.is_orientable()
-        is_orientable = True  
+        False
 
         """        
 
-        return 'is_orientable = %s' % (self._is_orientable)
+        return self.is_orientable 
 
     def num_punctures(self):
 
@@ -209,25 +199,7 @@ class Surface(SageObject):
         sage: S_2 = Surface(0, 0)
         sage: S_2.num_punctures()
         0
-        sage: D = Surface(0, 1)
-        sage: D.num_punctures()
-        1
-        sage: M = Surface(0, 0, False)
-        sage: M.num_punctures()
-        0
-        sage: T_2 = Surface(1, 0)
-        sage: T_2.num_punctures()
-        0
-        sage: K = Surface(1, 0, False)
-        sage: K.num_punctures()
-        0 
-        sage: s = Surface(10, 2, False)
-        sage: s.num_punctures()
-        2
-        sage: m = Surface(50, 23, True)
-        sage: m.num_punctures()
-        23
-        sage: E = Surface(23, True, -121)
+        sage: E = Surface(genus = 50, euler_char = -121)
         sage: E.num_punctures()
         23
 
@@ -246,28 +218,19 @@ class Surface(SageObject):
 
         EXAMPLES::
 
-        sage: S_2 = Surface(0, 0)
-        sage: S_2.genus()
-        0
-        sage: D = Surface(0, 1)
-        sage: D.genus()
-        0
         sage: M = Surface(0, 0, False)
         sage: M.genus()
         0
         sage: T_2 = Surface(1, 0)
         sage: T_2.genus()
         1
-        sage: K = Surface(1, 0, False)
-        sage: K.genus()
-        1
         sage: s = Surface(10, 2, False)
         sage: s.genus()
         10
-        sage: m = Surface(50, 23, True)
+        sage: m = Surface(50)
         sage: m.genus()
         50
-        sage: m = Surface(23, True, -121)
+        sage: m = Surface(num_punctures = 23, True, euler_char = -121)
         sage: m.genus()
         50
 
@@ -312,7 +275,7 @@ class Surface(SageObject):
         sage: m = Surface(50, 23, True)
         sage: Surface.euler_char(m)
         -121
-        sage: m = Surface(23, True, -121)
+        sage: m = Surface(num_puncs = 23, True, -121)
         -121
 
         """        
