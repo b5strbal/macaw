@@ -23,8 +23,9 @@ EXAMPLES::
 #                  http://www.gnu.org/licenses/
 #*****************************************************************************
 
+from sage.structure.sage_object import SageObject
     
-class TrainTrack(SageObject):
+class TrainTrack(SageObject): #MarkedSurface? 
     """
     Represent it as a directed graph so that vertices are directed
     branches and switches, and there is a directed edge between two
@@ -38,7 +39,7 @@ class TrainTrack(SageObject):
     right sides are glued together or left is glued to right. This
     allows us to represent train tracks on nonorientable surfaces. 
     """
-    def __init__(self,list_of_branches,labels=None):
+    def __init__(self,list_of_branches,labels=None): #what is labels?
         """
         
         Every branch 
@@ -58,7 +59,7 @@ class TrainTrack(SageObject):
 
         2. Same train track on the punctured torus:
 
-        sage: tt = TrainTrack([[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]], puctures
+        sage: tt = TrainTrack([[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]], punctures
         = [[0,'+',1]])
         sage: tt.surface()
         S_{1,1}
@@ -70,15 +71,15 @@ class TrainTrack(SageObject):
         3. A train track on the torus with two switches:
 
         sage: tt = TrainTrack([[0,'+',0,1,'-',0],[1,'+',0,0,'-',1],
-        [1,'"',1,0,'-',0]])
+        [1,'+',1,0,'-',0]])
         sage: tt.is_trivalent()
         True
 
         4. A train track on the three times punctured disk:
 
         sage: tt = TrainTrack([ [0,'+',0,0,'+',1], [0,'-',0,1,'+',0],
-        [1,'+',1,2,'-',0], [2,'+',0,2,'+'1], [1,'-',0,3,'+',0],
-        [3,'-',0,3,'-',1], punctures = [[1,'+',1],[1,'+',0],[2,'+'1],[3,'-',1]]  ]
+        [1,'+',1,2,'-',0], [2,'+',0,2,'+', 1], [1,'-',0,3,'+',0],
+        [3,'-',0,3,'-',1], punctures = [[1,'+',1],[1,'+',0],[2,'+'1],[3,'-',1]] ) 
         sage: tt.is_trivalent()
         True
         sage: tt.surface()
@@ -89,8 +90,16 @@ class TrainTrack(SageObject):
         False
         """
     
-        self._branches
-        self._switches
+        self._branches = list_of_branches
+        
+        switch = [] #start a list of switches 
+        for branch in list_of_branches: 
+            switch.extend( (branch[0], branch[3]) ) #iterate through branches, pick out the switches
+        self._switches = list(set(switch)) #remove duplicates 
+
+        self._euler_char = len(self._switches) - len(self._branches)
+        self._num_punctures 
+        self._genus 
 
     def surface(self):
         pass
@@ -138,22 +147,16 @@ class TrainTrack(SageObject):
         pass
 
 
-
-
     
     
-class MeasuredTrainTrack(TrainTrackLamination):
+#class MeasuredTrainTrack(TrainTrackLamination):
     """
     Represent curves, foliations, but also carried branches of another
     train track.
     """
-    def __init__(self):
-        self._measure
-
-
-
-
-
+    #def __init__(self):
+        #pass
+        #self._measure
         
         
 class CarryingMap(SageObject):
@@ -161,20 +164,23 @@ class CarryingMap(SageObject):
     Two train tracks, one is carried on the other.
     """
     def __init__(self):
-        self.original_tt
-        self.carried_tt
-        self.carried_branch_measures
+        
+        pass
+        #self.original_tt
+        #self.carried_tt
+        #self.carried_branch_measures
 
     def transition_matrix(self):
-    """
-    Return the transition matrix of the carrying map.
-    """
+        """
+        Return the transition matrix of the carrying map.
+        """
+        pass
 
     def __mul__(self):
-    """
-    Compose two carrying maps if possible.
-    """
-
+        """
+        Compose two carrying maps if possible.
+        """
+        pass
 
 
 class TrainTrackMap(CarryingMap):
@@ -183,18 +189,32 @@ class TrainTrackMap(CarryingMap):
     """
 
     def teichmuller_polynomial(self):
+
+        pass
     
     def _edge_cocycles(self):
 
+        pass
+
     def _coboundary_map(self):
+
+        pass
 
     def action_on_cohomology(self):
 
+        pass
+
     def invariant_cohomology(self):
+
+        pass
 
     def _action_on_tt_edges(self):
 
+        pass
+
     def _action_on_tt_vertices(self):
+
+        pass
 
 
         

@@ -1,6 +1,6 @@
 r"""
 
-Surfaces and surfaces with markings.
+Surfaces.
 
 AUTHORS:
 
