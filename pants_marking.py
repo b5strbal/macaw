@@ -25,8 +25,7 @@ EXAMPLES::
 #*****************************************************************************
 
 
-from marked_surface import MarkedSurface
-
+from mf_computation import MarkedSurface
 
 
         
@@ -123,9 +122,9 @@ class PantsMarkedSurface(MarkedSurface):
 
             return self.surface.__repr__() #just for testing
 
-        pass
 
-        def measured_train_track_to_global(self,measured_tt):
+
+    def measured_train_track_to_global(self,measured_tt):
         """
         Return the global coordinates of a measured standard train
         track.
@@ -145,7 +144,7 @@ class PantsMarkedSurface(MarkedSurface):
         raise NotImplementedError
 
 
-        def global_to_measured_train_track(self,curve,all_reps = False):
+    def global_to_measured_train_track(self,curve,all_reps = False):
         """
         Represent a curve as a standard measured train track.
 
@@ -166,7 +165,7 @@ class PantsMarkedSurface(MarkedSurface):
         generators. 
 
         """
-
+        raise NotImplementedError
 
 
         
@@ -176,7 +175,8 @@ class PantsMarkedSurface(MarkedSurface):
 
 
                  
-class PantsMappingClass(MappingClass):
-    """
+# class PantsMappingClass(MappingClass):
+#     """
 
-    """
+#     """
+    
