@@ -14,6 +14,15 @@ EXAMPLES::
 """
 from surface import Surface
 
+# TODO (maybe): Remove the MarkedSurface class as an abstract base
+# class for pants decompositions, triangulations, etc. When we write
+# the MFcomputation class that runs with a marked surface class, certain
+# methods will be called, so it will be checked this way anyways that
+# our pants decomposition, triangulation etc. has those methods
+# implemented. It seems okay to just document the specifications that
+# a marked surface has to have in the MFcomputation class.
+
+
 class MarkedSurface(Surface):
     """
     Abstract base class for markings of surfaces.
