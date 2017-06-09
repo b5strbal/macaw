@@ -31,17 +31,28 @@ class Surface(SageObject):
     """
     A finite type surface.
     """
-    def __init__(self, genus = None, num_punctures = 0, 
+    def __init__(self, genus = None, num_punctures = None, 
                  is_orientable = True, euler_char = None):
         """
         Specifying euler_char overrides genus.
         """
 
-        self._num_punctures = num_punctures
         self._is_orientable = is_orientable
 
+        if num_punctures == None:
+            if genus != None and euler_char != None:
+                temp_num_puncture = 2 - 2*genus - euler_char if is_orientable else 2 - genus - euler_char
+                self._num_punctures = temp_num_puncture
+                self.genus = genus
+                self.euler_char = euler_char
+                return
+            else:
+                num_punctures = 0
+
+        self._num_punctures = num_punctures
+
         if genus == None and euler_char == None:
-            raise ValueError('at least one of genus number and euler characteristic should be given. Not able to specify the surface')
+            raise ValueError('At least one of genus number and euler characteristic should be given. Not able to specify the surface')        
         elif genus != None:
             if num_punctures != None:
                 if is_orientable:
@@ -56,7 +67,7 @@ class Surface(SageObject):
             temp_genus = 2-num_punctures-euler_char
             if is_orientable:
                 if temp_genus % 2 == 1:
-                    raise ValueError('invalid puncture number or euler characteristic')
+                    raise ValueError('Invalid puncture number or euler characteristic')
                 else:
                     temp_genus /= 2
             self._genus = temp_genus
@@ -203,6 +214,9 @@ class Surface(SageObject):
         sage: S_2 = Surface(0, 0)
         sage: S_2.num_punctures()
         0
+        sage: E = Surface(genus = 50, euler_char = -121)
+        sage: E.num_punctures()
+        23
 
 
         """
