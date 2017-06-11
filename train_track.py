@@ -47,47 +47,37 @@ class TrainTrack(SageObject): #MarkedSurface?
         [starting_switch,side,index,ending_switch,side,index,is_twisted]
 
         is_twisted is optional, default is False
+
         EXAMPLES:
 
-        1. A train track on the torus with one switch:
+        1. A train track on the torus with one switch::
 
-        sage: tt = TrainTrack([[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]])
-        sage: tt.is_trivalent()
-        False
-        sage: tt.surface()
-        S_{1,0}
+            sage: tt = TrainTrack([[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]])
+            sage: tt.is_trivalent()
+            False
+            sage: tt.neighborhood()
+            Once-punctured torus
 
-        2. Same train track on the punctured torus:
+        2. A train track on the torus with two switches:
 
-        sage: tt = TrainTrack([[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]], punctures
-        = [[0,'+',1]])
-        sage: tt.surface()
-        S_{1,1}
+            sage: tt = TrainTrack([[0,'+',0,1,'-',0],[1,'+',0,0,'-',1],
+            [1,'+',1,0,'-',0]])
+            sage: tt.is_trivalent()
+            True
 
-        Instead of [0,'+',1], one could also write [0,'+',0],
-        [0,'+',2], [0,'-',0], [0,'-',1], [0,'-',2], since all
-        represent the same complementary region.
+        3. A train track on the three times punctured disk:
 
-        3. A train track on the torus with two switches:
-
-        sage: tt = TrainTrack([[0,'+',0,1,'-',0],[1,'+',0,0,'-',1],
-        [1,'+',1,0,'-',0]])
-        sage: tt.is_trivalent()
-        True
-
-        4. A train track on the three times punctured disk:
-
-        sage: tt = TrainTrack([ [0,'+',0,0,'+',1], [0,'-',0,1,'+',0],
-        [1,'+',1,2,'-',0], [2,'+',0,2,'+', 1], [1,'-',0,3,'+',0],
-        [3,'-',0,3,'-',1], punctures = [[1,'+',1],[1,'+',0],[2,'+'1],[3,'-',1]] ) 
-        sage: tt.is_trivalent()
-        True
-        sage: tt.surface()
-        S_{0,4}
-        sage: tt.is_tangentially_orientable()
-        False
-        sage: tt.is_transversely_orientable()
-        False
+            sage: tt = TrainTrack([ [0,'+',0,0,'+',1], [0,'-',0,1,'+',0],
+            [1,'+',1,2,'-',0], [2,'+',0,2,'+', 1], [1,'-',0,3,'+',0],
+            [3,'-',0,3,'-',1] ]) 
+            sage: tt.is_trivalent()
+            True
+            sage: tt.neighborhood()
+            S_{0,4}
+            sage: tt.is_tangentially_orientable()
+            False
+            sage: tt.is_transversely_orientable()
+            False
         """
     
         self._branches = list_of_branches
@@ -101,7 +91,7 @@ class TrainTrack(SageObject): #MarkedSurface?
         self._num_punctures 
         self._genus 
 
-    def surface(self):
+    def neighborhood(self):
         pass
 
     def is_recurrent(self):
