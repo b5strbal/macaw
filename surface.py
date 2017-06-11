@@ -92,11 +92,11 @@ class Surface(SageObject):
         sage: Surface(0, 1)
         the disk
         sage: Surface(0, 0, False)
-        the Mobius strip
+        the mobius strip
         sage: Surface(1, 0)
         the torus
         sage: Surface(1, 0, False)
-        the Klein bottle        
+        the klein bottle        
         sage: Surface(5)
         the genus 5 orientable closed surface 
         sage: Surface(10, 2, False)
@@ -106,36 +106,71 @@ class Surface(SageObject):
         sage: Surface(num_punctures = 23, euler_char = -121)
         the genus 50 orientable surface with 23 punctures
         sage: Surface(num_punctures = 1, euler_char = -1)
-        the genus 1 orientable surface with 1 puncture
+        the torus with 1 puncture
 
         """
+        # if self._is_orientable:
+        #     if self._num_punctures == 0:
+        #         if self._genus == 0:
+        #             return 'the sphere'
+        #         elif self._genus == 1:
+        #             return 'the torus'
+        #         else:
+        #             return 'the genus %d orientable closed surface' % (self._genus) #surface with 0 punctures is closed
+        #     elif self._num_punctures == 1:
+        #         if self._genus == 0:
+        #             return 'the disk'
+        #         else:
+        #             return 'the genus %d orientable surface with 1 puncture' % (self._genus)               
+        #     else:
+        #         return 'the genus %d orientable surface with %d punctures' % (self._genus, self._num_punctures)
+        # else:
+        #     if self._num_punctures == 0:
+        #         if self._genus == 0:
+        #             return 'the Mobius strip'
+        #         if self._genus == 1:
+        #             return 'the Klein bottle'
+        #         else:
+        #             return 'the genus %d nonorientable closed surface' % (self._genus)
+        #     elif self._num_punctures == 1:
+        #         return 'the genus %d nonorientable surface with 1 puncture' % (self._genus)           
+        #     else:
+        #         return 'the genus %d nonorientable surface with %d punctures' % (self._genus, self._num_punctures)
+
+        topotype = ''
+
         if self._is_orientable:
-            if self._num_punctures == 0:
-                if self._genus == 0:
-                    return 'the sphere'
-                elif self._genus == 1:
-                    return 'the torus'
-                else:
-                    return 'the genus %d orientable closed surface' % (self._genus) #surface with 0 punctures is closed
-            elif self._num_punctures == 1:
-                if self._genus == 0:
-                    return 'the disk'
-                else:
-                    return 'the genus %d orientable surface with 1 puncture' % (self._genus)               
+            if self._genus == 0:
+                topotype = 'the sphere'
+            elif self._genus == 1:
+                topotype = 'the torus'
             else:
-                return 'the genus %d orientable surface with %d punctures' % (self._genus, self._num_punctures)
+                topotype = 'the genus %d orientable' % (self._genus)
         else:
-            if self._num_punctures == 0:
-                if self._genus == 0:
-                    return 'the Mobius strip'
-                if self._genus == 1:
-                    return 'the Klein bottle'
-                else:
-                    return 'the genus %d nonorientable closed surface' % (self._genus)
-            elif self._num_punctures == 1:
-                return 'the genus %d nonorientable surface with 1 puncture' % (self._genus)           
+            if self._genus == 0:
+                topotype = 'the mobius strip'
+            elif self._genus == 1:
+                topotype = 'the klein bottle'
             else:
-                return 'the genus %d nonorientable surface with %d punctures' % (self._genus, self._num_punctures)
+                topotype = 'the genus %d nonorientable' % (self._genus)
+
+        if self._num_punctures == 0:
+            if self._genus > 1:
+                topotype += ' closed surface'
+        elif self._num_punctures == 1:
+            if self._genus > 1:
+                topotype += ' surface with 1 puncture'
+            elif self._genus == 0:
+                topotype = 'the disk'
+            else:
+                topotype += ' with 1 puncture'
+        else:
+            if self._genus > 1:
+                topotype += ' surface with %d punctures' % (self._num_punctures)
+            else: 
+                topotype += 'with %d punctures' % (self._num_punctures)
+        return topotype
+
 
     def _latex_(self):
         
@@ -154,11 +189,11 @@ class Surface(SageObject):
         sage: Surface(0, 1)
         the disk
         sage: Surface(0, 0, False)
-        the Mobius strip
+        the mobius strip
         sage: Surface(1, 0)
         the torus
         sage: Surface(1, 0, False)
-        the Klein bottle        
+        the klein bottle        
         sage: Surface(5)
         the genus 5 orientable closed surface 
         sage: Surface(10, 2, False)
@@ -168,7 +203,8 @@ class Surface(SageObject):
         sage: Surface(num_punctures = 23, euler_char = -121)
         the genus 50 orientable surface with 23 punctures
         sage: Surface(num_punctures = 1, euler_char = -1)
-        the genus 1 orientable surface with 1 puncture
+        the torus with 1 puncture
+
         """
 
         return self.__repr__()
@@ -183,8 +219,8 @@ class Surface(SageObject):
 
         OUTPUT: 
 
-        - "True" if orientable
-        - "False" if nonorientable 
+        - True if orientable
+        - False if nonorientable 
 
         EXAMPLES::
 
