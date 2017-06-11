@@ -5,7 +5,7 @@ Pants decompositions of surfaces.
 AUTHORS:
 
 - BALAZS STRENNER (2017-05-02): initial version
-- YIHAN ZHOU
+- YIHAN ZHOU (2017-6-11)
 
 EXAMPLES::
 
@@ -26,6 +26,7 @@ EXAMPLES::
 
 
 from surface import Surface
+from sage.all import Graph
 
 class PantsDecomposition(Surface):
     """A pants decomposition of a surface.
@@ -77,35 +78,65 @@ class PantsDecomposition(Surface):
 
         sage: G = Graph([[0,0],[0,1]],loops=True)
         sage: PantsDecomposition(G)
-        Pants decomposition of the once-punctured torus
+        Pants decomposition of the torus with 1 puncture
 
-        sage: G = Graph([[0,0,'-'],[0,1,'+]],loops=True)
+        sage: G = Graph([[0,0,'-'],[0,1,'+'']],loops=True)
         sage: PantsDecomposition(G)
-        Pants decomposition of the genus two nonorientable surface with one puncture
+        Pants decomposition of the genus 2 nonorientable surface with 1 puncture
 
         sage: G = Graph([[0,1],[0,1],[0,1]],multiedges=True)
         sage: PantsDecomposition(G)
-        Pants decomposition of closed surface of genus 2
+        Pants decomposition of the genus 2 closed surface
 
         sage: G = Graph({0:[1,2,3],3:[4,5]})
         sage: PantsDecomposition(G)
-        Pants decomposition of the sphere with four punctures
+        Pants decomposition of the sphere with 4 punctures
 
     """
     def __init__(self,graph):
+        
+        g = graph
+        degreels = g.degree()
+
         # check for connectedness
+        if not g.is_connected():
+            raise ValueError('Invalid input. Surface should be connect')
         
         # check valencies
+        for d in degreels:
+            if d != 3 and d != 1:
+                raise ValueError('Invalid input. Each vertices of the graph should have valencies of 1 or 3')       
 
         # decide if orientable
+        orientable = True
+        if g.degree() == [3,3]:
+            cycle_weight = sum([1 if e[2] == '-' else 0 for e in g.edges()])
+            if cycle_weight == 1 or cycle_weight == 2:
+                orientable = False
+        else:
+            for cycle in g.cycle_basis(output='edge'):
+                cycle_weight = sum([1 if e[2] == '-' else 0 for e in cycle])
+                if cycle_weight % 2 == 1:
+                    orientable = False
+                    break
 
         # compute euler_char
+        num_pants = degreels.count(3)
+        euler_char = -1 * num_pants
 
         # compute number of punctures
+        num_puncture = 0
+        for v in g.vertices():
+            if g.degree(v) == 1 and ((not g.edges_incident(v)[0][2]) or (g.edges_incident(v)[0][2] == '+')):
+                num_puncture += 1
 
         # initialize parent class
-        pass
+        self.surface = Surface(is_orientable = orientable, euler_char = euler_char, num_punctures = num_puncture)
+        #print self.surface.__repr__() ####THIS LINE IS JUST FOR TESTING
+        #pass
 
+    def __repr__(self):
+        return 'Pants decomposition of ' + self.surface.__repr__()
 
 
     def measured_train_track_to_global(self,measured_tt):
@@ -152,121 +183,3 @@ class PantsDecomposition(Surface):
         raise NotImplementedError
 
 
-
-
-
-
-
-
-
-
-# PantsMarkedSurface is to be deleted once PantsDecomposition is implemented.
-        
-class PantsMarkedSurface(Surface):
-    """A marked pants decomposition of the surface.
-
-    A bunch of pair of pants, glued together along their boundaries.
-    The gluing is specified in the format
-    [pants1,boundary1,pants2,boundary2]. If a gluing is done in an
-    orientation-reversing way, '-' is added as a fifth argument.
-
-    Boundaries not identified are the boundaries of the big surface.
-
-    EXAMPLES::
-
-    1. The once-punctured torus.
-
-    sage: s = PantsMarkedSurface([ [0,0,0,1] ])
-    sage: s.topological_type()
-    S_{1,1}
-
-    2. The once-punctured torus.
-
-    sage: s = PantsMarkedSurface([ [0,0,0,1,'-'] ])
-    sage: s.topological_type()
-    N_{1,1}
-
-    2. The closed genus 2 surface.
-    
-    sage: s = PantsMarkedSurface([ [0,0,1,0], [0,1,1,1], [0,2,1,2] ])
-    sage: s.topological_type()
-    S_2
-
-    3. The four times punctured sphere.
-
-    sage: s = PantsMarkedSurface([ [0,0,1,0] ])
-    sage: s.topological_type()
-    S_{0,4}
-
-    """
-    def __init__(self,gluing_list):
-
-
-        if len(gluing_list) == 0:
-            self.surface = MarkedSurface(num_puncture = 3, genus=0)
-        else:
-            pantdict = {}
-            uniondict = {}
-            orientable = True
-
-            #Initialize
-            for pair in gluing_list:
-                if len(pair) < 4 or len(pair) > 5 or (len(pair) == 5 and not (pair[4] == '-' or pair[4] == '+')):
-                    raise AttributeError('invalid input')
-                if pair[0] == None or pair[2] == None:
-                    raise ValueError('pants cannot be Nonetype')
-                if len(pair) == 5 and pair[4] == '-':
-                    orientable = False
-                if pair[0] not in pantdict:
-                    pantdict[pair[0]] = [False, False, False]
-                if pair[2] not in pantdict:
-                    pantdict[pair[2]] = [False, False, False]
-
-            #Boundary can only be connected once 
-            for pair in gluing_list:
-                if pantdict[pair[0]][pair[1]] or pantdict[pair[2]][pair[3]]:
-                    raise AttributeError('puncture could not be glued twice')
-                pantdict[pair[0]][pair[1]] = True
-                pantdict[pair[2]][pair[3]] = True
-
-            #Union Find Algorithm, check connectivity.            
-            for entry in pantdict.keys():
-                uniondict[entry] = None
-            for pair in gluing_list:
-                nodea = pair[0]
-                while uniondict[nodea] != None:
-                    nodea = uniondict[nodea]
-                nodeb = pair[2]
-                while uniondict[nodeb] != None:
-                    nodeb = uniondict[nodeb]
-                if nodea != nodeb or (nodeb == None and nodea == None):
-                    uniondict[nodea] = nodeb
-            if uniondict.values().count(None) > 1:
-                raise AttributeError('Surface should be connected')
-
-            num_puncture = len(pantdict.keys())*3 - len(gluing_list)
-
-            if orientable:
-                euler_char = -1 * len(pantdict.keys())
-            else:
-                euler_char = 0 ####TODO: need to change to exact formula
-
-            self.surface = MarkedSurface(num_puncture=num_puncture, orientable = orientable, euler_char = euler_char)
-
-            return self.surface.__repr__() #just for testing
-
-
-
-
-        
-
-
-
-
-
-                 
-# class PantsMappingClass(MappingClass):
-#     """
-
-#     """
-    
