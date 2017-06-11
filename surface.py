@@ -168,7 +168,7 @@ class Surface(SageObject):
             if self._genus > 1:
                 topotype += ' surface with %d punctures' % (self._num_punctures)
             else: 
-                topotype += 'with %d punctures' % (self._num_punctures)
+                topotype += ' with %d punctures' % (self._num_punctures)
         return topotype
 
 
