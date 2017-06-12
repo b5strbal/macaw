@@ -131,12 +131,13 @@ class PantsDecomposition(Surface):
                 num_puncture += 1
 
         # initialize parent class
-        self.surface = Surface(is_orientable = orientable, euler_char = euler_char, num_punctures = num_puncture)
-        #print self.surface.__repr__() ####THIS LINE IS JUST FOR TESTING
+        super(PantsDecomposition,self).__init__(euler_char = euler_char, num_punctures = num_puncture, is_orientable = orientable)
+        #print self.__repr__() #THIS LINE IS JUST FOR TESTING
         #pass
 
     def __repr__(self):
-        return 'Pants decomposition of ' + self.surface.__repr__()
+        return 'Pants decomposition of ' + super(PantsDecomposition,self).__repr__()
+
 
 
     def measured_train_track_to_global(self,measured_tt):
