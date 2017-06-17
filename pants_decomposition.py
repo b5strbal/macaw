@@ -139,37 +139,113 @@ class PantsDecomposition(Surface):
         return 'Pants decomposition of ' + super(PantsDecomposition,self).__repr__()
 
 
-
-    def measured_train_track_to_global(self,measured_tt):
+    def apply_elementary_move(self,pants_curve):
         """
-        Return the global coordinates of a measured standard train
-        track.
+        Create a new pants decomposition by changing one pants curve.
 
-        (Pants specific implementation of the method of the abstract
-        base class with the same name. The description of the method
-        there.)
+        The pants have to be marked by cyclic order of the boundary
+        components in each pair of pants, otherwise the elementary
+        move is not uniquely specified by the pants_curve.
+
+        EXAMPLES::
+
+        Type 1 elementary move::
+
+            sage: p1 = PantsDecomposition([[0,0,0,1]])
+            sage: p1
+            Pants decomposition of the closed surface of genus 2
+            sage: p2 = p1.apply_elementary_move((0,0))
+            sage: p2
+            Pants decomposition of the closed surface of genus 2
+
+        The resulting (marked) pants decomposition is isomorphic to
+        the original one.
+
+        Type 2 elementary move, resulting in a pants decomposition
+        with a separating curve::
+
+            sage: p1 = PantsDecomposition([[0,1,1,3],[0,2,1,2],[0,3,1,1]])
+            sage: p2 = p1.apply_elementary_move((0,2))
+
+        A type 2 elementary move on the same curve of the same pants
+        decomposition but with a different marking. The resulting
+        pants decomposition now does not have a separating curve::
+
+            sage: p3 = PantsDecomposition([[0,1,1,1],[0,2,1,2],[0,3,1,3]])
+            sage: p4 = p1.apply_elementary_move((0,2))
+
+
+        """
+        pass
+
+    def dehn_thurston_tt(self,pants_pieces,annulus_pieces):
+        """
+        Return a Dehn-Thurston train track.
+
+        EXAMPLES::
+
+            sage: p = PantsDecomposition([[0,1,1,3],[0,2,1,2],[0,3,1,1]])
+            sage: p
+            Pants decomposition of the closed surface of genus 2
+            sage: p.dehn_thurston_tt([(0,3),(1,0)],[(0,1,'L'),(0,2,'L')(0,3,'R')])
+            Train Track on the closed surface of genus 2
         
-        There are 12g-12 natural curves that are transverse to all
-        standard train tracks, but 9g-9 should be enough for an
-        injective representation. There are 3g-3 pants curves, and for
-        each pants curve, there are three curves intersecting only
-        this curve that are transverse to all standard train tracks.
-        Considering only two out of these three should be enough.
+        For the following pants decomposition, there are only two
+        Dehn-Thurston train tracks::
+
+            sage: p = PantsDecomposition([[0,1,1,1]])
+            sage: p
+            Pants decomposition of the sphere with 4 punctures
+            sage: p.dehn_thurston_tt([(0,1),(1,1)],[(0,1,'L')])
+            Train track on the sphere with 4 punctures
+            sage: p.dehn_thurston_tt([(0,1),(1,1)],[(0,1,'R')])
+            Train track on the sphere with 4 punctures
+
+        For the following pants decomposition, there are 16
+        Dehn-Thurston train tracks (two choices for each pants and two
+        choices for each pants curve)::
+
+            sage: p = PantsDecomposition([[0,1,1,2],[0,2,1,1]])
+            sage: p
+            Pants decomposition of the 
+            sage: p.dehn_thurston_tt([(0,1),(1,2)],[(0,1,'L'),(0,2,'R')])
+            Train track on the torus with 2 punctures
+            sage: p.dehn_thurston_tt([(0,2),(1,1)],[(0,1,'R'),(0,2,'L')])
+            Train track on the torus with 2 punctures
 
         """
-        raise NotImplementedError
+        pass
+        
+    # def measured_train_track_to_global(self,measured_tt):
+    #     """
+    #     Return the global coordinates of a measured standard train
+    #     track.
+
+    #     (Pants specific implementation of the method of the abstract
+    #     base class with the same name. The description of the method
+    #     there.)
+        
+    #     There are 12g-12 natural curves that are transverse to all
+    #     standard train tracks, but 9g-9 should be enough for an
+    #     injective representation. There are 3g-3 pants curves, and for
+    #     each pants curve, there are three curves intersecting only
+    #     this curve that are transverse to all standard train tracks.
+    #     Considering only two out of these three should be enough.
+
+    #     """
+    #     raise NotImplementedError
 
 
-    def global_to_measured_train_track(self,curve,all_reps = False):
-        """
-        Represent a curve as a standard measured train track.
+    # def global_to_measured_train_track(self,curve,all_reps = False):
+    #     """
+    #     Represent a curve as a standard measured train track.
 
-        (Pants specific implementation of the method of the abstract
-        base class with the same name. The description of the method
-        there.)
+    #     (Pants specific implementation of the method of the abstract
+    #     base class with the same name. The description of the method
+    #     there.)
 
-        """
-        raise NotImplementedError
+    #     """
+    #     raise NotImplementedError
         
 
         
