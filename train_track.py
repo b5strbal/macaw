@@ -217,17 +217,65 @@ class TrainTrack(SageObject): #MarkedSurface?
         #self._measure
         
         
-class CarryingMap(SageObject):
+class TrainTrackMap(SageObject):
     """
-    Two train tracks, one is carried on the other.
-    """
-    def __init__(self):
-        
-        pass
-        #self.original_tt
-        #self.carried_tt
-        #self.carried_branch_measures
+    A map between two train tracks.
 
+    The train track map is stored in one of two ways (or both).
+
+    1. By the edge_map. This is the detailed description of the train
+    track map. The image of every branch is stored as a train path.
+    The advantage of this representation is that this can be used to
+    compute Alexander and Teichmuller polynomials of mapping tori,
+    since the the transition maps can be computed on the maximal
+    Abelian cover. The disadvantage is that this requires a lot of
+    storage space. After `n` splittings, the images of branches may
+    get exponentially long in `n`.
+
+    2. By the transition matrix, and storing where the ends of
+    branches map and the position of the image of the ends of branches
+    among the strands of the image of this branch. The storage is much
+    more efficient in this case (the bitsize of the entries of the
+    transition matrix is at most about `n`), and operations like
+    splittings and compositions can be computed much faster.
+
+    Each representation can be computed from the other.
+
+    Maybe we should only consider trivalent train tracks for now? The
+    ones in the examples below are not trivalent. Maybe this class is
+    easier for non-trivalent train tracks, and it is enough to
+    restrict the Splitting class for trivalent ones.
+    """
+    def __init__(self,domain,codomain,edge_map):
+        """
+
+        EXAMPLES::
+
+            sage: tt1 = TrainTrack([[0,'+',0,0,'-',1,'a'], [0,'+',1,0,'-',0,b']])
+            sage: tt2 = TrainTrack([[0,'+',0,0,'-',1,'c'], [0,'+',1,0,'-',0,'d']])
+            sage: TrainTrackMap(tt1,tt2,{'a':['c'],'b':['c','d']])
+            TrainTrackMap
+        
+        The train track map induced by a Dehn twist::
+
+            sage: TrainTrackMap(tt1,tt1,{'a':['a'],'b':['a','b']])
+
+        The train track map induced by an order two involution::
+
+            sage: TrainTrackMap(tt1,tt1,{'a':[('a',-1)],'b':[('b',-1)]])
+        
+        """
+
+
+        pass
+
+    def domain(self):
+        pass
+
+
+    def codomain(self):
+        pass
+    
     def transition_matrix(self):
         """
         Return the transition matrix of the carrying map.
@@ -241,7 +289,29 @@ class CarryingMap(SageObject):
         pass
 
 
-class TrainTrackMap(CarryingMap):
+
+class Splitting(TrainTrackMap):
+    def __init__(self,train_track,large_branch,left_or_right):
+        """
+        
+        TODO: The TrainTrack class should really support labels!
+
+        EXAMPLES::
+
+            sage: tt = TrainTrack([[0,'+',0,1,'-',0],[1,'+',0,0,'-',1],
+            [1,'+',1,0,'-',0]])
+            sage: s = Splitting(tt,[1,'+',0,0,'-',1],'left') 
+            sage: s.codomain() == tt
+            True
+
+
+        """
+        pass
+
+
+
+    
+class TrainTrackSelfMap(TrainTrackMap):
     """
     An image of a train track carried on itself.
     """
@@ -276,9 +346,6 @@ class TrainTrackMap(CarryingMap):
 
 
         
-class Splitting(CarryingMap):
-    def __init__(self):
-        self.split_branch
 
 
         
