@@ -25,59 +25,58 @@ EXAMPLES::
 
 from sage.structure.sage_object import SageObject
     
-class TrainTrack(SageObject): #MarkedSurface? 
+class TrainTrack(SageObject):
     """
-    Represent it as a directed graph so that vertices are directed
-    branches and switches, and there is a directed edge between two
-    vertices if it is possibly to move from one to the other. The
-    outgoing edges from the switch vertices should be in an ordered
-    list so we know which branch is on the left and right. 
 
-    Also, every directed switch and branch should have a left and
-    right side which defines a local orientation of the surface. For
-    each edge of the graph, we need to say if the two left and two
-    right sides are glued together or left is glued to right. This
-    allows us to represent train tracks on nonorientable surfaces. 
+    [starting_switch,side,index,ending_switch,side,index,is_twisted]
+
+    is_twisted is optional, default is False
+
+    EXAMPLES:
+
+    1. A train track on the torus with one switch::
+
+        sage: tt = TrainTrack([[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]])
+        sage: tt.is_trivalent()
+        False
+        sage: tt.neighborhood()
+        Once-punctured torus
+
+    2. A train track on the torus with two switches:
+
+        sage: tt = TrainTrack([[0,'+',0,1,'-',0],[1,'+',0,0,'-',1],
+        [1,'+',1,0,'-',0]])
+        sage: tt.is_trivalent()
+        True
+
+    3. A train track on the three times punctured disk:
+
+        sage: tt = TrainTrack([ [0,'+',0,0,'+',1], [0,'-',0,1,'+',0],
+        [1,'+',1,2,'-',0], [2,'+',0,2,'+', 1], [1,'-',0,3,'+',0],
+        [3,'-',0,3,'-',1] ]) 
+        sage: tt.is_trivalent()
+        True
+        sage: tt.neighborhood()
+        S_{0,4}
+        sage: tt.is_tangentially_orientable()
+        False
+        sage: tt.is_transversely_orientable()
+        False
     """
-    def __init__(self,list_of_branches,labels=None): #what is labels?
+    # Represent it as a directed graph so that vertices are directed
+    # branches and switches, and there is a directed edge between two
+    # vertices if it is possibly to move from one to the other. The
+    # outgoing edges from the switch vertices should be in an ordered
+    # list so we know which branch is on the left and right. 
+
+    # Also, every directed switch and branch should have a left and
+    # right side which defines a local orientation of the surface. For
+    # each edge of the graph, we need to say if the two left and two
+    # right sides are glued together or left is glued to right. This
+    # allows us to represent train tracks on nonorientable surfaces. 
+    def __init__(self,list_of_branches): 
         """
         
-        Every branch 
-
-        [starting_switch,side,index,ending_switch,side,index,is_twisted]
-
-        is_twisted is optional, default is False
-
-        EXAMPLES:
-
-        1. A train track on the torus with one switch::
-
-            sage: tt = TrainTrack([[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]])
-            sage: tt.is_trivalent()
-            False
-            sage: tt.neighborhood()
-            Once-punctured torus
-
-        2. A train track on the torus with two switches:
-
-            sage: tt = TrainTrack([[0,'+',0,1,'-',0],[1,'+',0,0,'-',1],
-            [1,'+',1,0,'-',0]])
-            sage: tt.is_trivalent()
-            True
-
-        3. A train track on the three times punctured disk:
-
-            sage: tt = TrainTrack([ [0,'+',0,0,'+',1], [0,'-',0,1,'+',0],
-            [1,'+',1,2,'-',0], [2,'+',0,2,'+', 1], [1,'-',0,3,'+',0],
-            [3,'-',0,3,'-',1] ]) 
-            sage: tt.is_trivalent()
-            True
-            sage: tt.neighborhood()
-            S_{0,4}
-            sage: tt.is_tangentially_orientable()
-            False
-            sage: tt.is_transversely_orientable()
-            False
         """
     
     
@@ -152,6 +151,92 @@ class TrainTrack(SageObject): #MarkedSurface?
         self.num_cusps = sum(self.graph.edge_labels()) 
         self.num_punctures = self.graph.connected_components_number() #num of disconnected components of the graph is number of punctures
         self.genus = (2 - self.num_punctures - self.euler_char)//2 
+
+    def branch_endpoint(self,branch):
+        """
+        Return the switch which is the endpoint of the branch.
+
+        INPUT:
+        
+        - ``branch`` -- the index of the oriented branch. It is an
+        integer in the interval `[1,n]` or `[-n,-1]` where `n` is the
+        number of branches. A negative sign means that the branch is
+        oriented differently from its standard orientation.
+
+        OUTPUT:
+        
+        - tuple (switch,side,pos) encoding a half-branch, just as in
+          the input of __init__. 
+        
+        EXAMPLES::
+
+            sage: tt = TrainTrack([[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]])
+            sage: tt.branch_endpoint(1)
+            (0,'-',1)
+            sage: tt.branch_endpoint(-1)
+            (0,'+',0)
+            sage: tt.branch_endpoint(2)
+            (0,'-',0)
+            sage: tt.branch_endpoint(-2)
+            """
+        pass
+    
+    def outgoing_branches(self,switch,side):
+        """
+        Return the list of branches departing from a switch.
+
+        EXAMPLES::
+
+            sage: tt = TrainTrack([[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]])
+            sage: tt.outgoing_branches(0,'+')
+            [1, 2]
+            sage: tt.outgoing_branches(0,'-')
+            [-2,-1]
+        """
+        pass
+
+    def branches(self):
+        """
+        Return the list of branches.
+
+        EXAMPLES:: 
+
+            sage: tt = TrainTrack([[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]])
+            sage: tt.branches()
+            [[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]]
+        """
+        pass
+
+    def complementary_regions(self):
+        """
+        Return the boundary paths of complementary regions.
+
+        The region is on the right side of the paths.
+
+        EXAMPLES::
+
+            sage: tt = TrainTrack([[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]])
+            sage: tt.complementary_regions()
+            [[1,2,-1,-2]]
+        """
+    
+    def is_branch_large(self,branch):
+        """
+        Decide if a branch is large.
+        """
+        pass
+
+    def is_branch_mixed(self,branch):
+        """
+        Decide if a branch is mixed.
+        """
+        pass
+
+    def is_branch_small(self,branch):
+        """
+        Decide if a branch is small.
+        """
+        pass
 
     def surface(self):
         return 'S_{' + str(self.genus) + ',' + str(self.num_punctures) + '}'
