@@ -389,9 +389,69 @@ class Splitting(TrainTrackMap):
             sage: s.codomain() == tt
             True
 
+            sage: tt = TrainTrack([0,'-',0,0,'-',1], [0,'+',0,1,'-',0],
+            [1,'-',1,2,'+',0], [2,'-',0,2,'-',1], [1,'+',0,3,'-',0],
+            [3,'+',0,3,'+',1])
+            sage: s_left = Splitting(tt, 5, 'left')
+            sage: split_train_left = TrainTrack([0,'-',0,0,'-',1], [0,'+',0,1,'-',0],
+            [1,'+',0,3,'-',0], [1,'+',1,3,'+',0], [3,'-',1,2,'+',0], [2,'-',0,2,'-',1])
+            sage: s_left.codomain() == split_train_left
+            True
+            sage: s_right = Splitting(tt, 5, 'right')
+            sage: split_train_right = TrainTrack([0,'-',0,0,'-',1], [0,'+',0,3,'-',0],
+            [3,'-',1,1,'+',1], [3,'+',0,1,'+',0], [1,'-',0,2,'+',0], [2,'-',0,2,'-',1])
+            sage: s_right.codomain() == split_train_right
+            True
+
 
         """
-        pass
+        if not(train_track.is_branch_large(large_branch)):
+            raise ValueError('Invalid branch: must be large branch.')
+
+        def opp(pos_or_neg): # flips the '+' and '-' characters
+            if pos_or_neg == '+':
+                return '-'
+            elif pos_or_neg == '-':
+                return '+'
+
+        def branch_builder(branch, new_half_branch, branch_list): # replaces the first (according to orientation) half of branch with new_half_branch
+            if branch > 0:
+                branch_list[branch - 1] = new_half_branch + branch_list[branch - 1][3:]
+            elif branch < 0:
+                branch_list[-branch - 1] = branch_list[-branch - 1][:3] + new_half_branch
+            return branch_list
+
+        pos_side = train_track.branch_endpoint(large_branch)
+        neg_side = train_track.branch_endpoint(-large_branch)
+        pos_branches = train_track.outgoing_branches(pos_side[0], opp(pos_side[1]))
+        neg_branches = train_track.outgoing_branches(neg_side[0], opp(neg_side[1]))
+
+        # pos_side[0] = B
+        # pos_side[1] = dB
+        # pos_branches[0] = 4
+        # pos_branches[1] = 5 
+        # neg_side[0] = A
+        # neg_side[1] = dA
+        # neg_branches[0] = 2
+        # neg_branches[1] = 1
+
+        list_of_branches = train_track.branches()
+
+        if left_or_right == 'left':
+            list_of branches = branch_builder(pos_branches[1], [neg_side[0], neg_side[1], 1], list_of_branches)
+            list_of branches = branch_builder(neg_branches[1], [pos_side[0], pos_side[1], 1], list_of_branches)
+        elif left_or_right == 'right':
+            list_of branches = branch_builder(pos_branches[0], [neg_side[0], neg_side[1], 0], list_of_branches)
+            list_of branches = branch_builder(pos_branches[1], [pos_side[0], opp(pos_side[1]), 0], list_of_branches)
+            list_of branches = branch_builder(neg_branches[0], [pos_side[0], pos_side[1], 0], list_of_branches)
+            list_of branches = branch_builder(neg_branches[1], [neg_side[0], opp(neg_side[1]), 0], list_of_branches)
+            list_of branches = branch_builder(large_branch, [neg_side[0], neg_side[1], 1], list_of_branches)
+            list_of branches = branch_builder(-large_branch, [pos_side[0], pos_side[1], 1], list_of_branches)
+        else:
+            raise ValueError("Invalid direction: must be 'left' or 'right'.")
+
+        self._domain = train_track
+        self._codomain = TrainTrack(list_of_branches)
 
 
 
