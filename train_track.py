@@ -473,15 +473,15 @@ class Splitting(TrainTrackMap):
         list_of_branches = train_track.branches()
 
         if left_or_right == 'left':
-            list_of branches = branch_builder(pos_branches[1], [neg_side[0], neg_side[1], 1], list_of_branches)
-            list_of branches = branch_builder(neg_branches[1], [pos_side[0], pos_side[1], 1], list_of_branches)
+            list_of_branches = branch_builder(pos_branches[1], [neg_side[0], neg_side[1], 1], list_of_branches)
+            list_of_branches = branch_builder(neg_branches[1], [pos_side[0], pos_side[1], 1], list_of_branches)
         elif left_or_right == 'right':
-            list_of branches = branch_builder(pos_branches[0], [neg_side[0], neg_side[1], 0], list_of_branches)
-            list_of branches = branch_builder(pos_branches[1], [pos_side[0], opp(pos_side[1]), 0], list_of_branches)
-            list_of branches = branch_builder(neg_branches[0], [pos_side[0], pos_side[1], 0], list_of_branches)
-            list_of branches = branch_builder(neg_branches[1], [neg_side[0], opp(neg_side[1]), 0], list_of_branches)
-            list_of branches = branch_builder(large_branch, [neg_side[0], neg_side[1], 1], list_of_branches)
-            list_of branches = branch_builder(-large_branch, [pos_side[0], pos_side[1], 1], list_of_branches)
+            list_of_branches = branch_builder(pos_branches[0], [neg_side[0], neg_side[1], 0], list_of_branches)
+            list_of_branches = branch_builder(pos_branches[1], [pos_side[0], opp(pos_side[1]), 0], list_of_branches)
+            list_of_branches = branch_builder(neg_branches[0], [pos_side[0], pos_side[1], 0], list_of_branches)
+            list_of_branches = branch_builder(neg_branches[1], [neg_side[0], opp(neg_side[1]), 0], list_of_branches)
+            list_of_branches = branch_builder(large_branch, [neg_side[0], neg_side[1], 1], list_of_branches)
+            list_of_branches = branch_builder(-large_branch, [pos_side[0], pos_side[1], 1], list_of_branches)
         else:
             raise ValueError("Invalid direction: must be 'left' or 'right'.")
 
