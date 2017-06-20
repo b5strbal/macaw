@@ -5,12 +5,8 @@ Surfaces.
 AUTHORS:
 
 - BALAZS STRENNER (2017-05-02): initial version
-- YIHAN ZHOU 
-- YANDI WU
-
-EXAMPLES::
-
-<Lots and lots of examples>
+- YIHAN ZHOU (2017-06-14): implemented surface class, added document and doctest
+- YANDI WU (2017-06-14): added document
 
 
 """
@@ -29,45 +25,76 @@ from sage.structure.sage_object import SageObject
 
 class Surface(SageObject):
     """
-    A finite type surface.
-    """
-    def __init__(self, genus = None, num_punctures = None, 
-                 is_orientable = True, euler_char = None):
-        """
-        Specifying euler_char overrides genus.
-        """
+    Compact surface with finite many of points removed.
+    
 
+    INPUT:
+
+    Users can created surface by providing the following parameter
+
+    - ``genus`` -- integer larger than  or equal to 0 or None. For orientable surface, the genus is the number of tori in the connected sum; 
+    for nonorientable surface, the genus is the number of projective planes in the connected sum. Genus by default is None.
+    - ``num_puncture`` -- integer larger than or equal to 0. The number of punctures by default is 0.
+    - ``is_orientable`` -- boolean. The value is true for orientable surfaces while false for nonorientable surfaces. The orientability of by default is True.
+    - ``euler_char`` -- integer smaller than or smaller than 2 or None. euler characteristic of the surface, by default is None.
+    At least one of genus and euler_char should be provided to determine the surface.
+
+    EXAMPLES:
+
+    #. Specifying the genus and the number of punctures::
+        sage: Surface(0, 1)
+        Disk
+        sage: Surface(2, 2, False)
+        Klein bottle with 2 punctures
+
+
+    #. If only the genus is specified, the surface by default is a closed surface::
+        sage: Surface(1)
+        Torus
+        sage: Surface(2, is_orientable = False)
+        Klein bottle    
+     
+       
+    #. Specifying the Euler characteristic and number of punctures::
+        sage: Surface(num_punctures = 3, euler_char = -3)
+        Torus with 3 punctures
+
+
+    """
+    def __init__(self, genus = None, num_punctures = 0, 
+                 is_orientable = True, euler_char = None): ###### change num_puncture = 0
+        
         self._is_orientable = is_orientable
 
-        if num_punctures == None:
-            if genus != None and euler_char != None:
-                temp_num_puncture = 2 - 2*genus - euler_char if is_orientable else 2 - genus - euler_char
-                self._num_punctures = temp_num_puncture
-                self.genus = genus
-                self.euler_char = euler_char
-                return
-            else:
-                num_punctures = 0
+        # if num_punctures == None:
+        #     if genus != None and euler_char != None:
+        #         temp_num_puncture = 2 - 2*genus - euler_char if is_orientable else 2 - genus - euler_char
+        #         self._num_punctures = temp_num_puncture
+        #         self.genus = genus
+        #         self.euler_char = euler_char
+        #         return
+        #     else:
+        #         num_punctures = 0
 
         self._num_punctures = num_punctures
 
         if genus == None and euler_char == None:
-            raise ValueError('At least one of genus number and euler characteristic should be given. Not able to specify the surface')        
+            raise ValueError('At least one of genus number and euler characteristic should be given.')        
         elif genus != None:
-            if num_punctures != None:
-                if is_orientable:
-                    temp_euler = 2-2*genus-num_punctures
-                else:
-                    temp_euler = 2-genus-num_punctures
-                if euler_char != None and temp_euler != euler_char:
-                    raise ValueError('No such surface exist')
+            #if num_punctures != None:
+            if is_orientable:
+                temp_euler = 2-2*genus-num_punctures
+            else:
+                temp_euler = 2-genus-num_punctures
+            if euler_char != None and temp_euler != euler_char:
+                raise ValueError('The number of genus / puncture / euler_char provided is not consistent.')
             self._genus = genus
             self._euler_char = temp_euler        
         else:            
             temp_genus = 2-num_punctures-euler_char
             if is_orientable:
                 if temp_genus % 2 == 1:
-                    raise ValueError('Invalid puncture number or euler characteristic')
+                    raise ValueError('The number of genus computed according to puncture and euler_char is not a non-negative integer')
                 else:
                     temp_genus /= 2
             self._genus = temp_genus
@@ -75,7 +102,7 @@ class Surface(SageObject):
         
 
 
-    def __repr__(self):
+    def _repr_(self):
         
         r"""
 
@@ -84,30 +111,7 @@ class Surface(SageObject):
         OUTPUT: 
 
         - string that describes surface using the genus, number of boundary components, and orientability.
-
-        EXAMPLES::
-
-        sage: Surface(0, 0)
-        the sphere
-        sage: Surface(0, 1)
-        the disk
-        sage: Surface(0, 0, False)
-        the mobius strip
-        sage: Surface(1, 0)
-        the torus
-        sage: Surface(1, 0, False)
-        the klein bottle        
-        sage: Surface(5)
-        the genus 5 orientable closed surface 
-        sage: Surface(10, 2, False)
-        the genus 10 nonorientable surface with 2 punctures
-        sage: Surface(50, 23, True)
-        the genus 50 orientable surface with 23 punctures
-        sage: Surface(num_punctures = 23, euler_char = -121)
-        the genus 50 orientable surface with 23 punctures
-        sage: Surface(num_punctures = 1, euler_char = -1)
-        the torus with 1 puncture
-
+        
         """
         # if self._is_orientable:
         #     if self._num_punctures == 0:
@@ -141,74 +145,35 @@ class Surface(SageObject):
 
         if self._is_orientable:
             if self._genus == 0:
-                topotype = 'the sphere'
+                topotype = 'Sphere'
             elif self._genus == 1:
-                topotype = 'the torus'
+                topotype = 'Torus'
             else:
-                topotype = 'the genus %d orientable' % (self._genus)
+                topotype = 'Genus %d orientable' % (self._genus)
         else:
             if self._genus == 0:
-                topotype = 'the mobius strip'
-            elif self._genus == 1:
-                topotype = 'the klein bottle'
+                topotype = 'Mobius strip'
+            elif self._genus == 2:
+                topotype = 'Klein bottle'
             else:
-                topotype = 'the genus %d nonorientable' % (self._genus)
+                topotype = 'Genus %d nonorientable' % (self._genus)
 
         if self._num_punctures == 0:
             if self._genus > 1:
                 topotype += ' closed surface'
         elif self._num_punctures == 1:
-            if self._genus > 1:
+            if self._genus > 2 or self._genus == 1:
                 topotype += ' surface with 1 puncture'
             elif self._genus == 0:
                 topotype = 'the disk'
             else:
                 topotype += ' with 1 puncture'
         else:
-            if self._genus > 1:
+            if self._genus > 2 or self._genus == 1:
                 topotype += ' surface with %d punctures' % (self._num_punctures)
             else: 
                 topotype += ' with %d punctures' % (self._num_punctures)
         return topotype
-
-
-    def _latex_(self):
-        
-        r"""
-
-        Return topological description of the surface. 
-
-        OUTPUT: 
-
-        - string that describes surface using the genus, number of boundary components, and orientability.
-
-        EXAMPLES::
-
-        sage: Surface(0, 0)
-        the sphere
-        sage: Surface(0, 1)
-        the disk
-        sage: Surface(0, 0, False)
-        the mobius strip
-        sage: Surface(1, 0)
-        the torus
-        sage: Surface(1, 0, False)
-        the klein bottle        
-        sage: Surface(5)
-        the genus 5 orientable closed surface 
-        sage: Surface(10, 2, False)
-        the genus 10 nonorientable surface with 2 punctures
-        sage: Surface(50, 23, True)
-        the genus 50 orientable surface with 23 punctures
-        sage: Surface(num_punctures = 23, euler_char = -121)
-        the genus 50 orientable surface with 23 punctures
-        sage: Surface(num_punctures = 1, euler_char = -1)
-        the torus with 1 puncture
-
-        """
-
-        return self.__repr__()
-        #return 'the genus %d %s surface with %d punctures' % (self._genus, 'orientable' if self._is_orientable else 'nonorientable', self._num_punctures)
 
         
     def is_orientable(self):
@@ -217,18 +182,13 @@ class Surface(SageObject):
 
         Return if the surface is orientable. 
 
-        OUTPUT: 
-
-        - True if orientable
-        - False if nonorientable 
-
         EXAMPLES::
 
-        sage: S_2 = Surface(0, 0)
-        sage: S_2.is_orientable()
+        sage: S = Surface(0, 0)
+        sage: S.is_orientable()
         True 
-        sage: M = Surface(0, 0, False)
-        sage: M.is_orientable()
+        sage: S = Surface(0, 0, is_orientable = False)
+        sage: S.is_orientable()
         False
 
         """        
@@ -239,19 +199,19 @@ class Surface(SageObject):
 
         r"""
 
-        Return number of punctures/cusps. 
+        Return number of punctures. 
 
         OUTPUT: 
 
-        - integer giving the number of boundary components
+        - integer giving the number of puncture components
 
         EXAMPLES::
 
-        sage: S_2 = Surface(0, 0)
-        sage: S_2.num_punctures()
+        sage: S = Surface(0, 0)
+        sage: S.num_punctures()
         0
-        sage: E = Surface(genus = 50, euler_char = -121)
-        sage: E.num_punctures()
+        sage: S = Surface(genus = 50, euler_char = -121)
+        sage: S.num_punctures()
         23
 
 
@@ -270,20 +230,20 @@ class Surface(SageObject):
 
         EXAMPLES::
 
-        sage: M = Surface(0, 0, False)
-        sage: M.genus()
+        sage: S = Surface(0, 0, False)
+        sage: S.genus()
         0
-        sage: T_2 = Surface(1, 0)
-        sage: T_2.genus()
+        sage: S = Surface(1, 0)
+        sage: S.genus()
         1
-        sage: s = Surface(10, 2, False)
-        sage: s.genus()
+        sage: S = Surface(10, 2, False)
+        sage: S.genus()
         10
-        sage: m = Surface(50)
-        sage: m.genus()
+        sage: S = Surface(50)
+        sage: S.genus()
         50
-        sage: m = Surface(num_punctures = 23, euler_char = -121)
-        sage: m.genus()
+        sage: S = Surface(num_punctures = 23, euler_char = -121)
+        sage: S.genus()
         50
 
         """        
@@ -306,26 +266,26 @@ class Surface(SageObject):
 
         EXAMPLES::
 
-        sage: S_2 = Surface(0, 0)
-        sage: Surface.euler_char(S_2)
+        sage: S = Surface(0, 0)
+        sage: S.euler_char()
         2
-        sage: D = Surface(0, 1)
-        sage: Surface.euler_char(D)
+        sage: S = Surface(0, 1)
+        sage: S.euler_char()
         1
-        sage: M = Surface(0, 0, False)
-        sage: Surface.euler_char(M)
+        sage: S = Surface(0, 0, False)
+        sage: S.euler_char()
         2
-        sage: T_2 = Surface(1, 0)
-        sage: Surface.euler_char(T_2)
+        sage: S = Surface(1, 0)
+        sage: S.euler_char()
         0
-        sage: K = Surface(1, 0, False)
-        sage: Surface.euler_char(K)
+        sage: S = Surface(1, 0, False)
+        sage: S.euler_char()
         1
-        sage: s = Surface(10, 2, False)
-        sage: Surface.euler_char(s)
+        sage: S = Surface(10, 2, False)
+        sage: S.euler_char()
         -10
-        sage: m = Surface(50, 23, True)
-        sage: Surface.euler_char(m)
+        sage: S = Surface(50, 23, True)
+        sage: S.euler_char()
         -121
         """        
 
@@ -343,34 +303,32 @@ class Surface(SageObject):
 
         EXAMPLES::
 
-        sage: S_2 = Surface(0, 0)
-        sage: S_2.teich_space_dim()
+        sage: S = Surface(0, 0)
+        sage: S.teich_space_dim()
         -6
-        sage: D = Surface(0, 1)
-        sage: D.teich_space_dim()
+        sage: S = Surface(0, 1)
+        sage: S.teich_space_dim()
         -4
-        sage: M = Surface(0, 0, False)
+        sage: S = Surface(0, 0, False)
         sage: M.teich_space_dim()
-        -3
-        sage: T_2 = Surface(1, 0)
-        sage: T_2.teich_space_dim()
+        -6
+        sage: S = Surface(1, 0)
+        sage: S.teich_space_dim()
         0
-        sage: K = Surface(1, 0, False)
-        sage: K.teich_space_dim()
-        1
-        sage: s = Surface(10, 2, False)
-        sage: s.teich_space_dim()
-        41
-        sage: m = Surface(50, 23, False)
-        sage: m.teich_space_dim()
-        243
+        sage: S = Surface(1, 0, False)
+        sage: S.teich_space_dim()
+        -2
+        sage: S = Surface(10, 2, False)
+        sage: S.teich_space_dim()
+        38
+        sage: S = Surface(50, 23, False)
+        sage: S.teich_space_dim()
+        240
 
         """        
 
         if self._is_orientable:
             return 6*self._genus-6+2*self._num_punctures
         else:
-            return 4*self._genus-3+2*self._num_punctures        
-
-
+            return 3*self._genus-6+2*self._num_punctures        
 
