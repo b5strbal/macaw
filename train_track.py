@@ -23,6 +23,7 @@ EXAMPLES::
 #                  http://www.gnu.org/licenses/
 #*****************************************************************************
 
+from surface import Surface 
 from sage.structure.sage_object import SageObject
     
 class TrainTrack(SageObject):
@@ -65,7 +66,7 @@ class TrainTrack(SageObject):
     """
     # Represent it as a directed graph so that vertices are directed
     # branches and switches, and there is a directed edge between two
-    # vertices if it is possibly to move from one to the other. The
+    # vertices if it is possible to move from one to the other. The
     # outgoing edges from the switch vertices should be in an ordered
     # list so we know which branch is on the left and right. 
 
@@ -78,9 +79,6 @@ class TrainTrack(SageObject):
         """
         
         """
-    
-    
-        self._branches = list_of_branches
         
         switch = [] #start a list of switches 
         for branch in list_of_branches:
@@ -91,66 +89,9 @@ class TrainTrack(SageObject):
             else:
                 switch.extend( [branch[0], branch[3]] ) #iterate through branches, pick out the switches
         self._switches = list(set(switch)) #remove duplicates 
-
-        self.euler_char = len(self._switches) - len(self._branches) #Euler characteristic assuming no punctures are glued
-        
-        def pos_branch_sorter(br, sw): #returns a list of the '+' half branches for each switch
-            switch_plus_list = []
-            for b in br:
-                if sw == b[0] and '+' == b[1] and (b[:3] not in switch_plus_list):
-                    switch_plus_list.append(b[:3])
-                if sw == b[3] and '+' == b[4] and (b[3:] not in switch_plus_list):
-                    switch_plus_list.append(b[3:])
-            return switch_plus_list
-
-        def neg_branch_sorter(br, sw): #returns a list of the '-' half branches for each switch
-            #switch_minus_list = []
-            s1 = set([tuple(b[:3]) for b in br if sw == b[0] and '-' == b[1]])
-            s2 = set([tuple(b[3:]) for b in br if sw == b[3] and '-' == b[4]])
-            l1 = list(s1)
-            l2 = list(s2)
-            switch_minus_list = l1 + l2 
-            #for b in br:
-                #if sw == b[0] and '-' == b[1] and (b[:3] not in switch_minus_list):
-                    #switch_minus_list.append(b[:3])
-                #if sw == b[3] and '-' == b[4] and (b[3:] not in switch_minus_list):
-                    #switch_minus_list.append(b[3:])
-            return switch_minus_list
-
-        def tt_graph(branches, switches): #constructs a graph to help find the punctures
-            g = Graph() 
-            vplus, vminus = [], [] #create separate lists for '+' and '-' half branches
-            e = [] #create list of edges
-            for b in branches:  #edges between half branches 
-                if b[0] == b[3] and b[1] == b[4] and (b[2] == b[5] + 1 or b[5] == b[2] + 1): 
-                    #special case for edges between half-branches (see case with S_{0,4})
-                    e.extend([((str(b[:3]), 'L'), (str(b[3:]), 'R'), 0)]) 
-                else: 
-                    e.extend([((str(b[:3]), 'R'), (str(b[3:]), 'R'), 0), ((str(b[:3]), 'L'), (str(b[3:]), 'L'), 0)])
-            g.add_edges(e)
-            for i in range(len(switches)):
-                #index 0 half branches on the left that form a 180 degree angle
-                g.add_edges([((str([switches[i]] + ['+', 0]), 'L'), (str([switches[i]] + ['-', 0]), 'L'), 0)]) 
-                n, p = len(neg_branch_sorter(branches, i)), len(pos_branch_sorter(branches, i))
-                #the half branches on the right that form a 180 degree angle
-                g.add_edges([((str([switches[i]] + ['+'] + [p - 1]), 'R'), (str([switches[i]] + ['-'] + [n - 1]), 'R'), 0)]) 
-                for m in range(n - 1): #joins adjacent half branches on '-' side and weights each branch with 1 to count num_cusps
-                    g.add_edges([((str([switches[i]] + ['-'] + [m]), 'R'), (str([switches[i]] + ['-'] + [m + 1]), 'L'), 1)]) 
-                for k in range(p - 1): #joins adjacent half branches on '+' side and weights each branch with 1 to count num_cusps
-                    g.add_edges([((str([switches[i]] + ['+'] + [k]), 'R'), (str([switches[i]] + ['+'] + [k + 1]), 'L'), 1)]) 
-            return g  
-
-        def is_trivalent(b, s):        
-            for es in s: #iterates through the switches, checks degree of each switch = 3
-                if len(neg_branch_sorter(b, es)) + len(pos_branch_sorter(b, es)) != 3:
-                    return False
-            return True 
-
-        self._is_trivalent = is_trivalent(self._branches, self._switches)
-        self.graph = tt_graph(self._branches, self._switches)
-        self.num_cusps = sum(self.graph.edge_labels()) 
-        self.num_punctures = self.graph.connected_components_number() #num of disconnected components of the graph is number of punctures
-        self.genus = (2 - self.num_punctures - self.euler_char)//2 
+        self._branches = list_of_branches
+        self.euler_char = len(self._switches) - len(list_of_branches) #Euler characteristic assuming no punctures are glued
+        #self.num_cusps = sum(self.graph.edge_labels()) 
 
     def branch_endpoint(self,branch):
         """
@@ -181,20 +122,6 @@ class TrainTrack(SageObject):
             """
         pass
     
-    def outgoing_branches(self,switch,side):
-        """
-        Return the list of branches departing from a switch.
-
-        EXAMPLES::
-
-            sage: tt = TrainTrack([[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]])
-            sage: tt.outgoing_branches(0,'+')
-            [1, 2]
-            sage: tt.outgoing_branches(0,'-')
-            [-2,-1]
-        """
-        pass
-
     def branches(self):
         """
         Return the list of branches.
@@ -205,7 +132,7 @@ class TrainTrack(SageObject):
             sage: tt.branches()
             [[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]]
         """
-        pass
+        return self._branches 
 
     def complementary_regions(self):
         """
@@ -219,6 +146,69 @@ class TrainTrack(SageObject):
             sage: tt.complementary_regions()
             [[1,2,-1,-2]]
         """
+        pass
+
+    def outgoing_branches(self,switch,side):
+        """
+        Return the list of branches, from left to right, departing from a switch with specified orientation.
+
+        EXAMPLES::
+
+            sage: tt = TrainTrack([[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]])
+            sage: tt.outgoing_branches(0,'+')
+            [1, 2]
+            sage: tt.outgoing_branches(0,'-')
+            [-2,-1]
+            sage: tt = TrainTrack([[0,'+',0,0,'+',1], [0,'-',0,2,'+',0], [1,'+',0,2,'+',1], [1,'-',0,1,'-',1], [2,'-',0,3,'-',0], [3,'+',0,3,'+',1]])
+            sage: tt.outgoing_branches(3,'+')
+            sage: [6, -6]
+            sage: tt.outgoing_branches(3, '-')
+            sage: [-5]
+            sage: tt.outgoing_branches(2, '+')
+            sage: [-2, -3]
+
+        """
+        initial_list, order_list = [], []
+        index = 1 
+        branchlist = self.branches()
+        for branch in branchlist:
+            if switch == branch[0] and side == branch[1]:
+                initial_list.append(index)
+                order_list.append(branch[2])
+            if switch == branch[3] and side == branch[4]:
+                initial_list.append(-1 * index)
+                order_list.append(branch[5]) 
+            index += 1
+        order_list, outgoing_branch_list = (list(l) for l in zip(*sorted(zip(order_list, initial_list)))) #order branch indices from L to R 
+        return outgoing_branch_list 
+
+    def puncturefinder_graph(self): #constructs a graph to help find the punctures
+        g = Graph() 
+        e = [] #create list of edges
+        branchlist = self.branches()
+        switchlist = self._switches
+        for b in branchlist:  #edges between half branches 
+            if b[0] == b[3] and b[1] == b[4] and (b[2] == b[5] + 1 or b[5] == b[2] + 1): 
+            #special case for edges between half-branches (see case with S_{0,4})
+                e.extend([(((self.outgoing_branches(b[0], b[1]))[b[2]], 'L'), ((self.outgoing_branches(b[3], b[4]))[b[5]], 'R'), 0)]) 
+            else: 
+                e.extend([(((self.outgoing_branches(b[0], b[1]))[b[2]], 'R'), ((self.outgoing_branches(b[3], b[4]))[b[5]], 'L'), 0), (((self.outgoing_branches(b[3], b[4]))[b[5]], 'R'), ((self.outgoing_branches(b[0], b[1]))[b[2]], 'L'), 0)])
+        g.add_edges(e)
+        for switch in switchlist:
+            n, p = len(self.outgoing_branches(switch, '-')), len(self.outgoing_branches(switch, '+'))
+            #index 0 half branches on the left that form a 180 degree angle
+            g.add_edges([(((self.outgoing_branches(switch, '+'))[0], 'L'), ((self.outgoing_branches(switch, '-'))[n - 1], 'R'), 0)])
+                #the half branches on the right that form a 180 degree angle
+            g.add_edges([(((self.outgoing_branches(switch, '-'))[0], 'L'), ((self.outgoing_branches(switch, '+'))[p - 1], 'R'), 0)]) 
+            for m in range(n - 1): #joins adjacent half branches on '-' side and weights each branch with 1 to count num_cusps
+                g.add_edges([(((self.outgoing_branches(switch, '-'))[m], 'R'), ((self.outgoing_branches(switch, '-'))[m + 1], 'L'), 1)]) 
+            for k in range(p - 1): #joins adjacent half branches on '+' side and weights each branch with 1 to count num_cusps
+                g.add_edges([(((self.outgoing_branches(switch, '+'))[k + 1], 'L'), ((self.outgoing_branches(switch, '+'))[k], 'R'), 1)])
+        return g  
+
+    def num_complementary_components(self): #num of disconnected components of the graph is number of punctures
+        ttgraph = self.puncturefinder_graph()
+        return ttgraph.connected_components_number() 
     
     def is_branch_large(self,branch):
         """
@@ -239,25 +229,66 @@ class TrainTrack(SageObject):
         pass
 
     def surface(self):
-        return 'S_{' + str(self.genus) + ',' + str(self.num_punctures) + '}'
+        return 'S_{' + str((2 - self.num_complementary_components() - self.euler_char)//2) + ',' + str(self.complementary_components()) + '}'
 
-    def is_trivalent(self):
-        return self._is_trivalent
+    def _repr_(self):
+        lowercase = lambda s: s[:1].lower() + s[1:] 
+        return 'Train track on ' + lowercase(str(Surface(num_punctures = self.num_complementary_components(), euler_char = self.euler_char))) + '.'
+
+    def num_cusps_list(self):
+        """
+        Return list of cusp counts for each puncture.
+
+        EXAMPLES::
+        sage: tt = TrainTrack([ [0,'+',0,0,'+',1], [0,'-',0,1,'+',0],
+        [1,'+',1,2,'-',0], [2,'+',0,2,'+', 1], [1,'-',0,3,'+',0],
+        [3,'-',0,3,'-',1] ])
+        sage: tt.num_cusps_list()
+        sage: [1, 1, 1, 1]
+        """
+        lst = []
+        G = self.puncturefinder_graph()
+        C = G.connected_components()
+        for puncture in C: 
+            cycle = G.subgraph(vertices=puncture)
+            s = sum(cycle.edge_labels())
+            lst += [s] 
+        return lst 
+
+    def is_trivalent(self): 
+
+        """
+        EXAMPLES:
+
+        sage: tt = TrainTrack([ [0,'+',0,0,'+',1], [0,'-',0,1,'+',0],
+        [1,'+',1,2,'-',0], [2,'+',0,2,'+', 1], [1,'-',0,3,'+',0],
+        [3,'-',0,3,'-',1] ])
+        sage: tt.is_trivalent()
+        sage: True 
+        
+        """ 
+        switch_list = self._switches
+        for switch in switch_list: #iterates through the switches, checks degree of each switch = 3
+            if len(self.outgoing_branches(switch, '+')) + len(self.outgoing_branches(switch, '-')) != 3:
+                    return False
+        return True 
     
-    def neighborhood(self):
+    def is_recurrent(self):
+        #if tt.graph.is_connected():
+            #return tt.graph.is_strongly_connected()
+        #else:
+            #for component in tt.graph.connected_components():
+                #if 
         pass
 
-    def is_recurrent(self):
+    def neighborhood(self):
         pass
 
     def is_transversely_recurrent(self):
         pass
     
     def is_birecurrent(self):
-        pass
-
-    def is_trivalent(self):
-        pass
+        pass 
 
     def is_tangentially_orientable(self):
         pass
