@@ -96,108 +96,109 @@ class PantsDecomposition(Surface):
     """
     def __init__(self, gluing_list):
         
-    if len(gluing_list) == 0:
-        num_punctures = 3
-        euler_char = -1
-        orientable = True
-    else:
-        conn_map = {}
-        pant_map = {}
-        #conn_cnt = 0
-        edgels = []
+        if len(gluing_list) == 0:
+            num_punctures = 3
+            euler_char = -1
+            orientable = True
+        else:
+            conn_map = {}
+            pant_map = {}
+            #conn_cnt = 0
+            edgels = []
 
-        for pair in gluing_list:
-            if len(pair) < 4 or len(pair) > 5:
-                raise ValueError('Each gluing only has 4 to 5 input')#######TODO#############
-            elif len(pair) == 5 and not (pair[4] == '-' or pair[4] == '+'):
-                raise ValueError('Use ''+'' to indicate orientable gluing and ''-'' to indicate nonorientable gluing')#######TODO###########
-            elif type(pair[1]) != int or type(pair[3]) != int:
-                raise ValueError('Use integer 0-2 to label the punctures for pants') ######TODO###################
-            elif pair[1] > 2 or pair[1] < 0 or pair[3] > 2 or pair[3] < 0:
-                raise ValueError('Use integer 0-2 to label the punctures for pants')###########################TODO############
-            if pair[0] not in pantdict:
-                pant_map[pair[0]] = [False, False, False]
-            if pair[2] not in pantdict:
-                pant_map[pair[2]] = [False, False, False]
+            for pair in gluing_list:
+                if len(pair) < 4 or len(pair) > 5:
+                    raise ValueError('Each gluing only has 4 to 5 input')#######TODO#############
+                elif len(pair) == 5 and not (pair[4] == '-' or pair[4] == '+'):
+                    raise ValueError('Use ''+'' to indicate orientable gluing and ''-'' to indicate nonorientable gluing')#######TODO###########
+                elif type(pair[1]) != int or type(pair[3]) != int:
+                    raise ValueError('Use integer 0-2 to label the punctures for pants') ######TODO###################
+                elif pair[1] > 2 or pair[1] < 0 or pair[3] > 2 or pair[3] < 0:
+                    raise ValueError('Use integer 0-2 to label the punctures for pants')###########################TODO############
+                if pair[0] not in pant_map:
+                    pant_map[pair[0]] = [False, False, False]
+                if pair[2] not in pant_map:
+                    pant_map[pair[2]] = [False, False, False]
 
-            conn1 = (pair[0], pair[1])
-            conn2 = (pair[2], pair[3])
+                conn1 = (pair[0], pair[1])
+                conn2 = (pair[2], pair[3])
 
-            if conn1 in conn_map.keys() or conn2 in conn_map.keys():
-                raise ValueError('One puncture can not be glued twice')######TODO#########
+                if conn1 in conn_map.keys() or conn2 in conn_map.keys():
+                    raise ValueError('One puncture can not be glued twice')######TODO#########
 
-            conn_pair = (conn1, conn2)
+                conn_pair = (conn1, conn2)
 
-            conn_map[conn1] = conn_pair
-            conn_map[conn2] = conn_pair
+                conn_map[conn1] = conn_pair
+                conn_map[conn2] = conn_pair
 
-            pant_map[pair[0]][pair[1]] = True
-            pant_map[pair[2]][pair[3]] = True
+                pant_map[pair[0]][pair[1]] = True
+                pant_map[pair[2]][pair[3]] = True
 
-            #conn_cnt += 1
+                #conn_cnt += 1
 
-            weight = 1 if (len(pair)==5 and pair[4] == '-') else 0
-            edgels.append((pair[0], pair[2], weight))
+                weight = 1 if (len(pair)==5 and pair[4] == '-') else 0
+                edgels.append((pair[0], pair[2], weight))
 
-        g = graphs.Graph(edgels, multiedges=True, weighted=True)
+            g = Graph(edgels, multiedges=True, weighted=True)
 
-        degreels = g.degree()
+            degreels = g.degree()
 
-        # check for connectedness   
-        if not g.is_connected():
-            raise ValueError('Invalid input. Surface should be connect')
-        
-        # # check valencies
-        # for d in degreels:
-        #     if d != 3 and d != 1:
-        #         raise ValueError('Invalid input. Each vertices of the graph should have valencies of 1 or 3')       
+            # check for connectedness   
+            if not g.is_connected():
+                raise ValueError('Invalid input. Surface should be connect')
+            
+            # # check valencies
+            # for d in degreels:
+            #     if d != 3 and d != 1:
+            #         raise ValueError('Invalid input. Each vertices of the graph should have valencies of 1 or 3')       
 
-        # decide if orientable
-        # orientable = True
-        # if g.degree() == [3,3]:
-        #     cycle_weight = sum([1 if e[2] == '-' else 0 for e in g.edges()])
-        #     if cycle_weight == 1 or cycle_weight == 2:
-        #         orientable = False
-        # else:
-        #     for cycle in g.cycle_basis(output='edge'):
-        #         cycle_weight = sum([1 if e[2] == '-' else 0 for e in cycle])
-        #         if cycle_weight % 2 == 1:
-        #             orientable = False
-        #             break
+            # decide if orientable
+            # orientable = True
+            # if g.degree() == [3,3]:
+            #     cycle_weight = sum([1 if e[2] == '-' else 0 for e in g.edges()])
+            #     if cycle_weight == 1 or cycle_weight == 2:
+            #         orientable = False
+            # else:
+            #     for cycle in g.cycle_basis(output='edge'):
+            #         cycle_weight = sum([1 if e[2] == '-' else 0 for e in cycle])
+            #         if cycle_weight % 2 == 1:
+            #             orientable = False
+            #             break
 
-        # # compute euler_char
-        # num_pants = degreels.count(3)
-        # euler_char = -1 * num_pants
+            # # compute euler_char
+            # num_pants = degreels.count(3)
+            # euler_char = -1 * num_pants
 
-        # # compute number of punctures
-        # num_puncture = 0
-        # for v in g.vertices():
-        #     if g.degree(v) == 1 and ((not g.edges_incident(v)[0][2]) or (g.edges_incident(v)[0][2] == '+')):
-        #         num_puncture += 1
+            # # compute number of punctures
+            # num_puncture = 0
+            # for v in g.vertices():
+            #     if g.degree(v) == 1 and ((not g.edges_incident(v)[0][2]) or (g.edges_incident(v)[0][2] == '+')):
+            #         num_puncture += 1
 
-        
+            
 
-        orientable = True
+            orientable = True
 
-        for cycle in g.cycle_basis(output='edge'):
-            cycle_weight = sum([e[2] for e in cycle])
-            if cycle_weight % 2 == 1:
-                orientable = False
+            for cycle in g.cycle_basis(output='edge'):
+                cycle_weight = sum([e[2] for e in cycle])
+                if cycle_weight % 2 == 1:
+                    orientable = False
 
-        num_pant = g.order()
+            num_pant = g.order()
 
-        num_puncture = num_pant*3 - 2*len(gluing_list)
+            num_puncture = num_pant*3 - 2*len(gluing_list)
 
-        euler_char = -1*num_puncture   
+            euler_char = -1*num_pant   
 
-        # initialize parent class
-        super(PantsDecomposition,self).__init__(euler_char = euler_char, num_punctures = num_puncture, is_orientable = orientable)
-        #print self.__repr__() #THIS LINE IS JUST FOR TESTING
-        #pass
+            # initialize parent class
+            super(PantsDecomposition,self).__init__(euler_char = euler_char, num_punctures = num_puncture, is_orientable = orientable)
+            #print self.__repr__() #THIS LINE IS JUST FOR TESTING
+            #pass
 
-        self._conn = conn_map
-        self._conn_cnt = len(gluing_list)
-        self._pants = pant_map
+            self._conn = conn_map
+            self._conn_cnt = len(gluing_list)
+            self._pants = pant_map
+            self._gluing_list = gluing_list
 
     def __repr__(self):
         return 'Pants decomposition of ' + super(PantsDecomposition,self).__repr__()
@@ -240,6 +241,53 @@ class PantsDecomposition(Surface):
 
 
         """
+
+        if pants_curve not in self._conn:
+            raise ValueError('Specified puncture is not glued.')
+
+        glue1 = self._conn[pants_curve][0]
+        glue2 = self._conn[pants_curve][1]
+
+        pant1 = glue1[0]
+        pant2 = glue2[0]
+
+        if pant1 == pant2:
+            return PantsDecomposition(self._gluing_list)
+
+        else:
+            punc1_1 = glue1[1]
+            punc1_2 = (punc1_1+1)%3
+            punc1_3 = (punc1_1+2)%3
+            punc2_1 = glue2[2]
+            punc2_2 = (punc2_1+1)%3
+            punc2_3 = (punc2_1+2)%3
+
+            pair_ne = list(self._conn[(pant2, punc2_2)]) if (pant2, punc2_2) in self._conn else None 
+            pair_nw = list(self._conn[(pant2, punc2_3)]) if (pant2, punc2_3) in self._conn else None
+            pair_sw = list(self._conn[(pant1, punc1_2)]) if (pant1, punc1_2) in self._conn else None  
+            pair_se = list(self._conn[(pant1, punc1_3)]) if (pant1, punc1_3) in self._conn else None 
+
+            rt_ls = list(self._gluing_list)
+
+            if pair_ne: 
+                rt_ls.remove(pair_ne)
+                pair_ne.remove((pant2, punc2_2))
+                rt_ls.append(pair_ne[0][0], pair_ne[0][1], pant2, punc2_3)
+            if pair_nw: 
+                rt_ls.remove(pair_nw)
+                pair_ne.remove((pant2, punc2_3))
+                rt_ls.append(pair_nw[0][0], pair_nw[0][1], pant1, punc1_2)
+            if pair_sw: 
+                rt_ls.remove(pair_sw)
+                pair_ne.remove((pant1, punc1_2))
+                rt_ls.append(pair_ne[0][0], pair_ne[0][1], pant1, punc1_3)
+            if pair_se: 
+                rt_ls.remove(pair_se)
+                pair_ne.remove((pant1, punc1_3))
+                rt_ls.append(pair_ne[0][0], pair_ne[0][1], pant2, punc2_2)
+
+            return PantsDecomposition(rt_ls)
+
         pass
 
     def dehn_thurston_tt(self,pants_pieces,annulus_pieces):
@@ -293,8 +341,9 @@ class PantsDecomposition(Surface):
         """
         # for strange torus
         if self._genus == 1:
-            pass #####TODO#################################
+            print 'bbb'
         else:
+            print 'aaa'
             train_track_ls = []
 
             if len(annulus_pieces) != self._conn_cnt:
@@ -305,7 +354,7 @@ class PantsDecomposition(Surface):
 
             for glue in annulus_pieces:
                 conn_temp = glue[:2]
-                if conn_temp not self._conn:
+                if conn_temp not in self._conn:
                     raise ValueError('The specified puncture is not glued')
                 conn1 = self._conn[glue[:2]][0]
                 conn2 = self._conn[glue[:2]][1]
@@ -383,25 +432,35 @@ class PantsDecomposition(Surface):
                             plus_punc = tt_type%3
                             minus_punc = (punc-1) % 3
                             plus_conn = (pant, plus_punc)
+                            print plus_conn
                             plus_switch = annulus_map[plus_conn]
+                            print annulus_map[plus_conn]
+                            #print annulus_map
                             minus_conn = (pant, minus_punc)
                             minus_switch = annulus_map[minus_conn]
-                            link4 = [selfswitch2, '+', 1].extend(plus_switch)
-                            link5 = [switch, '+', 0].extend(minus_switch)
+                            link4 = (selfswitch2, '+', 1, plus_switch[0], plus_switch[1], plus_switch[2])
+                            link5 = (switch, '+', 0, minus_switch[0], minus_switch[1], minus_switch[2])
                             train_track_ls.append(tuple(link3))
-                            train_track_ls.append(tuple(link4))
-                            train_track_ls.append(tuple(link5))
+                            #print train_track_ls
+                            #print link4
+                            #print link5
+                            train_track_ls.append(link4)
+                            train_track_ls.append(link5)
                         else:
                             punctures_cp = list(punctures)
                             punctures_cp[punc] = False
                             idx = punctures_cp.index(True)
                             switch = annulus_map[(pant, punc)]
                             switch_idx = annulus_map[(pant, idx)]
-                            link6 = [selfswitch1, '-', 0].extend(switch)
-                            link7 = [selfswitch2, '1', 0].extend(switch_idx)
-                            train_track_ls.append(tuple(link6))
-                            train_track_ls.append(tuple(link7))
+                            link6 = (selfswitch1, '-', 0, switch[0], switch[1], switch[2])
+                            link7 = (selfswitch2, '1', 0, switch_idx[0], switch_idx[1], switch_idx[2])
+                            train_track_ls.append(link6)
+                            train_track_ls.append(link7)
             traintrack = TrainTrack(train_track_ls)
+            print traintrack.branch()
+            print 'aaa'
+            print train_track_ls
+            #print repr(traintrack)
             return traintrack
 
 
