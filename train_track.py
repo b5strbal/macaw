@@ -119,8 +119,12 @@ class TrainTrack(SageObject):
             sage: tt.branch_endpoint(2)
             (0,'-',0)
             sage: tt.branch_endpoint(-2)
+            (0,'+',1)
             """
-        pass
+        if branch > 0:
+            return self._branches[branch - 1][3:]
+        elif branch < 0:
+            return self._branches[-branch - 1][:3]
     
     def branches(self):
         """
