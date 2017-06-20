@@ -85,13 +85,12 @@ class TrainTrack(SageObject):
             if len(branch) != 6:
                 raise ValueError('Invalid branch list: incorrect number of arguments.') 
             elif not((branch[1] == '+' or branch[1] == '-') and (branch[4] == '+' or branch[4] == '-')):
-                raise ValueError('Invalid branch list: second and fourth entries must express direction.')
+                raise ValueError('Invalid branch list: second and fifth entries must express direction.')
             else:
                 switch.extend( [branch[0], branch[3]] ) #iterate through branches, pick out the switches
         self._switches = list(set(switch)) #remove duplicates 
         self._branches = list_of_branches
         self.euler_char = len(self._switches) - len(list_of_branches) #Euler characteristic assuming no punctures are glued
-        #self.num_cusps = sum(self.graph.edge_labels()) 
 
     def branch_endpoint(self,branch):
         """
@@ -121,10 +120,13 @@ class TrainTrack(SageObject):
             sage: tt.branch_endpoint(-2)
             (0,'+',1)
             """
+
         if branch > 0:
             return self._branches[branch - 1][3:]
         elif branch < 0:
             return self._branches[-branch - 1][:3]
+        else:
+            raise ValueError('Invalid branch index.')
     
     def branches(self):
         """
@@ -137,20 +139,6 @@ class TrainTrack(SageObject):
             [[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]]
         """
         return self._branches 
-
-    def complementary_regions(self):
-        """
-        Return the boundary paths of complementary regions.
-
-        The region is on the right side of the paths.
-
-        EXAMPLES::
-
-            sage: tt = TrainTrack([[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]])
-            sage: tt.complementary_regions()
-            [[1,2,-1,-2]]
-        """
-        pass
 
     def outgoing_branches(self,switch,side):
         """
@@ -187,16 +175,16 @@ class TrainTrack(SageObject):
         return outgoing_branch_list 
 
     def puncturefinder_graph(self): #constructs a graph to help find the punctures
-        g = Graph() 
+        g = DiGraph(multiedges=True) 
         e = [] #create list of edges
         branchlist = self.branches()
         switchlist = self._switches
         for b in branchlist:  #edges between half branches 
             if b[0] == b[3] and b[1] == b[4] and (b[2] == b[5] + 1 or b[5] == b[2] + 1): 
             #special case for edges between half-branches (see case with S_{0,4})
-                e.extend([(((self.outgoing_branches(b[0], b[1]))[b[2]], 'L'), ((self.outgoing_branches(b[3], b[4]))[b[5]], 'R'), 0)]) 
+                e.extend([(((self.outgoing_branches(b[0], b[1]))[b[2]], 'L'), ((self.outgoing_branches(b[3], b[4]))[b[5]], 'R'), 0), (((self.outgoing_branches(b[3], b[4]))[b[5]], 'R'), ((self.outgoing_branches(b[0], b[1]))[b[2]], 'L'), 0)]) 
             else: 
-                e.extend([(((self.outgoing_branches(b[0], b[1]))[b[2]], 'R'), ((self.outgoing_branches(b[3], b[4]))[b[5]], 'L'), 0), (((self.outgoing_branches(b[3], b[4]))[b[5]], 'R'), ((self.outgoing_branches(b[0], b[1]))[b[2]], 'L'), 0)])
+                e.extend([(((self.outgoing_branches(b[3], b[4]))[b[5]], 'L'), ((self.outgoing_branches(b[0], b[1]))[b[2]], 'R'), 0), (((self.outgoing_branches(b[0], b[1]))[b[2]], 'L'), ((self.outgoing_branches(b[3], b[4]))[b[5]], 'R'), 0)])
         g.add_edges(e)
         for switch in switchlist:
             n, p = len(self.outgoing_branches(switch, '-')), len(self.outgoing_branches(switch, '+'))
@@ -207,13 +195,34 @@ class TrainTrack(SageObject):
             for m in range(n - 1): #joins adjacent half branches on '-' side and weights each branch with 1 to count num_cusps
                 g.add_edges([(((self.outgoing_branches(switch, '-'))[m], 'R'), ((self.outgoing_branches(switch, '-'))[m + 1], 'L'), 1)]) 
             for k in range(p - 1): #joins adjacent half branches on '+' side and weights each branch with 1 to count num_cusps
-                g.add_edges([(((self.outgoing_branches(switch, '+'))[k + 1], 'L'), ((self.outgoing_branches(switch, '+'))[k], 'R'), 1)])
+                g.add_edges([(((self.outgoing_branches(switch, '+'))[k], 'R'), ((self.outgoing_branches(switch, '+'))[k + 1], 'L'), 1)])
         return g  
 
     def num_complementary_components(self): #num of disconnected components of the graph is number of punctures
         ttgraph = self.puncturefinder_graph()
         return ttgraph.connected_components_number() 
     
+    def complementary_regions(self):
+        """
+        Return the boundary paths of complementary regions.
+
+        The region is on the right side of the paths.
+
+        EXAMPLES::
+
+            sage: tt = TrainTrack([[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]])
+            sage: tt.complementary_regions()
+            [[1,2,-1,-2]]
+        """
+        G = tt.puncturefinder_graph()
+        cycles = G.connected_components()
+        complementary_regions_list = []
+        for c in cycles:
+            l = [v[0] for v in c]
+            complementary_regions_list.append(l) 
+        return complementary_regions_list
+
+
     def is_branch_large(self,branch):
         """
         Decide if a branch is large.
@@ -232,8 +241,8 @@ class TrainTrack(SageObject):
         """
         pass
 
-    def surface(self):
-        return 'S_{' + str((2 - self.num_complementary_components() - self.euler_char)//2) + ',' + str(self.complementary_components()) + '}'
+    def regular_neighborhood(self):
+        pass 
 
     def _repr_(self):
         lowercase = lambda s: s[:1].lower() + s[1:] 
@@ -244,6 +253,9 @@ class TrainTrack(SageObject):
         Return list of cusp counts for each puncture.
 
         EXAMPLES::
+        sage: tt = TrainTrack([[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]])
+        sage: tt.num_cusps_list()
+        sage: [2, 0, 0]
         sage: tt = TrainTrack([ [0,'+',0,0,'+',1], [0,'-',0,1,'+',0],
         [1,'+',1,2,'-',0], [2,'+',0,2,'+', 1], [1,'-',0,3,'+',0],
         [3,'-',0,3,'-',1] ])
@@ -252,7 +264,7 @@ class TrainTrack(SageObject):
         """
         lst = []
         G = self.puncturefinder_graph()
-        C = G.connected_components()
+        C = G.connected_components() #returns punctures from large to small
         for puncture in C: 
             cycle = G.subgraph(vertices=puncture)
             s = sum(cycle.edge_labels())
@@ -277,15 +289,43 @@ class TrainTrack(SageObject):
                     return False
         return True 
     
+    def recurrence_graph(self):
+
+        """
+        Construct graph to determine recurrence.
+
+        EXAMPLES::
+        
+        sage: tt = TrainTrack([ [0,'+',2,0,'+',0], [0,'-',0,0,'+',1] ])
+        sage: G = tt.recurrence_graph()
+        sage: G.edges()
+        sage: [(1, 2), (-1, 2), (2, 2), (-2, 1), (-2, -1), (-2, -2)]
+        sage: tt = TrainTrack([ [0,'+',0,0,'-',0], [0,'+',1,0,'-',1] ])
+        sage: G = tt.recurrence_graph()
+        sage: G.edges()
+        sage: [(1, 1), (1, 2), (2, 1), (2, 2), (-1, -1), (-1, -2), (-2, -1), (-2, -2)]
+
+        """
+
     def is_recurrent(self):
+        
+        """
+        EXAMPLES::
+
+        sage: tt = TrainTrack([ [0,'+',0,0,'-',0], [0,'+',1,0,'-',1] ])
+        sage: tt.is_recurrent()
+        sage: True 
+        sage: tt = TrainTrack([ [0,'+',2,0,'+',0], [0,'-',0,0,'+',1] ])
+        sage: tt.is_recurrent()
+        sage: False
+
+        """
+
         #if tt.graph.is_connected():
             #return tt.graph.is_strongly_connected()
         #else:
             #for component in tt.graph.connected_components():
                 #if 
-        pass
-
-    def neighborhood(self):
         pass
 
     def is_transversely_recurrent(self):
@@ -439,7 +479,7 @@ class Splitting(TrainTrackMap):
             True
 
 
-        """
+    
         if not(train_track.is_branch_large(large_branch)):
             raise ValueError('Invalid branch: must be large branch.')
 
@@ -488,7 +528,7 @@ class Splitting(TrainTrackMap):
         self._domain = train_track
         self._codomain = TrainTrack(list_of_branches)
 
-
+        """
 
     
 class TrainTrackSelfMap(TrainTrackMap):
