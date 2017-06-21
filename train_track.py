@@ -227,7 +227,11 @@ class TrainTrack(SageObject):
         """
         Decide if a branch is large.
         """
-        pass
+        pos_side = self.branch_endpoint(branch)
+        neg_side = self.branch_endpoint(-branch)
+        if len(self.outgoing_branches(pos_side[0], pos_side[1])) + len(self.outgoing_branches(neg_side[0], neg_side[1])) > 2:
+            return False
+        return True
 
     def is_branch_mixed(self,branch):
         """
@@ -425,22 +429,23 @@ class TrainTrackMap(SageObject):
             sage: TrainTrackMap(tt1,tt1,{'a':[('a',-1)],'b':[('b',-1)]])
         
         """
+        self._domain = domain
+        self._codomain = codomain
+        self._edge_map = edge_map
 
-
-        pass
 
     def domain(self):
-        pass
+        return self._domain
 
 
     def codomain(self):
-        pass
+        return self._codomain
     
     def transition_matrix(self):
         """
         Return the transition matrix of the carrying map.
         """
-        pass
+        return self._edge_map
 
     def __mul__(self):
         """
@@ -464,9 +469,9 @@ class Splitting(TrainTrackMap):
             sage: s.codomain() == tt
             True
 
-            sage: tt = TrainTrack([0,'-',0,0,'-',1], [0,'+',0,1,'-',0],
+            sage: tt = TrainTrack([[0,'-',0,0,'-',1], [0,'+',0,1,'-',0],
             [1,'-',1,2,'+',0], [2,'-',0,2,'-',1], [1,'+',0,3,'-',0],
-            [3,'+',0,3,'+',1])
+            [3,'+',0,3,'+',1]])
             sage: s_left = Splitting(tt, 5, 'left')
             sage: split_train_left = TrainTrack([0,'-',0,0,'-',1], [0,'+',0,1,'-',0],
             [1,'+',0,3,'-',0], [1,'+',1,3,'+',0], [3,'-',1,2,'+',0], [2,'-',0,2,'-',1])
@@ -477,6 +482,8 @@ class Splitting(TrainTrackMap):
             [3,'-',1,1,'+',1], [3,'+',0,1,'+',0], [1,'-',0,2,'+',0], [2,'-',0,2,'-',1])
             sage: s_right.codomain() == split_train_right
             True
+
+        """
 
 
     
@@ -510,7 +517,9 @@ class Splitting(TrainTrackMap):
         # neg_branches[0] = 2
         # neg_branches[1] = 1
 
-        list_of_branches = train_track.branches()
+        list_of_branches = []
+        for branch in train_track.branches():
+            list_of_branches.append(branch)
 
         if left_or_right == 'left':
             list_of_branches = branch_builder(pos_branches[1], [neg_side[0], neg_side[1], 1], list_of_branches)
@@ -527,8 +536,6 @@ class Splitting(TrainTrackMap):
 
         self._domain = train_track
         self._codomain = TrainTrack(list_of_branches)
-
-        """
 
     
 class TrainTrackSelfMap(TrainTrackMap):
