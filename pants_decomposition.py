@@ -258,33 +258,47 @@ class PantsDecomposition(Surface):
             punc1_1 = glue1[1]
             punc1_2 = (punc1_1+1)%3
             punc1_3 = (punc1_1+2)%3
-            punc2_1 = glue2[2]
+            punc2_1 = glue2[1]
             punc2_2 = (punc2_1+1)%3
             punc2_3 = (punc2_1+2)%3
 
             pair_ne = list(self._conn[(pant2, punc2_2)]) if (pant2, punc2_2) in self._conn else None 
+            #print pair_ne
             pair_nw = list(self._conn[(pant2, punc2_3)]) if (pant2, punc2_3) in self._conn else None
             pair_sw = list(self._conn[(pant1, punc1_2)]) if (pant1, punc1_2) in self._conn else None  
             pair_se = list(self._conn[(pant1, punc1_3)]) if (pant1, punc1_3) in self._conn else None 
 
             rt_ls = list(self._gluing_list)
 
+            rm_set = set()
+
             if pair_ne: 
-                rt_ls.remove(pair_ne)
+                #print rt_ls
+                #print ((pair_ne[0][0], pair_ne[0][1], pair_ne[1][0], pair_ne[1][1]))
+                old_ne = (pair_ne[0][0], pair_ne[0][1], pair_ne[1][0], pair_ne[1][1])
+                rm_set.add(old_ne)
+                #print ((pant2, punc2_2))
                 pair_ne.remove((pant2, punc2_2))
-                rt_ls.append(pair_ne[0][0], pair_ne[0][1], pant2, punc2_3)
+
+                rt_ls.append((pair_ne[0][0], pair_ne[0][1], pant2, punc2_3))
             if pair_nw: 
-                rt_ls.remove(pair_nw)
-                pair_ne.remove((pant2, punc2_3))
-                rt_ls.append(pair_nw[0][0], pair_nw[0][1], pant1, punc1_2)
-            if pair_sw: 
-                rt_ls.remove(pair_sw)
-                pair_ne.remove((pant1, punc1_2))
-                rt_ls.append(pair_ne[0][0], pair_ne[0][1], pant1, punc1_3)
+                old_nw = (pair_nw[0][0], pair_nw[0][1], pair_nw[1][0], pair_nw[1][1])
+                rm_set.add(old_nw)
+                pair_nw.remove((pant2, punc2_3))
+                rt_ls.append((pair_nw[0][0], pair_nw[0][1], pant1, punc1_2))
+            if pair_sw:
+                old_sw = (pair_sw[0][0], pair_sw[0][1], pair_sw[1][0], pair_sw[1][1])
+                rm_set.add(old_sw)
+                pair_sw.remove((pant1, punc1_2))
+                rt_ls.append((pair_sw[0][0], pair_sw[0][1], pant1, punc1_3))
             if pair_se: 
-                rt_ls.remove(pair_se)
-                pair_ne.remove((pant1, punc1_3))
-                rt_ls.append(pair_ne[0][0], pair_ne[0][1], pant2, punc2_2)
+                old_se = (pair_se[0][0], pair_se[0][1], pair_se[1][0], pair_se[1][1])
+                rm_set.add(old_se)
+                pair_se.remove((pant1, punc1_3))
+                rt_ls.append((pair_se[0][0], pair_se[0][1], pant2, punc2_2))
+
+            for x in rm_set:
+                rt_ls.remove(list(x))
 
             return PantsDecomposition(rt_ls)
 
@@ -400,6 +414,11 @@ class PantsDecomposition(Surface):
                             switch2 = ('pant', pant, (i+1) % 3)
                             link = (switch1, '+', 0, switch2, '+', 1)
                             train_track_ls.append(link)
+                        for i in range(3):
+                            switchp = ('pant', pant, i)
+                            switchc = annulus_map[(pant, i)]
+                            link2 = (switchp, '-', 0, switchc[0], switchc[1], switchc[2])
+                            train_track_ls.append(link2)
                     elif curve_cnt == 1:
                         raise ValueError('blablabla') ######TO ASK?????######################
                     else:
@@ -412,17 +431,18 @@ class PantsDecomposition(Surface):
                         train_track_ls.append(tuple(temp_link))
                 else:
                     punc = tt_type - 1
+                    temp_conn = (pant, punc)
                     if curve_cnt == 1:
                         selfswitch = ('self', pant, punc)
                         link = (selfswitch, '+', 0, selfswitch, '+', 1)
                         train_track_ls.append(link)
-                        temp_conn = (pant, punc)
-                        link2 = [selfswitch, '-', 0].extend(annulus_map[temp_conn])
+                        temp_switch = annulus_map[temp_conn]
+                        link2 = (selfswitch, '-', 0, temp_switch[0], temp_switch[1], temp_switch[2])
                         train_track_ls.append(link2)
                     else:
                         selfswitch1 = ('self_right', pant, punc)
                         selfswitch2 = ('self_left', pant, punc)
-                        link = (selfswitch1, '-', 0, selfswitch2, '-', 0)
+                        link = (selfswitch1, '+', 0, selfswitch2, '-', 0)
                         link2 = (selfswitch1, '+', 1, selfswitch2, '+', 0)
                         train_track_ls.append(link)
                         train_track_ls.append(link2)
@@ -432,20 +452,17 @@ class PantsDecomposition(Surface):
                             plus_punc = tt_type%3
                             minus_punc = (punc-1) % 3
                             plus_conn = (pant, plus_punc)
-                            print plus_conn
                             plus_switch = annulus_map[plus_conn]
-                            print annulus_map[plus_conn]
-                            #print annulus_map
                             minus_conn = (pant, minus_punc)
                             minus_switch = annulus_map[minus_conn]
+                            temp_switch = annulus_map[temp_conn]
                             link4 = (selfswitch2, '+', 1, plus_switch[0], plus_switch[1], plus_switch[2])
                             link5 = (switch, '+', 0, minus_switch[0], minus_switch[1], minus_switch[2])
-                            train_track_ls.append(tuple(link3))
-                            #print train_track_ls
-                            #print link4
-                            #print link5
+                            link6 = (switch, '-', 0, temp_switch[0], temp_switch[1], temp_switch[2])
+                            train_track_ls.append(link3)
                             train_track_ls.append(link4)
                             train_track_ls.append(link5)
+                            train_track_ls.append(link6)
                         else:
                             punctures_cp = list(punctures)
                             punctures_cp[punc] = False
@@ -453,14 +470,13 @@ class PantsDecomposition(Surface):
                             switch = annulus_map[(pant, punc)]
                             switch_idx = annulus_map[(pant, idx)]
                             link6 = (selfswitch1, '-', 0, switch[0], switch[1], switch[2])
-                            link7 = (selfswitch2, '1', 0, switch_idx[0], switch_idx[1], switch_idx[2])
+                            link7 = (selfswitch2, '+', 0, switch_idx[0], switch_idx[1], switch_idx[2])
                             train_track_ls.append(link6)
                             train_track_ls.append(link7)
             traintrack = TrainTrack(train_track_ls)
-            print traintrack.branch()
-            print 'aaa'
+            
             print train_track_ls
-            #print repr(traintrack)
+            print repr(traintrack)
             return traintrack
 
 
