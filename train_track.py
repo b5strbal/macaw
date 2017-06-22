@@ -473,13 +473,13 @@ class Splitting(TrainTrackMap):
             [1,'-',1,2,'+',0], [2,'-',0,2,'-',1], [1,'+',0,3,'-',0],
             [3,'+',0,3,'+',1]])
             sage: s_left = Splitting(tt, 5, 'left')
-            sage: split_train_left = TrainTrack([0,'-',0,0,'-',1], [0,'+',0,1,'-',0],
-            [1,'+',0,3,'-',0], [1,'+',1,3,'+',0], [3,'-',1,2,'+',0], [2,'-',0,2,'-',1])
+            sage: split_train_left = TrainTrack([[0,'-',0,0,'-',1], [0,'+',0,1,'-',0],
+            [3,'-',1,2,'+',0], [2,'-',0,2,'-',1], [1,'+',0,3,'-',0], [3,'+',0,1,'+',1]])
             sage: s_left.codomain() == split_train_left
             True
             sage: s_right = Splitting(tt, 5, 'right')
-            sage: split_train_right = TrainTrack([0,'-',0,0,'-',1], [0,'+',0,3,'-',0],
-            [3,'-',1,1,'+',1], [3,'+',0,1,'+',0], [1,'-',0,2,'+',0], [2,'-',0,2,'-',1])
+            sage: split_train_right = TrainTrack([[0,'-',0,0,'-',1], [0,'+',0,3,'-',0],
+            [1,'-',0,2,'+',0], [2,'-',0,2,'-',1], [1,'+',1,3,'-',1], [1,'+',0,3,'+',0]])
             sage: s_right.codomain() == split_train_right
             True
 
@@ -517,9 +517,7 @@ class Splitting(TrainTrackMap):
         # neg_branches[0] = 2
         # neg_branches[1] = 1
 
-        list_of_branches = []
-        for branch in train_track.branches():
-            list_of_branches.append(branch)
+        list_of_branches = list(train_track.branches())
 
         if left_or_right == 'left':
             list_of_branches = branch_builder(pos_branches[1], [neg_side[0], neg_side[1], 1], list_of_branches)
