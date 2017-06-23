@@ -162,8 +162,7 @@ class TrainTrack(SageObject):
         """
         initial_list, order_list = [], []
         index = 1 
-        branchlist = self.branches()
-        for branch in branchlist:
+        for branch in self.branches():
             if switch == branch[0] and side == branch[1]:
                 initial_list.append(index)
                 order_list.append(branch[2])
@@ -177,16 +176,14 @@ class TrainTrack(SageObject):
     def puncturefinder_graph(self): #constructs a graph to help find the punctures
         g = DiGraph(multiedges=True) 
         e = [] #create list of edges
-        branchlist = self.branches()
-        switchlist = self._switches
-        for b in branchlist:  #edges between half branches 
+        for b in self.branches():  #edges between half branches 
             if b[0] == b[3] and b[1] == b[4] and (b[2] == b[5] + 1 or b[5] == b[2] + 1): 
             #special case for edges between half-branches (see case with S_{0,4})
                 e.extend([(((self.outgoing_branches(b[0], b[1]))[b[2]], 'L'), ((self.outgoing_branches(b[3], b[4]))[b[5]], 'R'), 0), (((self.outgoing_branches(b[3], b[4]))[b[5]], 'R'), ((self.outgoing_branches(b[0], b[1]))[b[2]], 'L'), 0)]) 
             else: 
                 e.extend([(((self.outgoing_branches(b[3], b[4]))[b[5]], 'L'), ((self.outgoing_branches(b[0], b[1]))[b[2]], 'R'), 0), (((self.outgoing_branches(b[0], b[1]))[b[2]], 'L'), ((self.outgoing_branches(b[3], b[4]))[b[5]], 'R'), 0)])
         g.add_edges(e)
-        for switch in switchlist:
+        for switch in self._switches:
             n, p = len(self.outgoing_branches(switch, '-')), len(self.outgoing_branches(switch, '+'))
             #index 0 half branches on the left that form a 180 degree angle
             g.add_edges([(((self.outgoing_branches(switch, '+'))[0], 'L'), ((self.outgoing_branches(switch, '-'))[n - 1], 'R'), 0)])
@@ -199,6 +196,15 @@ class TrainTrack(SageObject):
         return g  
 
     def num_complementary_components(self): #num of disconnected components of the graph is number of punctures
+
+        """
+        Return number of complementary regions of train track. 
+
+        EXAMPLES::
+        sage: tt = TrainTrack([ [0,'+',0,0,'+',1], [0,'-',0,1,'+',0],
+        [1,'+',1,2,'-',0], [2,'+',0,2,'+', 1], [1,'-',0,3,'+',0],
+        [3,'-',0,3,'-',1] ])  
+        """
         ttgraph = self.puncturefinder_graph()
         return ttgraph.connected_components_number() 
     
@@ -215,10 +221,9 @@ class TrainTrack(SageObject):
             [[1,2,-1,-2]]
         """
         G = tt.puncturefinder_graph()
-        cycles = G.connected_components()
         complementary_regions_list = []
-        for c in cycles:
-            l = [v[0] for v in c]
+        for c in G.connected_components():
+            l = [v[0] for v in c if v[0] not in l]
             complementary_regions_list.append(l) 
         return complementary_regions_list
 
@@ -254,7 +259,7 @@ class TrainTrack(SageObject):
 
     def num_cusps_list(self):
         """
-        Return list of cusp counts for each puncture.
+        Return list of cusp counts for each puncture. Punctures ordered large to small. 
 
         EXAMPLES::
         sage: tt = TrainTrack([[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]])
@@ -265,11 +270,13 @@ class TrainTrack(SageObject):
         [3,'-',0,3,'-',1] ])
         sage: tt.num_cusps_list()
         sage: [1, 1, 1, 1]
+        sage: tt = TrainTrack([[0,'+',0,1,'-',0], [0,'-',0,0,'-',1], [1,'+',0,1,'+',1], [2,'+',0,2,'+',1], [2,'-',0,3,'-',1], [3,'+',0,4,'-',0], [3,'-',0,4,'+',0], [4,'+',1,5,'-',0], [5,'+',0,7,'-',1], [5,'+',1,6,'+',0], [7,'-',0,6,'+',1], [7,'+',0,6,'-',0]])
+        sage: tt.num_cusps_list()
+        sage: [1,1,3,3]
         """
         lst = []
         G = self.puncturefinder_graph()
-        C = G.connected_components() #returns punctures from large to small
-        for puncture in C: 
+        for puncture in G.connected_components(): 
             cycle = G.subgraph(vertices=puncture)
             s = sum(cycle.edge_labels())
             lst += [s] 
@@ -287,8 +294,7 @@ class TrainTrack(SageObject):
         sage: True 
         
         """ 
-        switch_list = self._switches
-        for switch in switch_list: #iterates through the switches, checks degree of each switch = 3
+        for switch in self._switches: #iterates through the switches, checks degree of each switch = 3
             if len(self.outgoing_branches(switch, '+')) + len(self.outgoing_branches(switch, '-')) != 3:
                     return False
         return True 
@@ -308,8 +314,25 @@ class TrainTrack(SageObject):
         sage: G = tt.recurrence_graph()
         sage: G.edges()
         sage: [(1, 1), (1, 2), (2, 1), (2, 2), (-1, -1), (-1, -2), (-2, -1), (-2, -2)]
+        sage: tt = TrainTrack([[0,'+',0,0,'+',1], [0,'-',0,2,'+',0], [1,'+',0,2,'+',1], [1,'-',0,1,'-',1], [2,'-',0,3,'-',0], [3,'+',0,3,'+',1]])
+        sage: G = tt.recurrence_graph()
+        sage: G.edges()
+        sage: [(1, 2), (-1, 2), (2, 5), (-2, 1), (-2,-1), (3, 5), (-3, 4), (-3, -4), (4, 3), (-4, 3), (5, 6), (5, -6), (-5, -2), (-5, -3), (6, -5), (-6, -5)]
 
         """
+
+        g = DiGraph(multiedges=True)
+        for b in self.branches(): 
+        #draw edges between half branches with no cusps between them 
+            if b[4] == '+':
+                g.add_edges([(self.outgoing_branches(b[0], b[1])[b[2]], self.outgoing_branches(b[3],'-')[i]) for i in range(len(self.outgoing_branches(b[3],'-')))])
+            elif b[4] == '-':
+                g.add_edges([(self.outgoing_branches(b[0], b[1])[b[2]], self.outgoing_branches(b[3],'+')[i]) for i in range(len(self.outgoing_branches(b[3],'+')))])
+            if b[1] == '+':
+                g.add_edges([(self.outgoing_branches(b[3], b[4])[b[5]], self.outgoing_branches(b[0],'-')[i]) for i in range(len(self.outgoing_branches(b[0],'-')))])
+            elif b[1] == '-':
+                g.add_edges([(self.outgoing_branches(b[3], b[4])[b[5]], self.outgoing_branches(b[0],'+')[i]) for i in range(len(self.outgoing_branches(b[0],'+')))])
+        return g 
 
     def is_recurrent(self):
         
@@ -324,49 +347,8 @@ class TrainTrack(SageObject):
         sage: False
 
         """
-
-        #if tt.graph.is_connected():
-            #return tt.graph.is_strongly_connected()
-        #else:
-            #for component in tt.graph.connected_components():
-                #if 
-        pass
-
-    def is_transversely_recurrent(self):
-        pass
-    
-    def is_birecurrent(self):
-        pass 
-
-    def is_tangentially_orientable(self):
-        pass
-
-    def is_transversely_orientable(self):
-        pass
-
-    
-    def split(self,split_at,how_to_split):
-        """
-        Split the train track at a given switch or branch.
-
-        INPUT: 
-        
-        - split_at: an oriented switch or branch that has at least two
-          incident branches on each side. 
-
-        - how_to_split: we look at the two rightmost branches near the
-        switch or branch in the forward and backward directions. There
-        are three ways to split: "down" - peels down the branch in the
-        forward direction, "up" - peels up the branch in the backward
-        direction, "central" - peels both branches off.
-
-        OUTPUT: 
-
-        - a Splitting object containing the original train track, the
-          new train track and the way of splitting
-
-        """
-        pass
+        G = self.recurrence_graph()
+        return G.is_strongly_connected()  
 
 
     
