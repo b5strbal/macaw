@@ -108,13 +108,15 @@ class PantsDecomposition(Surface):
 
             for pair in gluing_list:
                 if len(pair) < 4 or len(pair) > 5:
-                    raise ValueError('Each gluing only has 4 to 5 input')#######TODO#############
+                    raise ValueError('Each gluing only has 4 to 5 input')
                 elif len(pair) == 5 and not (pair[4] == '-' or pair[4] == '+'):
-                    raise ValueError('Use ''+'' to indicate orientable gluing and ''-'' to indicate nonorientable gluing')#######TODO###########
+                    raise ValueError('Use ''+'' to indicate orientable gluing and ''-'' to indicate nonorientable gluing')
                 elif type(pair[1]) != int or type(pair[3]) != int:
-                    raise ValueError('Use integer 0-2 to label the punctures for pants') ######TODO###################
+                    raise ValueError('Use integer 0-2 to label the punctures for pants')
                 elif pair[1] > 2 or pair[1] < 0 or pair[3] > 2 or pair[3] < 0:
-                    raise ValueError('Use integer 0-2 to label the punctures for pants')###########################TODO############
+                    raise ValueError('Use integer 0-2 to label the punctures for pants')
+                elif pair[0] == pair[2] and pair[1] == pair[3] and (len(pair) < 5 or pair[4] != '-'):
+                    raise ValueError('A puncture can only be glued to itself in the nonorientable way')
                 if pair[0] not in pant_map:
                     pant_map[pair[0]] = [False, False, False]
                 if pair[2] not in pant_map:
@@ -135,49 +137,25 @@ class PantsDecomposition(Surface):
                 pant_map[pair[2]][pair[3]] = True
 
                 #conn_cnt += 1
-
-                weight = 1 if (len(pair)==5 and pair[4] == '-') else 0
+                if (len(pair)==5 and pair[4] == '-'):
+                    weight = 1
+                else:
+                    weight = 0
+                #weight = 1 if (len(pair)==5 and pair[4] == '-') else 0
                 edgels.append((pair[0], pair[2], weight))
 
-            g = Graph(edgels, multiedges=True, weighted=True)
+            g = Graph(edgels)
 
             degreels = g.degree()
 
             # check for connectedness   
             if not g.is_connected():
-                raise ValueError('Invalid input. Surface should be connect')
-            
-            # # check valencies
-            # for d in degreels:
-            #     if d != 3 and d != 1:
-            #         raise ValueError('Invalid input. Each vertices of the graph should have valencies of 1 or 3')       
-
-            # decide if orientable
-            # orientable = True
-            # if g.degree() == [3,3]:
-            #     cycle_weight = sum([1 if e[2] == '-' else 0 for e in g.edges()])
-            #     if cycle_weight == 1 or cycle_weight == 2:
-            #         orientable = False
-            # else:
-            #     for cycle in g.cycle_basis(output='edge'):
-            #         cycle_weight = sum([1 if e[2] == '-' else 0 for e in cycle])
-            #         if cycle_weight % 2 == 1:
-            #             orientable = False
-            #             break
-
-            # # compute euler_char
-            # num_pants = degreels.count(3)
-            # euler_char = -1 * num_pants
-
-            # # compute number of punctures
-            # num_puncture = 0
-            # for v in g.vertices():
-            #     if g.degree(v) == 1 and ((not g.edges_incident(v)[0][2]) or (g.edges_incident(v)[0][2] == '+')):
-            #         num_puncture += 1
-
-            
+                raise ValueError('Invalid input. Surface should be connect')           
+        
 
             orientable = True
+            #print g
+            #print g.cycle_basis(output='edge')
 
             for cycle in g.cycle_basis(output='edge'):
                 cycle_weight = sum([e[2] for e in cycle])
@@ -192,7 +170,6 @@ class PantsDecomposition(Surface):
 
             # initialize parent class
             super(PantsDecomposition,self).__init__(euler_char = euler_char, num_punctures = num_puncture, is_orientable = orientable)
-            #print self.__repr__() #THIS LINE IS JUST FOR TESTING
             #pass
 
             self._conn = conn_map
@@ -262,47 +239,29 @@ class PantsDecomposition(Surface):
             punc2_2 = (punc2_1+1)%3
             punc2_3 = (punc2_1+2)%3
 
-            pair_ne = list(self._conn[(pant2, punc2_2)]) if (pant2, punc2_2) in self._conn else None 
-            #print pair_ne
-            pair_nw = list(self._conn[(pant2, punc2_3)]) if (pant2, punc2_3) in self._conn else None
-            pair_sw = list(self._conn[(pant1, punc1_2)]) if (pant1, punc1_2) in self._conn else None  
-            pair_se = list(self._conn[(pant1, punc1_3)]) if (pant1, punc1_3) in self._conn else None 
+            transmap = {}
 
-            rt_ls = list(self._gluing_list)
+            transmap[(pant1, punc1_2)] = (pant1, punc1_3)
+            transmap[(pant1, punc1_3)] = (pant2, punc2_2)
+            transmap[(pant2, punc2_2)] = (pant2, punc2_3)
+            transmap[(pant2, punc2_3)] = (pant1, punc1_2)
 
-            rm_set = set()
+            init_ls = []
+            keys = transmap.keys()
 
-            if pair_ne: 
-                #print rt_ls
-                #print ((pair_ne[0][0], pair_ne[0][1], pair_ne[1][0], pair_ne[1][1]))
-                old_ne = (pair_ne[0][0], pair_ne[0][1], pair_ne[1][0], pair_ne[1][1])
-                rm_set.add(old_ne)
-                #print ((pant2, punc2_2))
-                pair_ne.remove((pant2, punc2_2))
+            for glue in self._gluing_list:
+                if (glue[0], glue[1]) in keys:
+                    glue[0] = transmap[(glue[0], glue[1])][0]
+                    glue[1] = transmap[(glue[0], glue[1])][1]
+                if (glue[2], glue[3]) in keys:
+                    glue[2] = transmap[(glue[2], glue[3])][0]
+                    glue[3] = transmap[(glue[2], glue[3])][1]
+                init_ls.append(glue)
 
-                rt_ls.append((pair_ne[0][0], pair_ne[0][1], pant2, punc2_3))
-            if pair_nw: 
-                old_nw = (pair_nw[0][0], pair_nw[0][1], pair_nw[1][0], pair_nw[1][1])
-                rm_set.add(old_nw)
-                pair_nw.remove((pant2, punc2_3))
-                rt_ls.append((pair_nw[0][0], pair_nw[0][1], pant1, punc1_2))
-            if pair_sw:
-                old_sw = (pair_sw[0][0], pair_sw[0][1], pair_sw[1][0], pair_sw[1][1])
-                rm_set.add(old_sw)
-                pair_sw.remove((pant1, punc1_2))
-                rt_ls.append((pair_sw[0][0], pair_sw[0][1], pant1, punc1_3))
-            if pair_se: 
-                old_se = (pair_se[0][0], pair_se[0][1], pair_se[1][0], pair_se[1][1])
-                rm_set.add(old_se)
-                pair_se.remove((pant1, punc1_3))
-                rt_ls.append((pair_se[0][0], pair_se[0][1], pant2, punc2_2))
+            #print init_ls
+            return PantsDecomposition(init_ls)
+            
 
-            for x in rm_set:
-                rt_ls.remove(list(x))
-
-            return PantsDecomposition(rt_ls)
-
-        pass
 
     def dehn_thurston_tt(self,pants_pieces,annulus_pieces):
 
@@ -357,7 +316,6 @@ class PantsDecomposition(Surface):
         if self._genus == 1:
             print 'bbb'
         else:
-            print 'aaa'
             train_track_ls = []
 
             if len(annulus_pieces) != self._conn_cnt:
