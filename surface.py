@@ -165,7 +165,7 @@ class Surface(SageObject):
             if self._genus > 2 or self._genus == 1:
                 topotype += ' surface with 1 puncture'
             elif self._genus == 0:
-                topotype = 'the disk'
+                topotype = 'The disk'
             else:
                 topotype += ' with 1 puncture'
         else:
