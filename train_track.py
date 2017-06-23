@@ -410,10 +410,24 @@ class TrainTrackMap(SageObject):
     easier for non-trivalent train tracks, and it is enough to
     restrict the Splitting class for trivalent ones.
     """
-    def __init__(self,domain,codomain,edge_map):
+    def __init__(self,domain,codomain,edge_matrix,half_branch_map,switch_map,position_of_strands):
         """
 
-        EXAMPLES::
+        INPUT:
+
+        -domain: The domain Train Track
+
+        -codomain: The codomain Train Track
+
+        -edge_matrix: A matrix
+
+        -half_branch_map: A dictionary
+
+        -switch_map: A dictionary
+
+        -position_of_strands: A dictionary
+
+        EXAMPLES:: ( TODO needs to be changed)
 
             sage: tt1 = TrainTrack([[0,'+',0,0,'-',1,'a'], [0,'+',1,0,'-',0,b']])
             sage: tt2 = TrainTrack([[0,'+',0,0,'-',1,'c'], [0,'+',1,0,'-',0,'d']])
@@ -432,20 +446,34 @@ class TrainTrackMap(SageObject):
         self._domain = domain
         self._codomain = codomain
         self._edge_map = edge_map
+        self._half_branch_map = half_branch_map
+        self._switch_map = switch_map
+        self._position_of_strands = position_of_strands
 
 
     def domain(self):
         return self._domain
 
-
     def codomain(self):
         return self._codomain
+
+    def edge_matrix(self):
+        return self._edge_matrix
+
+    def half_branch_map(self):
+        return self._half_branch_map
+
+    def switch_map(self):
+        return self._switch_map
+
+    def position_of_strands(self):
+        return self._position_of_strands
     
     def transition_matrix(self):
         """
         Return the transition matrix of the carrying map.
         """
-        return self._edge_map
+        pass
 
     def __mul__(self):
         """
