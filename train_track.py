@@ -25,7 +25,20 @@ EXAMPLES::
 
 from surface import Surface 
 from sage.structure.sage_object import SageObject
-    
+
+
+LARGE = 0
+MIXED = 1
+SMALL_SAME_SIDE = 2
+SMALL_OPPOSITE_SIDE = 3
+
+SPLIT = 0
+LEFT_SPLIT = 1
+RIGHT_SPLIT = 2
+CENTRAL_SPLIT = 3
+FOLD = 4
+SHIFT = 5
+
 class TrainTrack(SageObject):
     """
 
@@ -75,9 +88,9 @@ class TrainTrack(SageObject):
     # each edge of the graph, we need to say if the two left and two
     # right sides are glued together or left is glued to right. This
     # allows us to represent train tracks on nonorientable surfaces. 
-    def __init__(self,list_of_branches): 
+    def __init__(self,list_of_branches,measure=None): 
         """
-        
+        TODO: add measures to the code and documentation.
         """
         
         switch = [] #start a list of switches 
@@ -228,28 +241,93 @@ class TrainTrack(SageObject):
         return complementary_regions_list
 
 
-    def is_branch_large(self,branch):
+    def branch_type(self,branch):
         """
-        Decide if a branch is large.
+        Return the type of the branch.
+
+        OUTPUT:
+
+        - LARGE
+        - MIXED
+        - SMALL_SAME_SIDE
+        - SMALL_OPPOSITE_SIDE
+
         """
+        # TODO: Change this.
         pos_side = self.branch_endpoint(branch)
         neg_side = self.branch_endpoint(-branch)
         if len(self.outgoing_branches(pos_side[0], pos_side[1])) + len(self.outgoing_branches(neg_side[0], neg_side[1])) > 2:
             return False
         return True
+        
+
+    def is_branch_large(self,branch):
+        """
+        Decide if a branch is large.
+        """
+        return self.branch_type(branch) == LARGE
 
     def is_branch_mixed(self,branch):
         """
         Decide if a branch is mixed.
         """
-        pass
+        return self.branch_type(branch) == MIXED
 
     def is_branch_small(self,branch):
         """
         Decide if a branch is small.
         """
+        return self.branch_type(branch) in {SMALL_SAME_SIDE, SMALL_OPPOSITE_SIDE}
+
+    def is_measured(self):
+        """Return if the train track has a measure on it."""
+        return self.measure() != None
+
+    def measure(self):
+        """Return the measure on the train track."""
         pass
 
+    def perform_operation(self,branch,operation,create_copy=False):
+        """Perform a split, shift or fold.
+
+        INPUT:
+
+        - ``branch`` -- index of the branch, and integer between
+          1 and the number of branches. For a split, the branch has to
+          be large. For a shift, it has to be mixed. For a fold, it
+          has to be small with opposite sides.
+
+        - ``operation`` -- possible values:
+
+            * ``SPLIT`` -- the train train must have a measure or
+        carry another train track, otherwise an error is raised. The
+        splitting is performed so that the resulting train track still
+        retains a positive measure or carries the train track.
+
+            * ``LEFT_SPLIT`` -- left split.
+
+            * ``RIGHT_SPLIT`` -- right split.
+
+            * ``CENTRAL_SPLIT`` -- central split.
+
+            * ``SHIFT`` -- a shift.
+
+            * ``FOLD`` -- a fold.
+
+        - ``create_copy`` -- if ``False``, the train track is changed
+          internally and no copy is made. If ``True``, the train track
+          is not changed and the new train track is created as a
+          separate object.
+
+        OUTPUT:
+
+        - nothing if ``create_copy`` is set to ``False``. Otherwise  
+        a TrainTrack map is returned with domain and codomain the old
+        and new train tracks.
+
+        """
+        pass
+    
     def regular_neighborhood(self):
         pass 
 
@@ -351,16 +429,18 @@ class TrainTrack(SageObject):
         return G.is_strongly_connected()  
 
 
+    # ------------------------------------------------------------
+    # Homology/cohomology computation.
     
+    def _edge_cocycles(self):
+        pass
+
+    def _coboundary_map(self):
+        pass
+
+
+    # ------------------------------------------------------------
     
-#class MeasuredTrainTrack(TrainTrackLamination):
-    """
-    Represent curves, foliations, but also carried branches of another
-    train track.
-    """
-    #def __init__(self):
-        #pass
-        #self._measure
         
         
 class TrainTrackMap(SageObject):
@@ -404,6 +484,11 @@ class TrainTrackMap(SageObject):
         -edge_matrix: A matrix
 
         -half_branch_map: A dictionary
+
+        # Caution: it may be the a branch doesn't map to any branch,
+        # just to a vertex. For instance, this happens for slides. In
+        # this case, maybe None is also an acceptable value for the
+        # image of a half-branch.
 
         -switch_map: A dictionary
 
@@ -450,6 +535,20 @@ class TrainTrackMap(SageObject):
 
     def position_of_strands(self):
         return self._position_of_strands
+
+    def is_splitting(self):
+        """Return if the train track map is a splitting."""
+        pass
+
+    def splitting_branch(self):
+        """Return the splitting branch if it is a splitting."""
+        pass
+
+    def is_shift(self):
+        pass
+
+    def splitting_and_shifting_sequence(self):
+        """Return a splitting and shifting sequence."""
     
     def transition_matrix(self):
         """
@@ -464,13 +563,33 @@ class TrainTrackMap(SageObject):
         pass
 
 
+    # ------------------------------------------------------------
+    # Teichmuller/Alexander polynomial computation.
+
+    
+    def action_on_cohomology(self):
+        pass
+
+    def invariant_cohomology(self):
+        pass
+
+    def teichmuller_polynomial(self):
+        pass
+
+    # ------------------------------------------------------------
+
+
+
+
+
+
+
+    
 
 class Splitting(TrainTrackMap):
     def __init__(self,train_track,large_branch,left_or_right):
         """
         
-        TODO: The TrainTrack class should really support labels!
-
         EXAMPLES::
 
             sage: tt = TrainTrack([[0,'+',0,1,'-',0],[1,'+',0,0,'-',1],
@@ -545,52 +664,17 @@ class Splitting(TrainTrackMap):
         self._domain = train_track
         self._codomain = TrainTrack(list_of_branches)
 
+
+
     
-class TrainTrackSelfMap(TrainTrackMap):
-    """
-    An image of a train track carried on itself.
-    """
 
-    def teichmuller_polynomial(self):
 
-        pass
-    
-    def _edge_cocycles(self):
-
-        pass
-
-    def _coboundary_map(self):
-
-        pass
-
-    def action_on_cohomology(self):
-
-        pass
-
-    def invariant_cohomology(self):
-
-        pass
-
-    def _action_on_tt_edges(self):
-
-        pass
-
-    def _action_on_tt_vertices(self):
-
-        pass
 
 
         
 
 
         
-        
-
-class SplittingSequence(SageObject):
-    """
-    A list of consecutive splittings.
-    """
-
 
 
 
