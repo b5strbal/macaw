@@ -181,6 +181,105 @@ class PantsDecomposition(Surface):
         return 'Pants decomposition of ' + super(PantsDecomposition,self).__repr__()
 
 
+    def pants_curve_as_tt(self,pants_curve):
+        """
+        Return a measured train track representing the pants curve.
+        """
+        pass
+    
+    def splitting_sequence_from_twist(self,curve,direction,measured_tt,power=1):
+        """Return a sequence in the splitting tree for the Dehn twist.
+
+        INPUT:
+
+        - ``curve`` -- ``curve[:-1]`` is the list of pants curves on which a sequence of
+          elementary moves are performed, and ``curve[-1]`` is the
+          pants curve in the final pants decomposition on which the
+          twist occurs.
+
+        - ``direction`` -- 'left' or 'right' specifying the direction
+          of the twist.
+        
+        - ``measured_tt`` -- a measured Dehn-Thurston train track
+          whose splitting sequence is computed.
+
+        - ``power`` -- (default:1) the power of the Dehn twist performed.
+
+        OUTPUT:
+
+        - a tuple (``splitting_sequence``,``carrying_map``) where both
+          entries are train track maps. ``splitting_sequence`` is a
+          splitting sequence from ``measured_tt`` to some train track `\tau`
+          and ``carrying_map`` is a train track map from `\tau` to
+          another Dehn-Thurston train track of self.
+        """
+
+        # Use self._splitting_sequence_from_elementary_move first, then
+        # self._splitting_sequence_from_pants_twist, then
+        # self._splitting_sequence_from_elementary_move again to change
+        # back the marking, and put together the pieces.
+        pass
+
+
+    
+    def _splitting_sequence_from_pants_twist(self,pants_curve,direction,measured_tt,power=1):
+        """Return a sequence in the splitting tree for twisting about a
+        pants curve.
+
+        INPUT:
+
+        - ``pants_curve`` -- the index of the pants curve.
+
+        - ``direction`` -- 'left' or 'right' specifying the direction
+          of the twist.
+        
+        - ``measured_tt`` -- a measured Dehn-Thurston train track
+          whose splitting sequence is computed.
+
+        - ``power`` -- (default:1) the power of the Dehn twist performed.
+
+        OUTPUT:
+
+        - a tuple (``splitting_sequence``,``carrying_map``) where both
+          entries are train track maps. ``splitting_sequence`` is a
+          splitting sequence from ``measured_tt`` to some train track `\tau`
+          and ``carrying_map`` is a train track map from `\tau` to
+          another Dehn-Thurston train track of self.
+
+        """
+        pass
+
+    
+
+    def _splitting_sequence_from_elementary_move(self,pants_curve,measured_tt):
+        """Return a sequence in the splitting tree for performing an
+        elementary move.
+
+        INPUT:
+
+        - ``pants_curve`` -- the index of the pants curve on which the
+          elementary move is applied.
+        
+        - ``measured_tt`` -- a measured Dehn-Thurston train track
+          whose splitting sequence is computed.
+
+        OUTPUT:
+
+        - a tuple (``splitting_sequence``,``carrying_map``) where both
+          entries are train track maps. ``splitting_sequence`` is a
+          splitting sequence from ``measured_tt`` to some train track `\tau`
+          and ``carrying_map`` is a train track map from `\tau` to
+          a Dehn-Thurston train track of pants decomposition obtained
+          by an elementary move.
+
+        """
+        pass
+
+    
+
+    
+        
+    
     def apply_elementary_move(self,pants_curve):
         """
         Create a new pants decomposition by changing one pants curve.
@@ -436,52 +535,15 @@ class PantsDecomposition(Surface):
             print train_track_ls
             print repr(traintrack)
             return traintrack
-
-
-
-
-
-
-                
-
-
-
-
-
         pass
         
-    # def measured_train_track_to_global(self,measured_tt):
-    #     """
-    #     Return the global coordinates of a measured standard train
-    #     track.
 
-    #     (Pants specific implementation of the method of the abstract
-    #     base class with the same name. The description of the method
-    #     there.)
-        
-    #     There are 12g-12 natural curves that are transverse to all
-    #     standard train tracks, but 9g-9 should be enough for an
-    #     injective representation. There are 3g-3 pants curves, and for
-    #     each pants curve, there are three curves intersecting only
-    #     this curve that are transverse to all standard train tracks.
-    #     Considering only two out of these three should be enough.
+    def generating_curves(self):
+        """
+        Return a list of curves whose twists generate.
 
-    #     """
-    #     raise NotImplementedError
-
-
-    # def global_to_measured_train_track(self,curve,all_reps = False):
-    #     """
-    #     Represent a curve as a standard measured train track.
-
-    #     (Pants specific implementation of the method of the abstract
-    #     base class with the same name. The description of the method
-    #     there.)
-
-    #     """
-    #     raise NotImplementedError
-        
-
+        """
+        pass
         
     
     @staticmethod
