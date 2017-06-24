@@ -321,9 +321,10 @@ class TrainTrack(SageObject):
 
         OUTPUT:
 
-        - nothing if ``create_copy`` is set to ``False``. Otherwise  
-        a TrainTrack map is returned with domain and codomain the old
-        and new train tracks.
+        A CarryingData object describing the carrying if
+        ``create_copy`` is set to ``False``. Otherwise a TrainTrack
+        map is returned with domain and codomain the old and new train
+        tracks.
 
         """
         pass
@@ -441,7 +442,57 @@ class TrainTrack(SageObject):
 
     # ------------------------------------------------------------
     
+
+
+
+
+
+
+
+
+class CarryingData(SageObject):
+    """
+    Class for storing the data of a carrying map. 
+
+    Eventually there should be two versions: a dense and a sparse one.
+    The sparse one would only list what *really* changes in the data.
+
+    INPUT:
+    
+        -edge_matrix: A matrix
+
+        -half_branch_map: A dictionary
+
+        # Caution: it may be the a branch doesn't map to any branch,
+        # just to a vertex. For instance, this happens for slides. In
+        # this case, maybe None is also an acceptable value for the
+        # image of a half-branch.
+
+        -switch_map: A dictionary
+
+        -position_of_strands: A dictionary
+    """
+    def __init__(self,edge_matrix,half_branch_map,
+                 switch_map,position_of_strands,sparse=False):
+        self._edge_map = edge_map
+        self._half_branch_map = half_branch_map
+        self._switch_map = switch_map
+        self._position_of_strands = position_of_strands
         
+    def __mul__(self,other):
+        pass
+
+
+
+
+
+
+
+
+
+
+
+    
         
 class TrainTrackMap(SageObject):
     """
@@ -472,50 +523,26 @@ class TrainTrackMap(SageObject):
     easier for non-trivalent train tracks, and it is enough to
     restrict the Splitting class for trivalent ones.
     """
-    def __init__(self,domain,codomain,edge_matrix,half_branch_map,switch_map,position_of_strands):
+    def __init__(self,domain,codomain,carrying_data):
         """
 
         INPUT:
 
-        -domain: The domain Train Track
+        - ``domain`` -- The domain Train Track
 
-        -codomain: The codomain Train Track
+        - ``codomain`` -- The codomain Train Track
 
-        -edge_matrix: A matrix
+        - ``carrying_data`` -- a CarryingData object specifying how
+          the domain is carried on the codomain
 
-        -half_branch_map: A dictionary
+        EXAMPLES:: 
 
-        # Caution: it may be the a branch doesn't map to any branch,
-        # just to a vertex. For instance, this happens for slides. In
-        # this case, maybe None is also an acceptable value for the
-        # image of a half-branch.
-
-        -switch_map: A dictionary
-
-        -position_of_strands: A dictionary
-
-        EXAMPLES:: ( TODO needs to be changed)
-
-            sage: tt1 = TrainTrack([[0,'+',0,0,'-',1,'a'], [0,'+',1,0,'-',0,b']])
-            sage: tt2 = TrainTrack([[0,'+',0,0,'-',1,'c'], [0,'+',1,0,'-',0,'d']])
-            sage: TrainTrackMap(tt1,tt2,{'a':['c'],'b':['c','d']])
-            TrainTrackMap
-        
-        The train track map induced by a Dehn twist::
-
-            sage: TrainTrackMap(tt1,tt1,{'a':['a'],'b':['a','b']])
-
-        The train track map induced by an order two involution::
-
-            sage: TrainTrackMap(tt1,tt1,{'a':[('a',-1)],'b':[('b',-1)]])
+        <write examples>
         
         """
         self._domain = domain
         self._codomain = codomain
-        self._edge_map = edge_map
-        self._half_branch_map = half_branch_map
-        self._switch_map = switch_map
-        self._position_of_strands = position_of_strands
+        self._carrying_map = carrying_map
 
 
     def domain(self):
@@ -582,7 +609,7 @@ class TrainTrackMap(SageObject):
 
 
 
-
+    
 
     
 
