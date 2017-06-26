@@ -42,15 +42,17 @@ SHIFT = 5
 class TrainTrack(SageObject):
     """
 
-    [starting_switch,side,index,ending_switch,side,index,is_twisted]
+    INPUT:
 
-    is_twisted is optional, default is False
+    A list of lists. The list at index 2*n represents the positive side of switch n. The list
+    at index 2*n + 1 represents the negative side of switch n. Each list containsthe outgoing
+    oriented branches at that switch ordered from left to right.
 
     EXAMPLES:
 
     1. A train track on the torus with one switch::
 
-        sage: tt = TrainTrack([[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]])
+        sage: tt = TrainTrack([ [1, 2], [-2, -1] ])
         sage: tt.is_trivalent()
         False
         sage: tt.neighborhood()
@@ -58,16 +60,13 @@ class TrainTrack(SageObject):
 
     2. A train track on the torus with two switches:
 
-        sage: tt = TrainTrack([[0,'+',0,1,'-',0],[1,'+',0,0,'-',1],
-        [1,'+',1,0,'-',0]])
+        sage: tt = TrainTrack([ [1], [-3, -2], [2, 3], [-1] ])
         sage: tt.is_trivalent()
         True
 
     3. A train track on the three times punctured disk:
 
-        sage: tt = TrainTrack([ [0,'+',0,0,'+',1], [0,'-',0,1,'+',0],
-        [1,'+',1,2,'-',0], [2,'+',0,2,'+', 1], [1,'-',0,3,'+',0],
-        [3,'-',0,3,'-',1] ]) 
+        sage: tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3], [-5], [6, -6] ]) 
         sage: tt.is_trivalent()
         True
         sage: tt.neighborhood()
@@ -99,10 +98,10 @@ class TrainTrack(SageObject):
         for switch in gluing_list:
             if not switch:
                 raise ValueError("Invalid Train Track: Every switch must have a positive and negative side.")
-            branches.extend(switch) #iterate through branches, pick out the switches
+            branches.extend(switch) #iterate through switches, pick out the branches
         branches.sort()
         list_of_branches = list(set(branches))
-        if branches != list_of_branches:
+        if branches != list_of_branches: #check for duplicate branches
             raise ValueError("Invalid Train Track: Every branch and its negation must appear exactly once.")
         for branch in branches:
             if -branch not in branches:
@@ -117,27 +116,27 @@ class TrainTrack(SageObject):
 
         INPUT:
         
-        - ``branch`` -- the index of the oriented branch. It is an
-        integer in the interval `[1,n]` or `[-n,-1]` where `n` is the
-        number of branches. A negative sign means that the branch is
-        oriented differently from its standard orientation.
+        - the index of the oriented branch. A negative sign means that
+        the branch is oriented differently from its standard orientation.
 
         OUTPUT:
         
-        - tuple (switch,side,pos) encoding a half-branch, just as in
-          the input of __init__. 
+        - the index of the switch. A positive index means the branch
+        endpoint is on the positive side of the switch, and a negative
+        index means the branch endpoint is on the negative side of the
+        switch.
         
         EXAMPLES::
 
-            sage: tt = TrainTrack([[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]])
+            sage: tt = TrainTrack([ [1, 2], [-2, -1] ])
             sage: tt.branch_endpoint(1)
-            (0,'-',1)
+            -1
             sage: tt.branch_endpoint(-1)
-            (0,'+',0)
+            1
             sage: tt.branch_endpoint(2)
-            (0,'-',0)
+            -1
             sage: tt.branch_endpoint(-2)
-            (0,'+',1)
+            1
             """
 
         for switch in self._gluing_list:
@@ -151,6 +150,7 @@ class TrainTrack(SageObject):
     
     def branches(self):
         """
+        TODO Fix documentation here
         Return the list of branches.
 
         EXAMPLES:: 
@@ -163,6 +163,7 @@ class TrainTrack(SageObject):
 
     def outgoing_branches(self,switch,side):
         """
+        TODO Fix documentation here
         Return the list of branches, from left to right, departing from a switch with specified orientation.
 
         EXAMPLES::
@@ -366,6 +367,7 @@ class TrainTrack(SageObject):
     def is_trivalent(self): 
 
         """
+        TODO Fix documentation here
         EXAMPLES:
 
         sage: tt = TrainTrack([ [0,'+',0,0,'+',1], [0,'-',0,1,'+',0],
