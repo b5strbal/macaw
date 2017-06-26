@@ -159,7 +159,7 @@ class TrainTrack(SageObject):
         """
         return self._branches 
 
-    def outgoing_branches(self,switch,side):
+    def outgoing_branches(self,switch):
         """
         TODO Fix documentation here
         Return the list of branches, from left to right, departing from a switch with specified orientation.
@@ -180,12 +180,12 @@ class TrainTrack(SageObject):
             sage: [-2, -3]
 
         """
-        if side == '+':
-            return self._gluing_list[2 * switch]
-        elif side == '-':
-            return self._gluing_list[2 * switch + 1]
+        if switch > 0:
+            return self._gluing_list[2 * switch - 2]
+        elif switch < 0:
+            return self._gluing_list[-2 * switch - 1]
         else:
-            raise ValueError("Second argument must be '+' or '-'.")
+            raise ValueError("Invalid switch index.")
 
     def puncturefinder_graph(self): #constructs a graph to help find the punctures
         g = DiGraph(multiedges=True) 
