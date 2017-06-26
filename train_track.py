@@ -5,6 +5,8 @@ Define train tracks, measured train tracks, carrying, splitting.
 AUTHORS:
 
 - BALAZS STRENNER (2017-05-02): initial version
+- IAN KATZ 
+- YANDI WU 
 
 EXAMPLES::
 
@@ -25,7 +27,6 @@ EXAMPLES::
 
 from surface import Surface 
 from sage.structure.sage_object import SageObject
-
 
 LARGE = 0
 MIXED = 1
@@ -191,24 +192,31 @@ class TrainTrack(SageObject):
 
     def puncturefinder_graph(self): #constructs a graph to help find the punctures
         g = DiGraph(multiedges=True) 
-        e = [] #create list of edges
-        for b in self.branches():  #edges between half branches 
-            if b[0] == b[3] and b[1] == b[4] and (b[2] == b[5] + 1 or b[5] == b[2] + 1): 
-            #special case for edges between half-branches (see case with S_{0,4})
-                e.extend([(((self.outgoing_branches(b[0], b[1]))[b[2]], 'L'), ((self.outgoing_branches(b[3], b[4]))[b[5]], 'R'), 0), (((self.outgoing_branches(b[3], b[4]))[b[5]], 'R'), ((self.outgoing_branches(b[0], b[1]))[b[2]], 'L'), 0)]) 
-            else: 
-                e.extend([(((self.outgoing_branches(b[3], b[4]))[b[5]], 'L'), ((self.outgoing_branches(b[0], b[1]))[b[2]], 'R'), 0), (((self.outgoing_branches(b[0], b[1]))[b[2]], 'L'), ((self.outgoing_branches(b[3], b[4]))[b[5]], 'R'), 0)])
-        g.add_edges(e)
-        for switch in self._switches:
-            n, p = len(self.outgoing_branches(switch, '-')), len(self.outgoing_branches(switch, '+'))
-            #index 0 half branches on the left that form a 180 degree angle
-            g.add_edges([(((self.outgoing_branches(switch, '+'))[0], 'L'), ((self.outgoing_branches(switch, '-'))[n - 1], 'R'), 0)])
-                #the half branches on the right that form a 180 degree angle
-            g.add_edges([(((self.outgoing_branches(switch, '-'))[0], 'L'), ((self.outgoing_branches(switch, '+'))[p - 1], 'R'), 0)]) 
-            for m in range(n - 1): #joins adjacent half branches on '-' side and weights each branch with 1 to count num_cusps
-                g.add_edges([(((self.outgoing_branches(switch, '-'))[m], 'R'), ((self.outgoing_branches(switch, '-'))[m + 1], 'L'), 1)]) 
-            for k in range(p - 1): #joins adjacent half branches on '+' side and weights each branch with 1 to count num_cusps
-                g.add_edges([(((self.outgoing_branches(switch, '+'))[k], 'R'), ((self.outgoing_branches(switch, '+'))[k + 1], 'L'), 1)])
+        l = (len(self._gluing_list) // 2
+        for i in range(l):
+            #length of list of branches on negative and positive sides of each switch 
+            j, k = len(self._gluing_list[2*i]), len(self._gluing_list[2*i + 1]) 
+            #adding half branches that form a 180 degree angle
+            g.add_edges([((self._gluing_list[2*i + 1][k - 1], 'R'), (self._gluing_list[2*i][0], 'L'), 0)])
+            g.add_edges([((self._gluing_list[2*i][j - 1], 'R'), (self._gluing_list[2*i + 1][0], 'L'), 0)])
+            for m in range(j):
+                #join together half branches glued together
+                if self._gluing_list[2*i][m] == -self._gluing_list[2*i][m + 1]:
+                #special case for edges between half-branches (see case with S_{0,4})
+                    g.add_edges([((self._gluing_list[2*i][m], 'R'), (self._gluing_list[2*i][m + 1], 'L'), 0)])
+                else:
+                    g.add_edges([((self._gluing_list[2*i][m], 'L'), (self._gluing_list[2*i][m + 1], 'R'), 0)])
+                #joins adjacent half branches on '+' side and weights each branch with 1 to count num_cusps
+                g.add_edges([((self._gluing_list[2*i][m], 'R'), (self._gluing_list[2*i][m + 1], 'L'), 1)])
+            for n in range(k):
+                #join together half branches glued together
+                if self._gluing_list[2*i + 1][n] == -self._gluing_list[2*i + 1][n + 1]:
+                #special case for edges between half-branches (see case with S_{0,4})
+                    g.add_edges([((self._gluing_list[2*i + 1][n], 'R'), (self._gluing_list[2*i + 1][n + 1], 'L'), 0)])
+                else:
+                    g.add_edges([((self._gluing_list[2*i + 1][n], 'L'), (self._gluing[2*i + 1][n + 1], 'R'), 0)])
+                #joins adjacent half branches on '-' side and weights each branch with 1 to count num_cusps
+                g.add_edges([((self._gluing_list[2*i + 1][n], 'R'), (self._gluing_list[2*i + 1][n + 1], 'L'), 1)])
         return g  
 
     def num_complementary_components(self): #num of disconnected components of the graph is number of punctures
