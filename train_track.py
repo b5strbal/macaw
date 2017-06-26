@@ -100,15 +100,12 @@ class TrainTrack(SageObject):
             if not switch:
                 raise ValueError("Invalid Train Track: Every switch must have a positive and negative side.")
             branches.extend(switch) #iterate through switches, pick out the branches
-        branches.sort()
-        list_of_branches = list(set(branches))
-        if branches != list_of_branches: #check for duplicate branches
-            raise ValueError("Invalid Train Track: Every branch and its negation must appear exactly once.")
         for branch in branches:
-            if -branch not in branches:
+            if -branch not in branches or branches.count(branch) > 1:
                 raise ValueError("Invalid Train Track: Every branch and its negation must appear exactly once.")
+        branches.sort()
         self._gluing_list = gluing_list
-        self._branches = list_of_branches
+        self._branches = branches
         self.euler_char = (len(self._gluing_list) - len(self._branches)) / 2 #Euler characteristic assuming no punctures are glued
 
     def branch_endpoint(self,branch):
@@ -192,7 +189,7 @@ class TrainTrack(SageObject):
 
     def puncturefinder_graph(self): #constructs a graph to help find the punctures
         g = DiGraph(multiedges=True) 
-        l = (len(self._gluing_list) // 2
+        l = (len(self._gluing_list)) // 2
         for i in range(l):
             #length of list of branches on negative and positive sides of each switch 
             j, k = len(self._gluing_list[2*i]), len(self._gluing_list[2*i + 1]) 
