@@ -88,22 +88,28 @@ class TrainTrack(SageObject):
     # each edge of the graph, we need to say if the two left and two
     # right sides are glued together or left is glued to right. This
     # allows us to represent train tracks on nonorientable surfaces. 
-    def __init__(self,list_of_branches,measure=None): 
+    def __init__(self,gluing_list,measure=None): 
         """
         TODO: add measures to the code and documentation.
         """
         
-        switch = [] #start a list of switches 
-        for branch in list_of_branches:
-            if len(branch) != 6:
-                raise ValueError('Invalid branch list: incorrect number of arguments.') 
-            elif not((branch[1] == '+' or branch[1] == '-') and (branch[4] == '+' or branch[4] == '-')):
-                raise ValueError('Invalid branch list: second and fifth entries must express direction.')
-            else:
-                switch.extend( [branch[0], branch[3]] ) #iterate through branches, pick out the switches
-        self._switches = list(set(switch)) #remove duplicates 
+        branches = [] #start a list of branches
+        if len(gluing_list) % 2 == 1:
+            raise ValueError("Invalid Train Track: Every switch must have a positive and negative side.")
+        for switch in gluing_list:
+            if not switch:
+                raise ValueError("Invalid Train Track: Every switch must have a positive and negative side.")
+            branches.extend(switch) #iterate through branches, pick out the switches
+        branches.sort()
+        list_of_branches = list(set(branches))
+        if branches != list_of_branches:
+            raise ValueError("Invalid Train Track: Every branch and its negation must appear exactly once.")
+        for branch in branches:
+            if -branch not in branches:
+                raise ValueError("Invalid Train Track: Every branch and its negation must appear exactly once.")
+        self._gluing_list = gluing_list
         self._branches = list_of_branches
-        self.euler_char = len(self._switches) - len(list_of_branches) #Euler characteristic assuming no punctures are glued
+        self.euler_char = (len(self._gluing_list) - len(self._branches)) / 2 #Euler characteristic assuming no punctures are glued
 
     def branch_endpoint(self,branch):
         """
@@ -134,12 +140,14 @@ class TrainTrack(SageObject):
             (0,'+',1)
             """
 
-        if branch > 0:
-            return self._branches[branch - 1][3:]
-        elif branch < 0:
-            return self._branches[-branch - 1][:3]
-        else:
-            raise ValueError('Invalid branch index.')
+        for switch in self._gluing_list:
+            if -branch in switch:
+                switch_num = self._gluing_list.index(switch)
+                if switch_num % 2 == 0:
+                    return switch_num // 2 + 1
+                else:
+                    return -(switch_num // 2 + 1)
+        raise ValueError('Invalid branch index.')
     
     def branches(self):
         """
@@ -173,18 +181,12 @@ class TrainTrack(SageObject):
             sage: [-2, -3]
 
         """
-        initial_list, order_list = [], []
-        index = 1 
-        for branch in self.branches():
-            if switch == branch[0] and side == branch[1]:
-                initial_list.append(index)
-                order_list.append(branch[2])
-            if switch == branch[3] and side == branch[4]:
-                initial_list.append(-1 * index)
-                order_list.append(branch[5]) 
-            index += 1
-        order_list, outgoing_branch_list = (list(l) for l in zip(*sorted(zip(order_list, initial_list)))) #order branch indices from L to R 
-        return outgoing_branch_list 
+        if side == '+':
+            return self._gluing_list[2 * switch]
+        elif side == '-':
+            return self._gluing_list[2 * switch + 1]
+        else:
+            raise ValueError("Second argument must be '+' or '-'.")
 
     def puncturefinder_graph(self): #constructs a graph to help find the punctures
         g = DiGraph(multiedges=True) 
@@ -373,10 +375,11 @@ class TrainTrack(SageObject):
         sage: True 
         
         """ 
-        for switch in self._switches: #iterates through the switches, checks degree of each switch = 3
-            if len(self.outgoing_branches(switch, '+')) + len(self.outgoing_branches(switch, '-')) != 3:
-                    return False
-        return True 
+
+        for n in range(len(self._gluing_list) / 2): #iterates through the switches, checks degree of each switch = 3
+            if len(self._gluing_list[2 * n]) + len(self._gluing_list[2 * n + 1]) != 3:
+                return False
+        return True
     
     def recurrence_graph(self):
 
