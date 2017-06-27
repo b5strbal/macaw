@@ -106,6 +106,7 @@ class TrainTrack(SageObject):
         branches.sort()
         self._gluing_list = gluing_list
         self._branches = branches
+        self._measure = measure
         self.euler_char = (len(self._gluing_list) - len(self._branches)) / 2 #Euler characteristic assuming no punctures are glued
 
     def branch_endpoint(self,branch):
@@ -140,7 +141,7 @@ class TrainTrack(SageObject):
         for switch in self._gluing_list:
             if -branch in switch:
                 switch_num = self._gluing_list.index(switch)
-                if switch_num % 2 == 0:
+                if switch_num % 2 == 0: #checks orientation of the switch
                     return switch_num // 2 + 1
                 else:
                     return -(switch_num // 2 + 1)
@@ -148,14 +149,13 @@ class TrainTrack(SageObject):
     
     def branches(self):
         """
-        TODO Fix documentation here
         Return the list of branches.
 
         EXAMPLES:: 
 
-            sage: tt = TrainTrack([[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]])
+            sage: tt = TrainTrack([ [1, 2], [-2, -1] ])
             sage: tt.branches()
-            [[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]]
+            [-2, -1, 1, 2]
         """
         return self._branches 
 
@@ -295,6 +295,10 @@ class TrainTrack(SageObject):
         """Return the measure on the train track."""
         pass
 
+    def branch_measure(self, branch):
+        """Return the measure on the given branch."""
+        return self._measure[abs(branch) - 1]
+
     def perform_operation(self,branch,operation,create_copy=False):
         """Perform a split, shift or fold.
 
@@ -336,6 +340,47 @@ class TrainTrack(SageObject):
 
         """
         pass
+
+    def unzip(self, branch):
+        """
+        Unzips the train_track along the left side of the given branch.
+
+        """
+        """
+        switch = branch_endpoint(branch)
+        pos_side = outgoing_branches(switch)
+        neg_side = outgoing_branches(-switch)
+        split_weight = 0
+        for b in pos_side[:pos_side.index(-branch):-1]: #finds where to cut on the other side
+            split_weight += self.branch_measure(b)
+        weight = 0
+        for b in neg_side: #identifies the branch that needs to be cut
+            weight += self.branch_measure(b)
+            if weight >= split_weight: # TODO: edgecase when weight = split_weight?
+                split_branch = b
+                break
+        split_branch_sign = split_branch // abs(split_branch)
+        split_branch_switch = branch_endpoint(split_branch)
+        split_pos_side = outgoing_branches(split_branch_switch)
+        new_branch = max(self.branches()) + 1
+        new_pos_side = pos_side[:pos_side.index(-branch) + 1]
+        new_neg_side = neg_side[neg_side.index(split_branch):]
+        new_split_pos_side = split_pos_side[:split_pos_side(-split_branch) + 1] + [-split_branch_sign * new_branch] +
+                             split_pos_side[split_pos_side(-split_branch) + 1:]
+        new_switch_pos_side = pos_side[pos_side.index(-branch) + 1:]
+        new_switch_neg_side = neg_side[:neg_side.index(split_branch)] + [split_branch_sign * new_branch]
+        self._gluing_list = 
+        self._branches = [-new_branch] + self._branches + [new_branch]
+        self._measure[split_branch]
+        """
+
+    def unzipped(self, branch):
+        """
+        Returns a copy of the Train Track, unzipped along the left side of the given branch.
+        """
+        tt_copy = self
+        tt_copy.unzip()
+        return tt_copy
     
     def regular_neighborhood(self):
         pass 
@@ -372,14 +417,11 @@ class TrainTrack(SageObject):
     def is_trivalent(self): 
 
         """
-        TODO Fix documentation here
         EXAMPLES:
 
-        sage: tt = TrainTrack([ [0,'+',0,0,'+',1], [0,'-',0,1,'+',0],
-        [1,'+',1,2,'-',0], [2,'+',0,2,'+', 1], [1,'-',0,3,'+',0],
-        [3,'-',0,3,'-',1] ])
+        sage: tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3], [-5], [6, -6] ])
         sage: tt.is_trivalent()
-        sage: True 
+        sage: True
         
         """ 
 
