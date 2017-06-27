@@ -26,159 +26,94 @@ EXAMPLES::
 
 
 from surface import Surface
-from sage.all import Graph
+from sage.all import Graph, preparser
 from train_track import TrainTrack
+import collections
 
 class PantsDecomposition(Surface):
     """A pants decomposition of a surface.
 
-    Pants decompositions can be encoded by graphs whose vertices have
-    valence 3 or 1. Each 3-valent vertex corresponds to a pair of
-    pants, and the three incident edges correspond to its three
-    boundary components. An edge between two 3-valent vertices
-    represents the gluing the corresponding two boundary components
-    together. An edge between a 3-valent and a 1-valent vertex
-    represent means the correspoding boundary component of a pair of
-    pants is not glued anywhere, therefore it becomes a boundary
-    components of the surface.
-
-    The gluing of the boundary components can happen in two different
-    ways. Orienting the pairs of pants induces an orientation of the
-    boundary components. The default way of gluing is when the
-    orientation of the glued boundary components do NOT match. These
-    gluings are called orientation-preserving gluings, because they
-    orientations of the pairs of pants match along near the gluing. Only
-    having such gluings always results in an orientable surface. 
-
-    The other way of gluing is when the orientation of the boundary
-    components match. These gluings are called orientation-reversing
-    gluings, because they orientations of the pairs of pants do not
-    match near the gluing. Such a gluing often makes the resulting
-    surface nonorientable, but not necessarily.
-
-    If the edges of the graph are not labelled, then all gluings are
-    assumed to be orientation-preserving. In the presence of
-    orientation-reversing gluings, all edges need to be labelled by
-    '+' or '-'. Between two 3-valent vertices, the '+' and '-' signs
-    specify an orientation-preserving and -reversing gluings,
-    respectively. Between a 3-valent and a 1-valent vertex, the '+'
-    sign means that the corresponding boundary component is not glued
-    anywhere. A '-' sign means that the boundary components is glued
-    to itself by the antipodal map. This is also an
-    orientation-reversing guling: the neighborhood of such a gluing is
-    a Moebius band.
+    Pants decompositions can be encoded by a list of list. The list in the position of index i would be considered as pant i.
+    Each pants is a list with 3 entries indicating 3 punctures in certain direction. Punctures are denoted by integer. Punctures of same value would be glued in the orientable direction 
+    while punctures who are binary complement would be glued in opposite direction.
     
     INPUT:
 
-    - ``graph`` -- a connected unoriented graph whose vertices have
-      valence 3 or 1. At least one vertex must have valence 3.
-      Multiedges and loops are allowed. To specify nonorientable
-      gluings, the edges must be labelled by '+' or '-'.
+    - ``p_list`` -- a list of list. The nested list should of definite length of three.
     
     EXAMPLES::
 
-        sage: G = Graph([[0,0],[0,1]],loops=True)
-        sage: PantsDecomposition(G)
-        Pants decomposition of the torus with 1 puncture
+        sage: PantsDecomposition([[1,2,3],[1,2,3]])
+        Pants decomposition of genus 2 orientable closed surface
 
-        sage: G = Graph([[0,0,'-'],[0,1,'+'']],loops=True)
-        sage: PantsDecomposition(G)
-        Pants decomposition of the genus 2 nonorientable surface with 1 puncture
+        sage: PantsDecomposition([[1,2,~2]])
+        Pants decomposition of klein bottle with 1 puncture
 
-        sage: G = Graph([[0,1],[0,1],[0,1]],multiedges=True)
-        sage: PantsDecomposition(G)
-        Pants decomposition of the genus 2 closed surface
+        sage: PantsDecomposition([[1,2,2]])
+        Pants decomposition of torus surface with 1 puncture
 
-        sage: G = Graph({0:[1,2,3],3:[4,5]})
-        sage: PantsDecomposition(G)
-        Pants decomposition of the sphere with 4 punctures
 
     """
-    def __init__(self, gluing_list):
+    def __init__(self, p_list):
         
-        if len(gluing_list) == 0:
-            num_punctures = 3
-            euler_char = -1
-            orientable = True
-        else:
-            conn_map = {}
-            pant_map = {}
-            #conn_cnt = 0
-            edgels = []
+        # punc => +-1 ~ +- inf
+        # pant_name => idx
 
-            for pair in gluing_list:
-                if len(pair) < 4 or len(pair) > 5:
-                    raise ValueError('Each gluing only has 4 to 5 input')
-                elif len(pair) == 5 and not (pair[4] == '-' or pair[4] == '+'):
-                    raise ValueError('Use ''+'' to indicate orientable gluing and ''-'' to indicate nonorientable gluing')
-                elif type(pair[1]) != int or type(pair[3]) != int:
-                    raise ValueError('Use integer 0-2 to label the punctures for pants')
-                elif pair[1] > 2 or pair[1] < 0 or pair[3] > 2 or pair[3] < 0:
-                    raise ValueError('Use integer 0-2 to label the punctures for pants')
-                elif pair[0] == pair[2] and pair[1] == pair[3] and (len(pair) < 5 or pair[4] != '-'):
-                    raise ValueError('A puncture can only be glued to itself in the nonorientable way')
-                if pair[0] not in pant_map:
-                    pant_map[pair[0]] = [False, False, False]
-                if pair[2] not in pant_map:
-                    pant_map[pair[2]] = [False, False, False]
+        try:
+            preparser(False)
+        except:
+            raise ValueError('Sage preparser issue')
 
-                conn1 = (pair[0], pair[1])
-                conn2 = (pair[2], pair[3])
+        num_pants = len(p_list)
+        punc_map = {}
+        edge_ls = []
+        gluing_cnt = 0
 
-                if conn1 in conn_map.keys() or conn2 in conn_map.keys():
-                    raise ValueError('One puncture can not be glued twice')######TODO#########
-
-                conn_pair = (conn1, conn2)
-
-                conn_map[conn1] = conn_pair
-                conn_map[conn2] = conn_pair
-
-                pant_map[pair[0]][pair[1]] = True
-                pant_map[pair[2]][pair[3]] = True
-
-                #conn_cnt += 1
-                if (len(pair)==5 and pair[4] == '-'):
+        for i in range(len(p_list)):
+            pant = p_list[i]
+            if len(pant) != 3:
+                raise ValueError('One pant should have three punctures')
+            for punc in pant:
+                punc_key = self._ignore_dir(punc)
+                if punc in punc_map.keys() and punc_map[punc][2] > 0:
                     weight = 1
                 else:
                     weight = 0
-                #weight = 1 if (len(pair)==5 and pair[4] == '-') else 0
-                edgels.append((pair[0], pair[2], weight))
+                if punc_key in punc_map.keys():
+                    if punc_map[punc_key][1] != None:
+                        raise ValueError("Each puncture can only be glued once")
+                    gluing_cnt += 1
+                    punc_map[punc_key][1] = i
+                    punc_map[punc_key][2] = weight
+                    edge_ls.append((punc_map[punc_key][0], i, weight))
+                else:
+                    if punc < 0:
+                        punc_map[punc_key] = [i, None, 0]
+                    else:
+                        punc_map[punc_key] = [i, None, 1]
 
-            g = Graph(edgels)
+        # check for connectedness
+        print edge_ls
+        g = Graph(edge_ls)
+        if not g.is_connected():
+            raise ValueError('Invalid input. Surface should be connect')
 
-            degreels = g.degree()
+        # orientation
+        orientable = True
+        for cycle in g.cycle_basis(output='edge'):
+            cycle_weight = sum([e[2] for e in cycle])
+            if cycle_weight % 2 == 1:
+                orientable = False
 
-            # check for connectedness   
-            if not g.is_connected():
-                raise ValueError('Invalid input. Surface should be connect')           
-        
-
-            orientable = True
-            #print g
-            #print g.cycle_basis(output='edge')
-
-            for cycle in g.cycle_basis(output='edge'):
-                cycle_weight = sum([e[2] for e in cycle])
-                if cycle_weight % 2 == 1:
-                    orientable = False
-
-            num_pant = g.order()
-
-            num_puncture = num_pant*3 - 2*len(gluing_list)
-
-            euler_char = -1*num_pant   
-
-            # initialize parent class
-            super(PantsDecomposition,self).__init__(euler_char = euler_char, num_punctures = num_puncture, is_orientable = orientable)
-            #pass
-
-            self._conn = conn_map
-            self._conn_cnt = len(gluing_list)
-            self._pants = pant_map
-            self._gluing_list = gluing_list
+        euler_char = -1*num_pants 
+        num_puncture = num_pants*3 - 2*gluing_cnt
+        super(PantsDecomposition,self).__init__(euler_char = euler_char, num_punctures = num_puncture, is_orientable = orientable)
+        print self.__repr__()
+        self._p_list = p_list
+        self._p_map = punc_map
 
     def __repr__(self):
-        return 'Pants decomposition of ' + super(PantsDecomposition,self).__repr__()
+        return 'Pants decomposition of ' + super(PantsDecomposition,self).__repr__().lower()
 
 
     def pants_curve_as_tt(self,pants_curve):
@@ -288,16 +223,17 @@ class PantsDecomposition(Surface):
         components in each pair of pants, otherwise the elementary
         move is not uniquely specified by the pants_curve.
 
+        INPUT:
+
+        - ``pants_curve`` -- selected curve to apply elementary move on.
+
         EXAMPLES::
 
         Type 1 elementary move::
 
-            sage: p1 = PantsDecomposition([[0,0,0,1]])
-            sage: p1
-            Pants decomposition of the closed surface of genus 2
-            sage: p2 = p1.apply_elementary_move((0,0))
-            sage: p2
-            Pants decomposition of the closed surface of genus 2
+            sage: p1 = PantsDecomposition([[1, 2, ~2]])
+            sage: p1.apply_elementary_move(2)
+            Pants decomposition of torus surface with 1 puncture
 
         The resulting (marked) pants decomposition is isomorphic to
         the original one.
@@ -305,60 +241,83 @@ class PantsDecomposition(Surface):
         Type 2 elementary move, resulting in a pants decomposition
         with a separating curve::
 
-            sage: p1 = PantsDecomposition([[0,1,1,3],[0,2,1,2],[0,3,1,1]])
-            sage: p2 = p1.apply_elementary_move((0,2))
+            sage: p2 = PantsDecomposition([[1,2,3],[~1,~3,~2]])
+            sage: p2.apply_elementary_move(1)
+            Pants decomposition of genus 2 orientable closed surface
 
         A type 2 elementary move on the same curve of the same pants
         decomposition but with a different marking. The resulting
         pants decomposition now does not have a separating curve::
 
-            sage: p3 = PantsDecomposition([[0,1,1,1],[0,2,1,2],[0,3,1,3]])
-            sage: p4 = p1.apply_elementary_move((0,2))
+            sage: p3 = PantsDecomposition([[1,2,3],[~1,~2,~3]])
+            sage: p4 = p1.apply_elementary_move(1)
+            Pants decomposition of genus 2 orientable closed surface
 
 
         """
+        if not self.is_orientable():
+            raise NotImplementedError('Elementary move for non-orientable surface has not been implement yet.')
 
-        if pants_curve not in self._conn:
-            raise ValueError('Specified puncture is not glued.')
+        curve_key = self._ignore_dir(pants_curve)
 
-        glue1 = self._conn[pants_curve][0]
-        glue2 = self._conn[pants_curve][1]
-
-        pant1 = glue1[0]
-        pant2 = glue2[0]
-
-        if pant1 == pant2:
-            return PantsDecomposition(self._gluing_list)
-
+        if curve_key not in self._p_map.keys():
+            raise ValueError('No such puncture exsit.')
+        p1 = self._p_map[curve_key][0]
+        p2 = self._p_map[curve_key][1]
+        ori = True if self._p_map[curve_key][2] > 0 else False
+        if p2 == None:
+            raise ValueError('Specified curve is not glued.')
+        if p1 == p2:
+            return PantsDecomposition(self._p_list)
         else:
-            punc1_1 = glue1[1]
-            punc1_2 = (punc1_1+1)%3
-            punc1_3 = (punc1_1+2)%3
-            punc2_1 = glue2[1]
-            punc2_2 = (punc2_1+1)%3
-            punc2_3 = (punc2_1+2)%3
+            p1_tuple = self._p_list[p1]
+            p2_tuple = self._p_list[p2]
+            punc_11_idx = p1_tuple.index(pants_curve) if pants_curve in p1_tuple else p1_tuple.index(~pants_curve)
+            punc_11 = self._ignore_dir(p1_tuple[punc_11_idx])
+            punc_21_idx = p2_tuple.index(pants_curve) if pants_curve in p2_tuple else p2_tuple.index(~pants_curve)
+            punc_21 = self._ignore_dir(p2_tuple[punc_21_idx])
+            punc_12 = p1_tuple[(punc_11_idx+1)%3]
+            punc_13 = p1_tuple[(punc_11_idx+2)%3]
+            punc_22 = p2_tuple[(punc_21_idx+1)%3]
+            punc_23 = p2_tuple[(punc_21_idx+2)%3]
+            mapping_punc_dict = {}
+            mapping_punc_dict[punc_12] = punc_13
+            mapping_punc_dict[punc_13] = punc_22
+            mapping_punc_dict[punc_22] = punc_23
+            mapping_punc_dict[punc_23] = punc_12
+            if ~punc_12 not in mapping_punc_dict:
+                mapping_punc_dict[~punc_12] = ~punc_13
+            if ~punc_13 not in mapping_punc_dict:
+                mapping_punc_dict[~punc_13] = ~punc_22
+            if ~punc_22 not in mapping_punc_dict:
+                mapping_punc_dict[~punc_22] = ~punc_23
+            if ~punc_23 not in mapping_punc_dict:
+                mapping_punc_dict[~punc_23] = ~punc_12
+            punc_ls = [self._ignore_dir(punc_11), self._ignore_dir(punc_12), self._ignore_dir(punc_13), self._ignore_dir(punc_22), self._ignore_dir(punc_23)]
+            change_pant_set = set()
+            rt_ls = list(self._p_list)
+            for p in punc_ls:
+                change_pant_set.add(self._p_map[p][0])
+                if self._p_map[p][1]:
+                    change_pant_set.add(self._p_map[p][1])
+            for pant_idx in change_pant_set:
+                cp_ls = list(rt_ls[pant_idx])
+                for i in range(3):
+                    ch_key = rt_ls[pant_idx][i]
+                    if ch_key in mapping_punc_dict.keys():
+                        cp_ls[i] = mapping_punc_dict[ch_key]
+                rt_ls[pant_idx] = cp_ls
+            print rt_ls
+            return PantsDecomposition(rt_ls)
 
-            transmap = {}
+    def _ignore_dir(self, x):
+        if x < 0:
+            return ~x
+        else:
+            return x
 
-            transmap[(pant1, punc1_2)] = (pant1, punc1_3)
-            transmap[(pant1, punc1_3)] = (pant2, punc2_2)
-            transmap[(pant2, punc2_2)] = (pant2, punc2_3)
-            transmap[(pant2, punc2_3)] = (pant1, punc1_2)
-
-            init_ls = []
-            keys = transmap.keys()
-
-            for glue in self._gluing_list:
-                if (glue[0], glue[1]) in keys:
-                    glue[0] = transmap[(glue[0], glue[1])][0]
-                    glue[1] = transmap[(glue[0], glue[1])][1]
-                if (glue[2], glue[3]) in keys:
-                    glue[2] = transmap[(glue[2], glue[3])][0]
-                    glue[3] = transmap[(glue[2], glue[3])][1]
-                init_ls.append(glue)
-
-            #print init_ls
-            return PantsDecomposition(init_ls)
+    def _bool_dir(self,x):
+        return self._p_map[x][2] == 0
             
 
 
