@@ -169,30 +169,23 @@ class TrainTrack(SageObject):
         EXAMPLES::
 
             sage: tt = TrainTrack([[1, 2], [-1, -2]])
-            sage: tt.outgoing_branches(1, '+')
+            sage: tt.outgoing_branches(1)
             sage: [1, 2]
-            sage: tt.outgoing_branches(0,'-')
+            sage: tt.outgoing_branches(-1)
             sage: [-1,-2]
             sage: tt = TrainTrack([[1, -1],[2],[-2,-3],[5],[6,-6],[-5],[4,-4],[3]])
-            sage: tt.outgoing_branches(3,'+')
+            sage: tt.outgoing_branches(3)
             sage: [6, -6]
-            sage: tt.outgoing_branches(3, '-')
+            sage: tt.outgoing_branches(-3)
             sage: [-5]
-            sage: tt.outgoing_branches(2, '+')
+            sage: tt.outgoing_branches(2)
             sage: [-2, -3]
 
         """
-<<<<<<< HEAD
         if switch > 0:
             return self._gluing_list[2 * switch - 2]
         elif switch < 0:
             return self._gluing_list[-2 * switch - 1]
-=======
-        if side == '+':
-            return self._gluing_list[2*(switch - 1)]
-        elif side == '-':
-            return self._gluing_list[2*(switch - 1) + 1]
->>>>>>> Update Traintracks puncture counter
         else:
             raise ValueError("Invalid switch index.")
 
@@ -463,11 +456,7 @@ class TrainTrack(SageObject):
         """
         EXAMPLES:
 
-<<<<<<< HEAD
         sage: tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3], [-5], [6, -6] ])
-=======
-        sage: tt = [[1,-1], [2], [-2,-3], [5], [6,-6], [-5], [4,-4], [3]]
->>>>>>> Update Traintracks puncture counter
         sage: tt.is_trivalent()
         sage: True
         
