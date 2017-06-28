@@ -104,6 +104,9 @@ class TrainTrack(SageObject):
             if -branch not in branches or branches.count(branch) > 1:
                 raise ValueError("Invalid Train Track: Every branch and its negation must appear exactly once.")
         branches.sort()
+        branches.extend(switch) #iterate through branches, pick out the switches
+        branches.sort()
+        list_of_branches = list(set(branches))
         self._gluing_list = gluing_list
         self._branches = branches
         self._measure = measure
@@ -161,17 +164,16 @@ class TrainTrack(SageObject):
 
     def outgoing_branches(self,switch):
         """
-        TODO Fix documentation here
         Return the list of branches, from left to right, departing from a switch with specified orientation.
 
         EXAMPLES::
 
-            sage: tt = TrainTrack([[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]])
-            sage: tt.outgoing_branches(0,'+')
-            [1, 2]
+            sage: tt = TrainTrack([[1, 2], [-1, -2]])
+            sage: tt.outgoing_branches(1, '+')
+            sage: [1, 2]
             sage: tt.outgoing_branches(0,'-')
-            [-2,-1]
-            sage: tt = TrainTrack([[0,'+',0,0,'+',1], [0,'-',0,2,'+',0], [1,'+',0,2,'+',1], [1,'-',0,1,'-',1], [2,'-',0,3,'-',0], [3,'+',0,3,'+',1]])
+            sage: [-1,-2]
+            sage: tt = TrainTrack([[1, -1],[2],[-2,-3],[5],[6,-6],[-5],[4,-4],[3]])
             sage: tt.outgoing_branches(3,'+')
             sage: [6, -6]
             sage: tt.outgoing_branches(3, '-')
@@ -180,38 +182,81 @@ class TrainTrack(SageObject):
             sage: [-2, -3]
 
         """
+<<<<<<< HEAD
         if switch > 0:
             return self._gluing_list[2 * switch - 2]
         elif switch < 0:
             return self._gluing_list[-2 * switch - 1]
+=======
+        if side == '+':
+            return self._gluing_list[2*(switch - 1)]
+        elif side == '-':
+            return self._gluing_list[2*(switch - 1) + 1]
+>>>>>>> Update Traintracks puncture counter
         else:
             raise ValueError("Invalid switch index.")
 
-    def puncturefinder_graph(self): #constructs a graph to help find the punctures
+    def puncturefinder_graph(self): 
+        """
+        Constructs a graph to help find the complementary region of the train track.
+
+        EXAMPLES::
+            sage: tt = TrainTrack([-2,1],[2,-1])
+            sage: G = tt.puncturefinder_graph()
+            sage: G.edges()
+            sage: [((-2, 'L'), (2, 'R'), 0),
+                   ((-2, 'R'), (1, 'L'), 1),
+                   ((-1, 'L'), (1, 'R'), 0),
+                   ((-1, 'R'), (-2, 'L'), 0),
+                   ((1, 'L'), (-1, 'R'), 0),
+                   ((1, 'R'), (2, 'L'), 0),
+                   ((2, 'L'), (-2, 'R'), 0),
+                   ((2, 'R'), (-1, 'L'), 1)]
+            sage: tt = TrainTrack([ [1,-1], [2], [3], [4.-4], [-2,-3], [5], [6,-6], [-5] ])
+            sage: G = tt.puncturefinder_graph()
+            sage: G.edges()
+            sage: [((-6, 'L'), (6, 'R'), 0),
+                   ((-6, 'R'), (-5, 'L'), 0),
+                   ((-5, 'L'), (5, 'R'), 0),
+                   ((-5, 'R'), (6, 'L'), 0),
+                   ((-4, 'L'), (4, 'R'), 0),
+                   ((-4, 'R'), (3, 'L'), 0),
+                   ((-3, 'L'), (3, 'R'), 0),
+                   ((-3, 'R'), (5, 'L'), 0),
+                   ((-2, 'L'), (2, 'R'), 0),
+                   ((-2, 'R'), (-3, 'L'), 1),
+                   ((-1, 'L'), (1, 'R'), 0),
+                   ((-1, 'R'), (2, 'L'), 0),
+                   ((1, 'L'), (-1, 'R'), 0),
+                   ((1, 'R'), (-1, 'L'), 1),
+                   ((2, 'L'), (-2, 'R'), 0),
+                   ((2, 'R'), (1, 'L'), 0),
+                   ((3, 'L'), (-3, 'R'), 0),
+                   ((3, 'R'), (4, 'L'), 0),
+                   ((4, 'L'), (-4, 'R'), 0),
+                   ((4, 'R'), (-4, 'L'), 1),
+                   ((5, 'L'), (-5, 'R'), 0),
+                   ((5, 'R'), (-2, 'L'), 0),
+                   ((6, 'L'), (-6, 'R'), 0),
+                   ((6, 'R'), (-6, 'L'), 1)]
+
+        """
         g = DiGraph(multiedges=True) 
         l = (len(self._gluing_list)) // 2
+        for lst in self._gluing_list:
+            for b in range(len(lst)):
+                #joining adjacent branches together 
+                g.add_edges([((lst[b], 'L'), (-lst[b], 'R'), 0)])
         for i in range(l):
             #length of list of branches on negative and positive sides of each switch 
             j, k = len(self._gluing_list[2*i]), len(self._gluing_list[2*i + 1]) 
             #adding half branches that form a 180 degree angle
             g.add_edges([((self._gluing_list[2*i + 1][k - 1], 'R'), (self._gluing_list[2*i][0], 'L'), 0)])
             g.add_edges([((self._gluing_list[2*i][j - 1], 'R'), (self._gluing_list[2*i + 1][0], 'L'), 0)])
-            for m in range(j):
-                #join together half branches glued together
-                if self._gluing_list[2*i][m] == -self._gluing_list[2*i][m + 1]:
-                #special case for edges between half-branches (see case with S_{0,4})
-                    g.add_edges([((self._gluing_list[2*i][m], 'R'), (self._gluing_list[2*i][m + 1], 'L'), 0)])
-                else:
-                    g.add_edges([((self._gluing_list[2*i][m], 'L'), (self._gluing_list[2*i][m + 1], 'R'), 0)])
+            for m in range(j - 1):
                 #joins adjacent half branches on '+' side and weights each branch with 1 to count num_cusps
                 g.add_edges([((self._gluing_list[2*i][m], 'R'), (self._gluing_list[2*i][m + 1], 'L'), 1)])
-            for n in range(k):
-                #join together half branches glued together
-                if self._gluing_list[2*i + 1][n] == -self._gluing_list[2*i + 1][n + 1]:
-                #special case for edges between half-branches (see case with S_{0,4})
-                    g.add_edges([((self._gluing_list[2*i + 1][n], 'R'), (self._gluing_list[2*i + 1][n + 1], 'L'), 0)])
-                else:
-                    g.add_edges([((self._gluing_list[2*i + 1][n], 'L'), (self._gluing[2*i + 1][n + 1], 'R'), 0)])
+            for n in range(k - 1):
                 #joins adjacent half branches on '-' side and weights each branch with 1 to count num_cusps
                 g.add_edges([((self._gluing_list[2*i + 1][n], 'R'), (self._gluing_list[2*i + 1][n + 1], 'L'), 1)])
         return g  
@@ -221,10 +266,14 @@ class TrainTrack(SageObject):
         """
         Return number of complementary regions of train track. 
 
-        EXAMPLES::
-        sage: tt = TrainTrack([ [0,'+',0,0,'+',1], [0,'-',0,1,'+',0],
-        [1,'+',1,2,'-',0], [2,'+',0,2,'+', 1], [1,'-',0,3,'+',0],
-        [3,'-',0,3,'-',1] ])  
+        EXAMPLES::  
+        sage: tt = TrainTrack([[-2,1],[2,-1]])
+        sage: tt.num_complementary_components()
+        sage: 1 
+        sage: tt = TrainTrack([ [1,-1], [2], [3], [4.-4], [-2,-3], [5], [6,-6], [-5] ])
+        sage: tt.num_complementary_components()
+        sage: 4 
+
         """
         ttgraph = self.puncturefinder_graph()
         return ttgraph.connected_components_number() 
@@ -244,7 +293,7 @@ class TrainTrack(SageObject):
         G = tt.puncturefinder_graph()
         complementary_regions_list = []
         for c in G.connected_components():
-            l = [v[0] for v in c if v[0] not in l]
+            l = [v for v in c]
             complementary_regions_list.append(l) 
         return complementary_regions_list
 
@@ -394,17 +443,12 @@ class TrainTrack(SageObject):
         Return list of cusp counts for each puncture. Punctures ordered large to small. 
 
         EXAMPLES::
-        sage: tt = TrainTrack([[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]])
+        sage: tt = TrainTrack([[1,-1], [-2,2]])
         sage: tt.num_cusps_list()
-        sage: [2, 0, 0]
-        sage: tt = TrainTrack([ [0,'+',0,0,'+',1], [0,'-',0,1,'+',0],
-        [1,'+',1,2,'-',0], [2,'+',0,2,'+', 1], [1,'-',0,3,'+',0],
-        [3,'-',0,3,'-',1] ])
+        sage: [0, 1, 1]
+        sage: tt = TrainTrack([ [1,-1],[2],[-2,-3],[5],[6,-6],[-5],[4,-4],[3] ])
         sage: tt.num_cusps_list()
         sage: [1, 1, 1, 1]
-        sage: tt = TrainTrack([[0,'+',0,1,'-',0], [0,'-',0,0,'-',1], [1,'+',0,1,'+',1], [2,'+',0,2,'+',1], [2,'-',0,3,'-',1], [3,'+',0,4,'-',0], [3,'-',0,4,'+',0], [4,'+',1,5,'-',0], [5,'+',0,7,'-',1], [5,'+',1,6,'+',0], [7,'-',0,6,'+',1], [7,'+',0,6,'-',0]])
-        sage: tt.num_cusps_list()
-        sage: [1,1,3,3]
         """
         lst = []
         G = self.puncturefinder_graph()
@@ -419,7 +463,11 @@ class TrainTrack(SageObject):
         """
         EXAMPLES:
 
+<<<<<<< HEAD
         sage: tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3], [-5], [6, -6] ])
+=======
+        sage: tt = [[1,-1], [2], [-2,-3], [5], [6,-6], [-5], [4,-4], [3]]
+>>>>>>> Update Traintracks puncture counter
         sage: tt.is_trivalent()
         sage: True
         
@@ -437,15 +485,15 @@ class TrainTrack(SageObject):
 
         EXAMPLES::
         
-        sage: tt = TrainTrack([ [0,'+',2,0,'+',0], [0,'-',0,0,'+',1] ])
+        sage: tt = TrainTrack([ [1,-1], [2,-2] ])
         sage: G = tt.recurrence_graph()
         sage: G.edges()
         sage: [(1, 2), (-1, 2), (2, 2), (-2, 1), (-2, -1), (-2, -2)]
-        sage: tt = TrainTrack([ [0,'+',0,0,'-',0], [0,'+',1,0,'-',1] ])
+        sage: tt = TrainTrack([ [1,2], [-2,-1] ])
         sage: G = tt.recurrence_graph()
         sage: G.edges()
         sage: [(1, 1), (1, 2), (2, 1), (2, 2), (-1, -1), (-1, -2), (-2, -1), (-2, -2)]
-        sage: tt = TrainTrack([[0,'+',0,0,'+',1], [0,'-',0,2,'+',0], [1,'+',0,2,'+',1], [1,'-',0,1,'-',1], [2,'-',0,3,'-',0], [3,'+',0,3,'+',1]])
+        sage: tt = TrainTrack([ [1,-1], [2], [-2.-3], [5], [6,-6], [-5], [4,-4], [3] ])
         sage: G = tt.recurrence_graph()
         sage: G.edges()
         sage: [(1, 2), (-1, 2), (2, 5), (-2, 1), (-2,-1), (3, 5), (-3, 4), (-3, -4), (4, 3), (-4, 3), (5, 6), (5, -6), (-5, -2), (-5, -3), (6, -5), (-6, -5)]
@@ -453,16 +501,12 @@ class TrainTrack(SageObject):
         """
 
         g = DiGraph(multiedges=True)
-        for b in self.branches(): 
+        for i in range(len(self._gluing_list) // 2):
         #draw edges between half branches with no cusps between them 
-            if b[4] == '+':
-                g.add_edges([(self.outgoing_branches(b[0], b[1])[b[2]], self.outgoing_branches(b[3],'-')[i]) for i in range(len(self.outgoing_branches(b[3],'-')))])
-            elif b[4] == '-':
-                g.add_edges([(self.outgoing_branches(b[0], b[1])[b[2]], self.outgoing_branches(b[3],'+')[i]) for i in range(len(self.outgoing_branches(b[3],'+')))])
-            if b[1] == '+':
-                g.add_edges([(self.outgoing_branches(b[3], b[4])[b[5]], self.outgoing_branches(b[0],'-')[i]) for i in range(len(self.outgoing_branches(b[0],'-')))])
-            elif b[1] == '-':
-                g.add_edges([(self.outgoing_branches(b[3], b[4])[b[5]], self.outgoing_branches(b[0],'+')[i]) for i in range(len(self.outgoing_branches(b[0],'+')))])
+            j, k = len(self._gluing_list[2*i]), len(self._gluing_list[2*i + 1])
+            for m, n in zip(range(j), range(k)):
+                g.add_edges([(self._gluing_list[2*i][m], self._gluing_list[2*i + 1][n]) for n in range(k)])
+                g.add_edges([(self._gluing_list[2*i + 1][n], self._gluing_list[2*i][m]) for m in range(j)])
         return g 
 
     def is_recurrent(self):
