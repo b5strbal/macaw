@@ -20,7 +20,7 @@ EXAMPLES::
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 2 of the License, or
-# (at your option) any later version.
+# (at your option) anys later version.
 #                  http://www.gnu.org/licenses/
 #*****************************************************************************
 
@@ -332,15 +332,7 @@ class PantsDecomposition(Surface):
             #print rt_ls
             return PantsDecomposition(rt_ls)
 
-    def _ignore_dir(self, x):
-        if x < 0:
-            return ~x
-        else:
-            return x
-
-    def _bool_dir(self,x):
-        return self._p_map[x][2] == 0
-            
+      
 
 
     def dehn_thurston_tt(self,pants_pieces,annulus_pieces):
@@ -430,21 +422,21 @@ class PantsDecomposition(Surface):
                     punc_n2 = p_ls_neg[(base_idx_neg+1)%3]
                     punc_n3 = p_ls_neg[(base_idx_neg+2)%3]
                     if p_type == 0:                        
-                        train_track_ls.append(self._filter_ls([punc_key, -self._offset(baseoffset, punc_p2), self._offset(baseoffset, punc_p3)]))
+                        train_track_ls.append(PantsDecomposition._filter_ls([punc_key, -self._offset(baseoffset, punc_p2), self._offset(baseoffset, punc_p3)]))
                     elif p_type == base_idx+1:###DEBUG
-                        train_track_ls.append(self._filter_ls([punc_key, -self._offset(baseoffset, punc_p2), self._offset(baseoffset, -punc_key), self._offset(baseoffset, punc_p3),-self._offset(baseoffset, -punc_key)]))
+                        train_track_ls.append(PantsDecomposition._filter_ls([punc_key, -self._offset(baseoffset, punc_p2), self._offset(baseoffset, -punc_key), self._offset(baseoffset, punc_p3),-self._offset(baseoffset, -punc_key)]))
                     elif (p_type - base_idx)%3 == 2:###DEBUG
-                        train_track_ls.append(self._filter_ls([punc_key, self._offset(baseoffset, punc_p3)]))
+                        train_track_ls.append(PantsDecomposition._filter_ls([punc_key, self._offset(baseoffset, punc_p3)]))
                     else:
-                        train_track_ls.append(self._filter_ls([punc_key, -self._offset(baseoffset, punc_p2)]))
+                        train_track_ls.append(PantsDecomposition._filter_ls([punc_key, -self._offset(baseoffset, punc_p2)]))
                     if p_type_neg == 0:
-                        train_track_ls.append(self._filter_ls([-punc_key, -self._offset(baseoffset, punc_n2), self._offset(baseoffset, punc_n3)]))
+                        train_track_ls.append(PantsDecomposition._filter_ls([-punc_key, -self._offset(baseoffset, punc_n2), self._offset(baseoffset, punc_n3)]))
                     elif p_type_neg == base_idx_neg+1:###
-                        train_track_ls.append(self._filter_ls([-punc_key, -self._offset(baseoffset, punc_n2), self._offset(baseoffset, punc_key), self._offset(baseoffset, punc_n3), -self._offset(baseoffset, punc_key)]))
+                        train_track_ls.append(PantsDecomposition._filter_ls([-punc_key, -self._offset(baseoffset, punc_n2), self._offset(baseoffset, punc_key), self._offset(baseoffset, punc_n3), -self._offset(baseoffset, punc_key)]))
                     elif (p_type_neg- base_idx_neg)%3 == 2:
-                        train_track_ls.append(self._filter_ls([-punc_key, self._offset(baseoffset, punc_n3)]))
+                        train_track_ls.append(PantsDecomposition._filter_ls([-punc_key, self._offset(baseoffset, punc_n3)]))
                     else:
-                        train_track_ls.append(self._filter_ls([-punc_key, -self._offset(baseoffset, punc_n2)]))
+                        train_track_ls.append(PantsDecomposition._filter_ls([-punc_key, -self._offset(baseoffset, punc_n2)]))
                 elif orientation == 'R':
                     p_ls_idx = self._p_map[punc_key][0]
                     p_ls_idx_neg = self._p_map[punc_key][1]
@@ -459,21 +451,21 @@ class PantsDecomposition(Surface):
                     punc_n2 = p_ls_neg[(base_idx_neg+1)%3]
                     punc_n3 = p_ls_neg[(base_idx_neg+2)%3]
                     if p_type == 0:                        
-                        train_track_ls.append(self._filter_ls([-self._offset(baseoffset, punc_p2), self._offset(baseoffset, punc_p3), punc_key]))
+                        train_track_ls.append(PantsDecomposition._filter_ls([-self._offset(baseoffset, punc_p2), self._offset(baseoffset, punc_p3), punc_key]))
                     elif p_type == base_idx+1:###DEBUG
-                        train_track_ls.append(self._filter_ls([-self._offset(baseoffset, punc_p2), self._offset(baseoffset, -punc_key), self._offset(baseoffset, punc_p3),-self._offset(baseoffset, -punc_key), punc_key]))
+                        train_track_ls.append(PantsDecomposition._filter_ls([-self._offset(baseoffset, punc_p2), self._offset(baseoffset, -punc_key), self._offset(baseoffset, punc_p3),-self._offset(baseoffset, -punc_key), punc_key]))
                     elif (p_type - base_idx)%3 == 2:###DEBUG
-                        train_track_ls.append(self._filter_ls([self._offset(baseoffset, punc_p3), punc_key]))
+                        train_track_ls.append(PantsDecomposition._filter_ls([self._offset(baseoffset, punc_p3), punc_key]))
                     else:
-                        train_track_ls.append(self._filter_ls([-self._offset(baseoffset, punc_p2), punc_key]))
+                        train_track_ls.append(PantsDecomposition._filter_ls([-self._offset(baseoffset, punc_p2), punc_key]))
                     if p_type_neg == 0:
-                        train_track_ls.append(self._filter_ls([-self._offset(baseoffset, punc_n2), self._offset(baseoffset, punc_n3), -punc_key]))
+                        train_track_ls.append(PantsDecomposition._filter_ls([-self._offset(baseoffset, punc_n2), self._offset(baseoffset, punc_n3), -punc_key]))
                     elif p_type_neg == base_idx_neg+1:###
-                        train_track_ls.append(self._filter_ls([-self._offset(baseoffset, punc_n2), self._offset(baseoffset, -punc_key), self._offset(baseoffset, punc_n3), -self._offset(baseoffset, -punc_key), -punc_key]))
+                        train_track_ls.append(PantsDecomposition._filter_ls([-self._offset(baseoffset, punc_n2), self._offset(baseoffset, -punc_key), self._offset(baseoffset, punc_n3), -self._offset(baseoffset, -punc_key), -punc_key]))
                     elif (p_type_neg-base_idx_neg)%3 == 2:
-                        train_track_ls.append(self._filter_ls([self._offset(baseoffset, punc_n3), -punc_key]))
+                        train_track_ls.append(PantsDecomposition._filter_ls([self._offset(baseoffset, punc_n3), -punc_key]))
                     else:
-                        train_track_ls.append(self._filter_ls([-self._offset(baseoffset, punc_n2), -punc_key]))
+                        train_track_ls.append(PantsDecomposition._filter_ls([-self._offset(baseoffset, punc_n2), -punc_key]))
                 else:
                     raise ValueError('Specify connector type by \'L\' and \'R\'')            
             
@@ -493,7 +485,7 @@ class PantsDecomposition(Surface):
         else:
             return 0
 
-    def _filter_ls(self, ls):
+    def _filter_ls(ls):
         return [x for x in ls if x != 0]
         
     def generating_curves(self):
