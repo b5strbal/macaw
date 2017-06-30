@@ -68,42 +68,52 @@ class PantsDecomposition(Surface):
         punc_map = {}
         edge_ls = []
         gluing_cnt = 0
+        gluing_set = set()
+        non_ori_punc_set = set()
+
 
         for i in range(len(p_list)):
             pant = p_list[i]
             if len(pant) != 3:
                 raise ValueError('One pant should have three punctures')
             for punc in pant:
-                punc_key = self._ignore_dir(punc)
-                if punc in punc_map.keys() and punc_map[punc][2] > 0:
+                if punc == 0:
+                    raise ValueError('Punctures should be named as non-zero integer')
+                punc_key = abs(punc)
+                if punc in punc_map.keys() and punc_map[punc][0]:
                     weight = 1
+                    non_ori_punc_set.add(punc)
                 else:
                     weight = 0
                 if punc_key in punc_map.keys():
-                    if punc_map[punc_key][1] != None:
+                    if punc_map[punc_key][1] != None and punc_map[punc_key][0] != None:
                         raise ValueError("Each puncture can only be glued once")
                     gluing_cnt += 1
-                    punc_map[punc_key][1] = i
-                    punc_map[punc_key][2] = weight
-                    edge_ls.append((punc_map[punc_key][0], i, weight))
+                    gluing_set.add(punc_key)
+                    if punc < 0:
+                        punc_map[punc_key][1] = i
+                    else:
+                        punc_map[punc_key][0] = i
+                    edge_ls.append((punc_map[punc_key][0], punc_map[punc_key][1], weight))
+                    gluing_set.add(punc_key)
                 else:
                     if punc < 0:
-                        punc_map[punc_key] = [i, None, 0]
+                        punc_map[punc_key] = [None, i]
                     else:
-                        punc_map[punc_key] = [i, None, 1]
+                        punc_map[punc_key] = [i, None]
 
         # check for connectedness
         print edge_ls
         g = Graph(edge_ls)
+
+        print g
+
         if not g.is_connected():
             raise ValueError('Invalid input. Surface should be connect')
 
         # orientation
-        orientable = True
-        for cycle in g.cycle_basis(output='edge'):
-            cycle_weight = sum([e[2] for e in cycle])
-            if cycle_weight % 2 == 1:
-                orientable = False
+        orientable = True ### DEBUG
+        #orientable = PantsDecomposition._is_orientable(g) ### DEBUG
 
         euler_char = -1*num_pants 
         num_puncture = num_pants*3 - 2*gluing_cnt
@@ -111,6 +121,17 @@ class PantsDecomposition(Surface):
         print self.__repr__()
         self._p_list = p_list
         self._p_map = punc_map
+        self._gluing_set = gluing_set
+        self._non_ori_punc_set = non_ori_punc_set
+
+    def _is_orientable(g):
+        orientable = True
+        for cycle in g.cycle_basis(output='edge'):
+            cycle_weight = sum([e[2] for e in cycle])
+            if cycle_weight % 2 == 1:
+                orientable = False
+        return orientable
+
 
     def __repr__(self):
         return 'Pants decomposition of ' + super(PantsDecomposition,self).__repr__().lower()
@@ -293,7 +314,7 @@ class PantsDecomposition(Surface):
                 mapping_punc_dict[~punc_22] = ~punc_23
             if ~punc_23 not in mapping_punc_dict:
                 mapping_punc_dict[~punc_23] = ~punc_12
-            punc_ls = [self._ignore_dir(punc_11), self._ignore_dir(punc_12), self._ignore_dir(punc_13), self._ignore_dir(punc_22), self._ignore_dir(punc_23)]
+            punc_ls = [abs(punc_11), abs(punc_12), abs(punc_13), abs(punc_22), abs(punc_23)]
             change_pant_set = set()
             rt_ls = list(self._p_list)
             for p in punc_ls:
@@ -336,6 +357,9 @@ class PantsDecomposition(Surface):
         '''
 
         """
+        pants_pieces: list of integer 0~3
+        annulus_pieces: dict of l,r 
+
         Return a Dehn-Thurston train track.
 
         EXAMPLES::
@@ -372,131 +396,105 @@ class PantsDecomposition(Surface):
         """
         # for strange torus
         if self._genus == 1:
-            print 'bbb'
+            raise NotImplementedError('Dehn-Thurston traintrack on torus is not implemented yet')
         else:
             train_track_ls = []
 
-            if len(annulus_pieces) != self._conn_cnt:
-                raise ValueError('Number of connectors should be equal to number of gluing') ####TODO change in the future
+            if len(pants_pieces) != len(self._p_list):
+                raise ValueError('Need to specify type for each pants')
 
-            #anuulus_set = set()
-            annulus_map = {}
+            baseoffset = len(self._p_map)
 
-            for glue in annulus_pieces:
-                conn_temp = glue[:2]
-                if conn_temp not in self._conn:
-                    raise ValueError('The specified puncture is not glued')
-                conn1 = self._conn[glue[:2]][0]
-                conn2 = self._conn[glue[:2]][1]
+            for punc_key in annulus_pieces.keys():
 
-                direction = glue[2]
+                if punc_key not in self._gluing_set:
+                    raise ValueError('Selected puncture is not glued.')
 
-                if conn1 in annulus_map.keys() or conn2 in annulus_map.keys():
-                    raise ValueError('Only one annulus connector is allowed in each gluing')
+                if punc_key in self._non_ori_punc_set:
+                    raise NotImplementedError('Train Track for non-orientable gluing have not been implemented yet.')
 
-                switch1 = ('conn', conn1[0], conn1[1])
-                switch2 = ('conn', conn2[0], conn2[1])
-
-                link = (switch1, '-', 0, switch2, '-', 0)
-                train_track_ls.append(link)
-
-                if direction == 'R':
-                    link2 = (switch1, '+', 1, switch2, '+', 1)
-                    annulus_map[conn1] = (switch1, '+', 0)
-                    annulus_map[conn2] = (switch2, '+', 0)
-                else:
-                    link2 = (switch1, '+', 0, switch2, '+', 0)
-                    annulus_map[conn1] = (switch1, '+', 1)
-                    annulus_map[conn2] = (switch2, '+', 1)               
-                    
-                train_track_ls.append(link2)
-
-            for p in pants_pieces:
-                pant = p[0]
-                tt_type = p[1]
-
-                if type(tt_type) != int or tt_type > 3 or tt_type < 0:
-                    raise ValueError('Pant type should be integer 0-3')
-
-                if pant not in self._pants.keys():
-                    raise ValueError('Such pant do not exit')
-                # tt in the pant
-                punctures = self._pants[pant]
-                curve_cnt = punctures.count(True)
-                if tt_type == 0:                    
-                    if curve_cnt == 3:
-                        for i in range(3):
-                            switch1 = ('pant', pant, i)
-                            switch2 = ('pant', pant, (i+1) % 3)
-                            link = (switch1, '+', 0, switch2, '+', 1)
-                            train_track_ls.append(link)
-                        for i in range(3):
-                            switchp = ('pant', pant, i)
-                            switchc = annulus_map[(pant, i)]
-                            link2 = (switchp, '-', 0, switchc[0], switchc[1], switchc[2])
-                            train_track_ls.append(link2)
-                    elif curve_cnt == 1:
-                        raise ValueError('blablabla') ######TO ASK?????######################
+                orientation = annulus_pieces[punc_key]
+                # first list '+'
+                if orientation == 'L':
+                    p_ls_idx = self._p_map[punc_key][1]
+                    p_ls_idx_neg = self._p_map[punc_key][0]
+                    p_ls = self._p_list[p_ls_idx]
+                    p_ls_neg = self._p_list[p_ls_idx_neg]
+                    base_idx = p_ls.index(-punc_key)
+                    base_idx_neg = p_ls_neg.index(punc_key)
+                    p_type = pants_pieces[p_ls_idx]
+                    p_type_neg = pants_pieces[p_ls_idx_neg]
+                    punc_p2 = p_ls[(base_idx+1)%3]
+                    punc_p3 = p_ls[(base_idx+2)%3]
+                    punc_n2 = p_ls_neg[(base_idx_neg+1)%3]
+                    punc_n3 = p_ls_neg[(base_idx_neg+2)%3]
+                    if p_type == 0:                        
+                        train_track_ls.append(self._filter_ls([punc_key, -self._offset(baseoffset, punc_p2), self._offset(baseoffset, punc_p3)]))
+                    elif p_type == base_idx+1:###DEBUG
+                        train_track_ls.append(self._filter_ls([punc_key, -self._offset(baseoffset, punc_p2), self._offset(baseoffset, -punc_key), self._offset(baseoffset, punc_p3),-self._offset(baseoffset, -punc_key)]))
+                    elif (p_type - base_idx)%3 == 2:###DEBUG
+                        train_track_ls.append(self._filter_ls([punc_key, self._offset(baseoffset, punc_p3)]))
                     else:
-                        temp_link = []
-                        for i in range(3):
-                            if punctures[i]:
-                                temp_conn = (pant, i)
-                                temp_link.append(annulus_map[temp_conn])
-                                #del annulus_map[temp_conn] 
-                        train_track_ls.append(tuple(temp_link))
-                else:
-                    punc = tt_type - 1
-                    temp_conn = (pant, punc)
-                    if curve_cnt == 1:
-                        selfswitch = ('self', pant, punc)
-                        link = (selfswitch, '+', 0, selfswitch, '+', 1)
-                        train_track_ls.append(link)
-                        temp_switch = annulus_map[temp_conn]
-                        link2 = (selfswitch, '-', 0, temp_switch[0], temp_switch[1], temp_switch[2])
-                        train_track_ls.append(link2)
+                        train_track_ls.append(self._filter_ls([punc_key, -self._offset(baseoffset, punc_p2)]))
+                    if p_type_neg == 0:
+                        train_track_ls.append(self._filter_ls([-punc_key, -self._offset(baseoffset, punc_n2), self._offset(baseoffset, punc_n3)]))
+                    elif p_type_neg == base_idx_neg+1:###
+                        train_track_ls.append(self._filter_ls([-punc_key, -self._offset(baseoffset, punc_n2), self._offset(baseoffset, punc_key), self._offset(baseoffset, punc_n3), -self._offset(baseoffset, punc_key)]))
+                    elif (p_type_neg- base_idx_neg)%3 == 2:
+                        train_track_ls.append(self._filter_ls([-punc_key, self._offset(baseoffset, punc_n3)]))
                     else:
-                        selfswitch1 = ('self_right', pant, punc)
-                        selfswitch2 = ('self_left', pant, punc)
-                        link = (selfswitch1, '+', 0, selfswitch2, '-', 0)
-                        link2 = (selfswitch1, '+', 1, selfswitch2, '+', 0)
-                        train_track_ls.append(link)
-                        train_track_ls.append(link2)
-                        if curve_cnt == 3:
-                            switch = ('pant', pant, punc)
-                            link3 = (selfswitch1, '-', 0, switch, '+', 1)
-                            plus_punc = tt_type%3
-                            minus_punc = (punc-1) % 3
-                            plus_conn = (pant, plus_punc)
-                            plus_switch = annulus_map[plus_conn]
-                            minus_conn = (pant, minus_punc)
-                            minus_switch = annulus_map[minus_conn]
-                            temp_switch = annulus_map[temp_conn]
-                            link4 = (selfswitch2, '+', 1, plus_switch[0], plus_switch[1], plus_switch[2])
-                            link5 = (switch, '+', 0, minus_switch[0], minus_switch[1], minus_switch[2])
-                            link6 = (switch, '-', 0, temp_switch[0], temp_switch[1], temp_switch[2])
-                            train_track_ls.append(link3)
-                            train_track_ls.append(link4)
-                            train_track_ls.append(link5)
-                            train_track_ls.append(link6)
-                        else:
-                            punctures_cp = list(punctures)
-                            punctures_cp[punc] = False
-                            idx = punctures_cp.index(True)
-                            switch = annulus_map[(pant, punc)]
-                            switch_idx = annulus_map[(pant, idx)]
-                            link6 = (selfswitch1, '-', 0, switch[0], switch[1], switch[2])
-                            link7 = (selfswitch2, '+', 0, switch_idx[0], switch_idx[1], switch_idx[2])
-                            train_track_ls.append(link6)
-                            train_track_ls.append(link7)
-            traintrack = TrainTrack(train_track_ls)
+                        train_track_ls.append(self._filter_ls([-punc_key, -self._offset(baseoffset, punc_n2)]))
+                elif orientation == 'R':
+                    p_ls_idx = self._p_map[punc_key][0]
+                    p_ls_idx_neg = self._p_map[punc_key][1]
+                    p_ls = self._p_list[p_ls_idx]
+                    p_ls_neg = self._p_list[p_ls_idx_neg]
+                    base_idx = p_ls.index(punc_key)
+                    base_idx_neg = p_ls_neg.index(-punc_key)
+                    p_type = pants_pieces[p_ls_idx]
+                    p_type_neg = pants_pieces[p_ls_idx_neg]
+                    punc_p2 = p_ls[(base_idx+1)%3]
+                    punc_p3 = p_ls[(base_idx+2)%3]
+                    punc_n2 = p_ls_neg[(base_idx_neg+1)%3]
+                    punc_n3 = p_ls_neg[(base_idx_neg+2)%3]
+                    if p_type == 0:                        
+                        train_track_ls.append(self._filter_ls([-self._offset(baseoffset, punc_p2), self._offset(baseoffset, punc_p3), punc_key]))
+                    elif p_type == base_idx+1:###DEBUG
+                        train_track_ls.append(self._filter_ls([-self._offset(baseoffset, punc_p2), self._offset(baseoffset, -punc_key), self._offset(baseoffset, punc_p3),-self._offset(baseoffset, -punc_key), punc_key]))
+                    elif (p_type - base_idx)%3 == 2:###DEBUG
+                        train_track_ls.append(self._filter_ls([self._offset(baseoffset, punc_p3), punc_key]))
+                    else:
+                        train_track_ls.append(self._filter_ls([-self._offset(baseoffset, punc_p2), punc_key]))
+                    if p_type_neg == 0:
+                        train_track_ls.append(self._filter_ls([-self._offset(baseoffset, punc_n2), self._offset(baseoffset, punc_n3), -punc_key]))
+                    elif p_type_neg == base_idx_neg+1:###
+                        train_track_ls.append(self._filter_ls([-self._offset(baseoffset, punc_n2), self._offset(baseoffset, -punc_key), self._offset(baseoffset, punc_n3), -self._offset(baseoffset, -punc_key), -punc_key]))
+                    elif (p_type_neg-base_idx_neg)%3 == 2:
+                        train_track_ls.append(self._filter_ls([self._offset(baseoffset, punc_n3), -punc_key]))
+                    else:
+                        train_track_ls.append(self._filter_ls([-self._offset(baseoffset, punc_n2), -punc_key]))
+                else:
+                    raise ValueError('Specify connector type by \'L\' and \'R\'')            
             
+            #traintrack = TrainTrack(train_track_ls)            
             print train_track_ls
+            traintrack = TrainTrack(train_track_ls)       
             print repr(traintrack)
-            return traintrack
+            #return traintrack
         pass
         
+    def _offset(self, baseoffset, x):
+        if abs(x) in self._gluing_set:
+            if x>0:
+                return x + baseoffset
+            else:
+                return abs(x)+2*baseoffset
+        else:
+            return 0
 
+    def _filter_ls(self, ls):
+        return [x for x in ls if x != 0]
+        
     def generating_curves(self):
         """
         Return a list of curves whose twists generate.
