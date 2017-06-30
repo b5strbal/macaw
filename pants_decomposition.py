@@ -103,7 +103,7 @@ class PantsDecomposition(Surface):
                         punc_map[punc_key] = [i, None]
 
         # check for connectedness
-        print edge_ls
+        #print edge_ls
         g = Graph(edge_ls)
 
         print g
@@ -118,7 +118,7 @@ class PantsDecomposition(Surface):
         euler_char = -1*num_pants 
         num_puncture = num_pants*3 - 2*gluing_cnt
         super(PantsDecomposition,self).__init__(euler_char = euler_char, num_punctures = num_puncture, is_orientable = orientable)
-        print self.__repr__()
+        #print self.__repr__()
         self._p_list = p_list
         self._p_map = punc_map
         self._gluing_set = gluing_set
@@ -202,6 +202,8 @@ class PantsDecomposition(Surface):
           and ``carrying_map`` is a train track map from `\tau` to
           another Dehn-Thurston train track of self.
 
+          measured_tt: t_i
+
         """
         pass
 
@@ -279,24 +281,23 @@ class PantsDecomposition(Surface):
         if not self.is_orientable():
             raise NotImplementedError('Elementary move for non-orientable surface has not been implement yet.')
 
-        curve_key = self._ignore_dir(pants_curve)
+        curve_key = abs(pants_curve)
 
         if curve_key not in self._p_map.keys():
             raise ValueError('No such puncture exsit.')
         p1 = self._p_map[curve_key][0]
         p2 = self._p_map[curve_key][1]
-        ori = True if self._p_map[curve_key][2] > 0 else False
-        if p2 == None:
+        if p2 == None or p1 == None:
             raise ValueError('Specified curve is not glued.')
         if p1 == p2:
             return PantsDecomposition(self._p_list)
         else:
             p1_tuple = self._p_list[p1]
             p2_tuple = self._p_list[p2]
-            punc_11_idx = p1_tuple.index(pants_curve) if pants_curve in p1_tuple else p1_tuple.index(~pants_curve)
-            punc_11 = self._ignore_dir(p1_tuple[punc_11_idx])
-            punc_21_idx = p2_tuple.index(pants_curve) if pants_curve in p2_tuple else p2_tuple.index(~pants_curve)
-            punc_21 = self._ignore_dir(p2_tuple[punc_21_idx])
+            punc_11_idx = p1_tuple.index(curve_key)
+            punc_11 = p1_tuple[punc_11_idx]
+            punc_21_idx = p2_tuple.index(-curve_key)
+            punc_21 = p2_tuple[punc_21_idx]
             punc_12 = p1_tuple[(punc_11_idx+1)%3]
             punc_13 = p1_tuple[(punc_11_idx+2)%3]
             punc_22 = p2_tuple[(punc_21_idx+1)%3]
@@ -306,14 +307,14 @@ class PantsDecomposition(Surface):
             mapping_punc_dict[punc_13] = punc_22
             mapping_punc_dict[punc_22] = punc_23
             mapping_punc_dict[punc_23] = punc_12
-            if ~punc_12 not in mapping_punc_dict:
-                mapping_punc_dict[~punc_12] = ~punc_13
-            if ~punc_13 not in mapping_punc_dict:
-                mapping_punc_dict[~punc_13] = ~punc_22
-            if ~punc_22 not in mapping_punc_dict:
-                mapping_punc_dict[~punc_22] = ~punc_23
-            if ~punc_23 not in mapping_punc_dict:
-                mapping_punc_dict[~punc_23] = ~punc_12
+            if -punc_12 not in mapping_punc_dict:
+                mapping_punc_dict[-punc_12] = -punc_13
+            if -punc_13 not in mapping_punc_dict:
+                mapping_punc_dict[-punc_13] = -punc_22
+            if -punc_22 not in mapping_punc_dict:
+                mapping_punc_dict[-punc_22] = -punc_23
+            if -punc_23 not in mapping_punc_dict:
+                mapping_punc_dict[-punc_23] = -punc_12
             punc_ls = [abs(punc_11), abs(punc_12), abs(punc_13), abs(punc_22), abs(punc_23)]
             change_pant_set = set()
             rt_ls = list(self._p_list)
@@ -328,7 +329,7 @@ class PantsDecomposition(Surface):
                     if ch_key in mapping_punc_dict.keys():
                         cp_ls[i] = mapping_punc_dict[ch_key]
                 rt_ls[pant_idx] = cp_ls
-            print rt_ls
+            #print rt_ls
             return PantsDecomposition(rt_ls)
 
     def _ignore_dir(self, x):
@@ -477,10 +478,10 @@ class PantsDecomposition(Surface):
                     raise ValueError('Specify connector type by \'L\' and \'R\'')            
             
             #traintrack = TrainTrack(train_track_ls)            
-            print train_track_ls
+            #print train_track_ls
             traintrack = TrainTrack(train_track_ls)       
-            print repr(traintrack)
-            #return traintrack
+            #print repr(traintrack)
+            return traintrack
         pass
         
     def _offset(self, baseoffset, x):
