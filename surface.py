@@ -169,7 +169,10 @@ class Surface(SageObject):
             Closed surface of genus 2
 
             sage: Surface(0,1)
-            Sphere with 1 puncture
+            Disk
+
+            sage: Surface(0,2)
+            Annulus
 
             sage: Surface(1,2)
             Torus with 2 punctures
@@ -201,6 +204,10 @@ class Surface(SageObject):
         if self.is_orientable():
             if self.genus() == 0:
                 s = 'Sphere'
+                if self.num_punctures() == 1:
+                    return 'Disk'
+                if self.num_punctures() == 2:
+                    return 'Annulus'
             elif self.genus() == 1:
                 s = 'Torus'
             else:
