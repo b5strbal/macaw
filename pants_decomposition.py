@@ -30,6 +30,17 @@ from sage.all import Graph, preparser
 from train_track import TrainTrack
 import collections
 
+class PantsCoordinates(namedtuple("PantsCoordinates",
+                                  "l11 l22 l33 l12 l13 l23")):
+    r"""
+    The `\lambda_{ij}` for a pair of pants. `\lambda_{ij}` is the
+    measure of the branch connecting the boundary components i and j.
+    At most three of them can be nonzero.
+    """
+
+
+    
+
 class PantsDecomposition(Surface):
     """A pants decomposition of a surface.
 
@@ -143,6 +154,7 @@ class PantsDecomposition(Surface):
         """
         pass
     
+<<<<<<< HEAD
     def splitting_sequence_from_twist(self,curve,direction,measured_tt,power=1):
         """Return a sequence in the splitting tree for the Dehn twist.
 
@@ -244,6 +256,8 @@ class PantsDecomposition(Surface):
         pass
 
     
+=======
+>>>>>>> Sketch methods constructing unzipping sequences
 
     
         
@@ -345,11 +359,13 @@ class PantsDecomposition(Surface):
       
 
 
+    
     def dehn_thurston_tt(self,pants_pieces,annulus_pieces):
 
 
         """
         Return a Dehn-Thurston train track.
+<<<<<<< HEAD
 
         INPUT:
 
@@ -357,6 +373,9 @@ class PantsDecomposition(Surface):
         
         - ``annulus_pieces`` -- dictionary of connector type 'L' or 'R' 
 
+=======
+v
+>>>>>>> Sketch methods constructing unzipping sequences
         EXAMPLES::
 
             sage: p = PantsDecomposition([[1,-1,2],[-2,4,3],[-3,5,6],[-5,-4,-6]])
@@ -515,3 +534,412 @@ class PantsDecomposition(Surface):
         raise NotImplementedError
 
 
+
+# class DTTrainTrack(SageObject):
+#     """
+#     Dehn-Thurston train track for a pants decomposition.
+
+#     INPUT:
+
+#     - ``pants_coordinates`` -- a list of PantsCoordinates, each
+#       containing the value of `\lambda_{ij}` for the corresponding
+#       pair of pants
+
+#     - ``twist_coordinates`` -- the list of `t_i`, the twisting
+#       numbers about the pants curves.
+
+#     EXAMPLES::
+
+#     sage: p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
+#     sage: p_coord = [(0,0,0,1,1,1),(0,0,1,0,1,1)]
+#     sage: t_coord = [-3,2,5]
+#     sage: DTTrainTrack(p,p_coord,t_coord)
+#     Train track on ...
+#     """
+
+#     def __init__(self,pants_decomposition, pants_coordinates,
+#                  twist_coordinates):
+#         self.tt 
+#         self.pants_decomposition # lambda_ij
+#         self.twist_coordinates # t_i
+#         self.branch_to_label_map # map from 1,...,num_branches to the
+#         # t_i and l_ij
+
+
+        
+
+    
+# class MeasuredLamination(SageObject):
+#     pass
+    
+
+# class DehnThurstonCoordinates(MeasuredLamination):
+#     """
+#     Dehn-Thurston coordinates of a measured lamination.
+
+#     EXAMPLES::
+
+#     sage: p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
+#     sage: DehnThurstonCoordinates(p,[0,1,2],[1,-2,-1])
+#     Measured lamination on the closed surface of genus 2
+
+#     """
+#     def __init__(self,pants_decomposition,m,t):
+#         """
+#         """
+#         pass
+
+#     def m(self,i):
+#         """
+#         Return `m_i`.
+#         """
+                 
+#     def t(self,i):
+#         """
+#         Return `t_i`.
+#         """
+
+#     def l(self,i,j,pair_of_pants):
+#         r"""
+#         Return `\lambda_{ij}` in the specified pair of pants.
+
+#         INPUT: 1<= i,j <=3
+        
+#         """
+
+#     def pants_decomposition(self):
+#         """
+#         Return the underlying pants decomposition.
+#         """
+
+
+
+        
+
+
+# Old Version
+# class Decision(namedtuple("Decision",
+#                           ["measure_A", "measure_B",
+#                            "unzipping_half_branch_A_smaller", 
+#                            "unzipping_half_branch_B_smaller",
+#                            "next_decision_A_smaller",
+#                            "next_decision_B_smaller"])): 
+#     r"""A decision about where to unzip based on comparing weights.
+
+#     We have either a measured Dehn-Thurston train track or a train
+#     track obtained by unzippings from a Dehn-Thurston train track after a
+#     sequence of unzippings. 
+
+#     - ``measure_A``, ``measure_B`` -- a linear combinations of
+#       measures on the branches in the original Dehn-Thurston train
+#       track. For example, [('l11',2), ('t1',-1)] encodes
+#       `2\lambda_{11} -t_1`.
+    
+#     - ``unzipping_half_branch_A_smaller`` -- the half-branch where the
+#       unzipping happens if ``measure_A``<``measure_B``. For example,
+#       (-5,2) means unzipping at the negative side of switch number 5
+#       (on pants curve 5), to the left of the 2nd branch. If the
+#       current train track is already an unzipped train track and the
+#       switches are not in bijection with the pants curves, some more
+#       information may be needed. 
+
+#     - ``unzipping_half_branch_B_smaller`` -- the half-branch where the
+#       unzipping happens if ``measure_B``<``measure_A``.
+
+#     - ``next_decision_A_smaller`` -- ``None`` if no other decision is
+#       needed if ``measure_A``<``measure_B``. Otherwise this is another
+#       Decision object encoding the next decision.
+
+#     - ``next_decision_A_smaller`` -- the same, taking effect when
+#       ``measure_B``<``measure_A``.
+
+#     """
+#     pass
+
+ 
+# class Decision(namedtuple("Decision",
+#                           ["condition", "switch", "unzip_pos",
+#                            "next_decisions"])): 
+#     r"""A decision about where to unzip based on comparing weights.
+
+#     We have either a measured Dehn-Thurston train track or a train
+#     track obtained by unzippings from a Dehn-Thurston train track after a
+#     sequence of unzippings. 
+
+#     - ``condition`` -- e.g. 'ti < 0' or 'l11 < t_1'.
+    
+#     - ``switch`` -- an oriented switch, i.e. a side a switch where the
+#       unzipping is performed. For type 1 moves, this should be 1 or 2.
+#       For type 2, the options are 1,2,3,4 or 5. If there is a scenario
+#       where a new switch is created or two switches merge, then we
+#       need additional information.
+
+#     - ``unzip_pos`` -- the index of the outgoing branch to the left of
+#       which the unzipping is performed. For example, 1 means unzipping
+#       between the left two branches. -1 means unzipping between the
+#       right two branches.
+
+#     - ``next_decisions`` -- a list of subsequent decisions. The cases
+#       should be mutually exclusive, but they do not need to cover all
+#       cases. If a case is not covered, no more decisions are made. If
+#       ``None``, no more decisions are made.
+
+#     """
+#     pass
+
+
+# type_1_decision_root = Decision(None,None,None,
+#                                 ['first_level_decisions'])
+# # TODO: Work out first level and lower level decision.
+
+# type_2_decision_root = Decision(None,None,None,
+#                                 ['first_level_decisions'])
+# # TODO: Work out first level and lower level decision.
+                                
+                                
+# # no unzippings are needed if the
+# # twist is in the good direction
+# left_twist_decision_root = Decision(None,None,None,[d_right])
+
+# right_twist_decision_root = Decision(None,None,None,[d_left])
+
+# d_left = Decision(
+#     condition = 'ti < 0', # left twisting
+#     switch = 1, # there is only one switch in the annulus
+#     unzip_pos = 1 # unzip between outgoing branches 0 and 1. Note that
+#     # outgoing branch 0 is the pants curve.
+#     next_decisions = None)
+
+# d_right = Decision(
+#     condition = 'ti > 0', # right twisting
+#     switch = 1, # there is only one switch in the annulus
+#     unzip_pos = -1 # unzip to the left of the rightmost outgoing
+#     # branch which is the pants curve. 
+#     next_decisions = None)
+
+
+
+
+def unzip_sequence_mapping_class(tt_map,pants_decomposition,codomain_embedding,mapping_class):
+    r"""Perform unzips determined by twisting about a pants curve.
+
+    We are handed a train track map whose domain `\mu` is any measured train
+    track and whose codomain `\tau` is a Dehn-Thurston train track for some
+    pants decomposition. We are also handed a mapping class `f`.
+
+    The goal is to perform (a minimal sequence of) unzips on `\mu`
+    and `\tau` to get train tracks `\mu'` and
+    `\tau'`. The unzipping sequences are required to satisfy the
+    following:
+    - `\mu` is unzipped according to its measure and `\mu'` is a
+    maximal train track (hence it is possible that non-canonical
+    choices have to be made)
+    - `\tau'` carries `\mu'`
+    - there exists another Dehn-Thurston train track `\tau_0` for the
+    same pants decomposition as '\tau` such
+    that `f(\tau')` is carried on `\tau_0`,
+
+    The method modifies the train track map from `\mu` to `\tau`
+    and does not make copies. This has three separate parts:
+    1. Modifying `\mu`
+    2. Modifying `\tau`
+    3. Modifying the ``CarryingData``
+
+    The method creates a `\tau_0` and the ``CarryingData`` between
+    `f(\tau)'` and `\tau`_0` and returns them.
+
+    INPUT:
+
+    - ``tt_map`` -- a TrainTrackMap whose codomain is a
+      Dehn-Thurston train track and whose domain is a measured train track
+
+    - ``pants_decomposition`` -- the pants decomposition of the
+      Dehn-Thurston train track
+
+    - ``codomain_embedding`` -- the embedding of the codomain train
+      track in the pants decomposition
+
+    - ``mapping_class`` -- a list of DehnTwists, encoding a product of
+      powers of Dehn twists, read left to right
+
+    OUTPUT:
+
+    a Dehn-Thurston train track (`\tau_0`) and the ``CarryingData``
+    for `f(\tau)` being carried on `\tau_0`.
+
+
+    """
+    dom = tt_map.domain
+    cod = tt_map.codomain
+    p = pants_decomposition
+
+    for twist in dehn_twists:
+        # changing the pants decomposition
+        for move in twist.elementary_moves:
+            dt_tt, codomain_embedding, cdata = \
+                unzip_sequence_elementary_move(tt_map, p,
+                                               codomain_embedding,
+                                               move)
+            # p is now the pants decomposition after the elementary
+            # move. Both the domain and the codomain of tt_map are
+            # changed by unzipping
+            
+            tt_map = TrainTrackMap(dom, dt_tt,
+                                   cdata*tt_map.carrying_data)
+
+        # applying the twist
+        dt_tt, codomain_embedding, cdata = \
+                unzip_sequence_pants_twist(tt_map, p,
+                                           codomain_embedding,
+                                           twist.pants_curve,
+                                           twist.power)
+
+        tt_map = TrainTrackMap(dom, dt_tt,
+                               cdata*tt_map.carrying_data)
+
+        # changing back the pants decomposition
+        for move in reversed(twist.elementary_moves):
+            dt_tt, codomain_embedding, cdata = \
+                unzip_sequence_elementary_move(tt_map, p,
+                                               codomain_embedding,
+                                               move)
+            
+            tt_map = TrainTrackMap(dom, dt_tt,
+                                   cdata*tt_map.carrying_data)
+
+            # WARNING: this is probably wrong for type 1 elementary moves,
+            # because applying a type 1 elementary move on the same
+            # curve twice does not result in the identity (the cyclic
+            # orientation in the pair of pants is reversed. So for
+            # type 1 moves, the above two line may need to be
+            # called three times in order to get the inverse.
+
+    return dt_tt, codomain_embedding, cdata
+        
+
+
+
+
+
+
+
+
+def unzip_sequence_pants_twist(tt_map,pants_decomposition,codomain_embedding,pants_curve,power=1):
+    r"""Perform unzips determined by twisting about a pants curve.
+
+    Same as ``unzip_sequence_mapping_class``, but instead of a general
+    mapping class, `f` is now a Dehn twist about a pants curve.
+
+    INPUT:
+
+    - ``tt_map`` -- 
+
+    - ``pants_decomposition`` -- 
+
+    - ``codomain_embedding`` -- 
+
+    - ``pants_curve`` -- the index of the pants curve about which we twist
+
+    - ``power`` -- (default:1) the power of the Dehn twist
+      performed. Power `n` means right twisting `n` times. Power
+      `-n` means twisting left `n` times.
+
+    OUTPUT:
+
+    a Dehn-Thurston train track (`\tau_0`), its embedding to the new
+    pants decomposition and the ``CarryingData`` for `f(\tau)` being
+    carried on `\tau_0`.
+
+    """
+
+    # Part 1: Trace the decision tree and perform
+    # tt_map.unzip_codomain for all decisions.
+    # 
+    # Part 2: Create `\tau_0`. This is easy, Penner's formulas tell
+    # which branches have to be drawn. More specifically, compute
+    # pants_coordinates and twist_coordinates and call DTTrainTrack(pants_coordinates,twist_coordinates)
+    # 
+    # Part 3: Compute the CarryingData for `f(\tau)` being carried on
+    # `\tau_0`. The branch-to-branch map is probably the easiest: this
+    # can be read from the formulas. The half-branch-to-half-branch
+    # map and the position between strands may involve
+    # combinatorial/isotopy considerations. Ideally, though, the
+    # branch-to-branch map uniquely determines the train track map.
+    # 
+    #
+    # 
+    #
+    # 
+    # ----------------------------------------
+    # Without Decisions:
+    dom = tt_map.domain
+    cod = tt_map.codomain
+
+    
+    tt_map.compute_measure_on_codomain()
+    
+    if power > 0:
+        if 
+
+
+
+    if power < 0:
+
+    pass
+
+
+
+
+
+    
+    
+
+def unzip_sequence_elementary_move(tt_map,pants_decomposition,
+                                   codomain_embedding,pants_curve):
+    r"""Perform unzips determined by an elementary move on the pants decomposition.
+
+    Same as ``unzip_sequence_mapping_class``, but instead of a mapping
+    class, now we have an elementary move a pants decomposition.
+
+    Here `\tau_0` is a Dehn-Thurston train track of the new pants
+    decomposition and we want `\tau'` to be carried on `\tau_0`.
+
+    INPUT:
+
+    - ``tt_map`` -- 
+
+    - ``pants_decomposition`` -- 
+
+    - ``codomain_embedding`` -- 
+
+    - ``pants_curve`` -- the index of the pants curve on which the
+      elementary move is performed
+
+    OUTPUT:
+
+    a Dehn-Thurston train track (`\tau_0`), its embedding to the
+    pants decomposition and the ``CarryingData``
+    for `f(\tau)` being carried on `\tau_0`.
+
+    """
+    pass
+
+
+class DehnTwist(namedtuple(elementary_moves,pants_curve,power)):
+    """
+    - ``elementary_moves`` -- a list of pants curve indices on which
+    elementary moves are performed.
+    
+    - ``pants_curve`` -- the index of the pants curve about which we
+      twist
+
+    - ``power`` -- the power of the Dehn twist
+      performed. Power `n` means right twisting `n` times. Power
+      `-n` means twisting left `n` times.
+    """
+
+
+
+
+    
+    

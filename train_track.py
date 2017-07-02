@@ -881,32 +881,44 @@ class TrainTrackMap(SageObject):
     def position_of_strands(self):
         return self._position_of_strands
 
-    def is_splitting(self):
-        """Return if the train track map is a splitting."""
-        pass
-
-    def splitting_branch(self):
-        """Return the splitting branch if it is a splitting."""
-        pass
-
-    def is_shift(self):
-        pass
-
-    def splitting_and_shifting_sequence(self):
-        """Return a splitting and shifting sequence."""
-    
-    def transition_matrix(self):
-        """
-        Return the transition matrix of the carrying map.
-        """
-        pass
-
     def __mul__(self):
         """
         Compose two carrying maps if possible.
         """
         pass
 
+    def compute_measure_on_codomain(self):
+        """
+        Compute the measure on the codomain from the measure of the
+        domain.
+        """
+        pass
+
+    def unzip_codomain(self,branch):
+        """Unzips the codomain and, if necessary, the domain, too.
+
+        The domain has to be a measured train track. If there is a way
+        to unzip the codomain so that the domain is carried, then that
+        unzipping is performed and the domain does not change. In this
+        case, the measure on the domain does not play a role. If there
+        is no way to split the codomain so that the domain is carried,
+        then the domain is unzipped according to the measure, and the
+        codomain is unzipped accordingly to preserve the carrying
+        relationship. If there are multiple way to unzip the domain
+        according to the measure, then one of the possible unzips is
+        performed - it is not specified which one.
+
+        Nothing is returned, all components of the carrying map are
+        changed internally.
+
+        INPUT:
+
+        - ``branch`` --
+
+        """
+
+
+    
 
     # ------------------------------------------------------------
     # Teichmuller/Alexander polynomial computation.
