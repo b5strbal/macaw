@@ -30,13 +30,6 @@ from sage.all import Graph, preparser
 from train_track import TrainTrack
 import collections
 
-class PantsCoordinates(namedtuple("PantsCoordinates",
-                                  "l11 l22 l33 l12 l23 l31")):
-    r"""
-    The `\lambda_{ij}` for a pair of pants. `\lambda_{ij}` is the
-    measure of the branch connecting the boundary components i and j.
-    At most three of them can be nonzero.
-    """
 
 
     
@@ -253,72 +246,6 @@ class PantsDecomposition(Surface):
             return PantsDecomposition(rt_ls)
 
       
-    def dehn_thurston_tt_new(self,pants_pieces,annulus_pieces):
-        """
-        Construct a Dehn-Thurston train track.
-
-        INPUT:
-
-        - ``pants_coordinates`` -- list of PantsCoordinates, one for
-        each pair of pants
-
-        - ``twist_coordinates`` -- list of integers, twisting numbers
-        for pants curves
-
-        OUTPUT:
-
-        the Dehn-Thurston train track and a label-to-branch
-        dictionary. The keys in the dictionary are 't_i' and
-        (k,'l_ij'), representing pants curves and branches connecting
-        boundary components in the `k`th pair of pants. The value is
-        the number of the branch in the gluing list of the train
-        track. If a branch is not part of the train track, the value
-        is zero.
-
-        EXAMPLES::
-
-            sage: p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
-            sage: p_coord1 = PantsCoordinates([0,0,0,1,1,2])
-            sage: p_coord2 = PantsCoordinates([3,0,0,0,5,1])
-            sage: tt, label_to_branch = p.dehn_thurston_tt_new([p_coord1,p_coord2],[-1,3,-2])
-            sage: tt
-            Train track on the surface of genus 2 with 4 punctures
-            sage: label_to_branch['t_1']
-            1
-            sage: label_to_branch['t_2']
-            1
-            sage: label_to_branch['t_3']
-            1
-            sage: label_to_branch[(1,'l_11')]
-            0
-            sage: label_to_branch[(1,'l_22')]
-            0
-            sage: label_to_branch[(1,'l_33')]
-            0
-            sage: label_to_branch[(1,'l_12')]
-            4
-            sage: label_to_branch[(1,'l_23')]
-            -6
-            sage: label_to_branch[(1,'l_31')]
-            -5
-            sage: label_to_branch[(2,'l_11')]
-            9
-            sage: label_to_branch[(2,'l_22')]
-            0
-            sage: label_to_branch[(2,'l_33')]
-            0
-            sage: label_to_branch[(2,'l_12')]
-            0
-            sage: label_to_branch[(2,'l_23')]
-            7
-            sage: label_to_branch[(2,'l_31')]
-            -8
-
-        The non-zero values are arbitrarily assigned, it is okay if
-        the implementation is different. There should be a convention
-        for the orientation of the branches `t_i` and (k,'l_ij'), so
-        the values represent oriented branches according to this convention.
-        """
 
     
     def dehn_thurston_tt(self,pants_pieces,annulus_pieces):
@@ -489,6 +416,126 @@ class PantsDecomposition(Surface):
         raise NotImplementedError
 
 
+
+
+    
+
+class PantsCoordinates(namedtuple("PantsCoordinates",
+                                  "l11 l22 l33 l12 l23 l31")):
+    r"""
+    The `\lambda_{ij}` for a pair of pants. `\lambda_{ij}` is the
+    measure of the branch connecting the boundary components i and j.
+    At most three of them can be nonzero.
+    """
+
+
+    
+
+class TrainTrackInPants(TrainTrack):
+    """
+    Train track carried on a Dehn-Thurston train track.
+
+    The __init__ method initializes a Dehn-Thurston train track.
+    Other train tracks can be obtained by unzipping.
+
+    INPUT:
+
+    - ``pants_decomposition`` -- a pants decomposition
+
+    - ``pants_coordinates`` -- list of PantsCoordinates, one for
+    each pair of pants
+
+    - ``twist_coordinates`` -- list of integers, twisting numbers
+    for pants curves
+
+    EXAMPLES::
+
+        sage: p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
+        sage: p_coord1 = PantsCoordinates([0,0,0,1,1,2])
+        sage: p_coord2 = PantsCoordinates([3,0,0,0,5,1])
+        sage: tt = TrainTrackInPants(p,[p_coord1,p_coord2],[-1,3,-2])
+        sage: tt
+        Train track on the surface of genus 2 with 4 punctures
+
+    """    
+    def __init__(self,pants_decomposition,
+                 pants_coordinates,twist_coordinates):
+        pass
+
+    def label_to_branch(self,label):
+        """Return the branch number of labelled branch.
+
+        TODO: What should this method do if we have an unzipped train track?
+
+        INPUT:
+
+        - ``label`` -- 't_i' or (k,'l_ij'), representing pants curves
+        and branches connecting boundary components in the `k`th pair
+        of pants. 
+
+        OUTPUT:
+
+        The number of the branch in the gluing list of the train
+        track. If a branch is not part of the train track, the value
+        is zero.
+        
+        EXAMPLES::
+
+            sage: p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
+            sage: p_coord1 = PantsCoordinates([0,0,0,1,1,2])
+            sage: p_coord2 = PantsCoordinates([3,0,0,0,5,1])
+            sage: tt = TrainTrackInPants(p,[p_coord1,p_coord2],[-1,3,-2])
+            sage: tt
+            Train track on the surface of genus 2 with 4 punctures
+            sage: self.label_to_branch('t_1')
+            1
+            sage: self.label_to_branch('t_2')
+            2
+            sage: self.label_to_branch('t_3')
+            3
+            sage: self.label_to_branch((1,'l_11'))
+            0
+            sage: self.label_to_branch((1,'l_22'))
+            0
+            sage: self.label_to_branch((1,'l_33'))
+            0
+            sage: self.label_to_branch((1,'l_12'))
+            4
+            sage: self.label_to_branch((1,'l_23'))
+            -6
+            sage: self.label_to_branch((1,'l_31'))
+            -5
+            sage: self.label_to_branch((2,'l_11'))
+            9
+            sage: self.label_to_branch((2,'l_22'))
+            0
+            sage: self.label_to_branch((2,'l_33'))
+            0
+            sage: self.label_to_branch((2,'l_12'))
+            0
+            sage: self.label_to_branch((2,'l_23'))
+            7
+            sage: self.label_to_branch((2,'l_31'))
+            -8
+
+        The non-zero values are arbitrarily assigned, it is okay if
+        the implementation is different. There should be a convention
+        for the orientation of the branches `t_i` and (k,'l_ij'), so
+        the values represent oriented branches according to this convention.
+
+
+        """
+        pass
+
+    def branch_to_label(self,branch):
+        pass
+    
+    def unzip(self,branch):
+        # Calls the unzip of the parent class and updates the
+        # branch-to-label dictionaries.
+        pass
+        
+    
 
 # class DTTrainTrack(SageObject):
 #     """
@@ -675,7 +722,7 @@ class PantsDecomposition(Surface):
 
 
 
-def unzip_sequence_mapping_class(tt_map,pants_decomposition,codomain_embedding,mapping_class):
+def unzip_sequence_mapping_class(tt_map,pants_decomposition,label_to_branch,mapping_class):
     r"""Perform unzips determined by twisting about a pants curve.
 
     We are handed a train track map whose domain `\mu` is any measured train
@@ -711,7 +758,7 @@ def unzip_sequence_mapping_class(tt_map,pants_decomposition,codomain_embedding,m
     - ``pants_decomposition`` -- the pants decomposition of the
       Dehn-Thurston train track
 
-    - ``codomain_embedding`` -- the embedding of the codomain train
+    - ``label_to_branch`` -- the embedding of the codomain train
       track in the pants decomposition
 
     - ``mapping_class`` -- a list of DehnTwists, encoding a product of
@@ -731,9 +778,9 @@ def unzip_sequence_mapping_class(tt_map,pants_decomposition,codomain_embedding,m
     for twist in dehn_twists:
         # changing the pants decomposition
         for move in twist.elementary_moves:
-            dt_tt, codomain_embedding, cdata = \
+            dt_tt, label_to_branch, cdata = \
                 unzip_sequence_elementary_move(tt_map, p,
-                                               codomain_embedding,
+                                               label_to_branch,
                                                move)
             # p is now the pants decomposition after the elementary
             # move. Both the domain and the codomain of tt_map are
@@ -743,9 +790,9 @@ def unzip_sequence_mapping_class(tt_map,pants_decomposition,codomain_embedding,m
                                    cdata*tt_map.carrying_data)
 
         # applying the twist
-        dt_tt, codomain_embedding, cdata = \
+        dt_tt, label_to_branch, cdata = \
                 unzip_sequence_pants_twist(tt_map, p,
-                                           codomain_embedding,
+                                           label_to_branch,
                                            twist.pants_curve,
                                            twist.power)
 
@@ -754,9 +801,9 @@ def unzip_sequence_mapping_class(tt_map,pants_decomposition,codomain_embedding,m
 
         # changing back the pants decomposition
         for move in reversed(twist.elementary_moves):
-            dt_tt, codomain_embedding, cdata = \
+            dt_tt, label_to_branch, cdata = \
                 unzip_sequence_elementary_move(tt_map, p,
-                                               codomain_embedding,
+                                               label_to_branch,
                                                move)
             
             tt_map = TrainTrackMap(dom, dt_tt,
@@ -769,7 +816,7 @@ def unzip_sequence_mapping_class(tt_map,pants_decomposition,codomain_embedding,m
             # type 1 moves, the above two line may need to be
             # called three times in order to get the inverse.
 
-    return dt_tt, codomain_embedding, cdata
+    return dt_tt, label_to_branch, cdata
         
 
 
@@ -779,7 +826,7 @@ def unzip_sequence_mapping_class(tt_map,pants_decomposition,codomain_embedding,m
 
 
 
-def unzip_sequence_pants_twist(tt_map,pants_decomposition,codomain_embedding,pants_curve,power=1):
+def unzip_sequence_pants_twist(tt_map,pants_decomposition,label_to_branch,pants_curve,power=1):
     r"""Perform unzips determined by twisting about a pants curve.
 
     Same as ``unzip_sequence_mapping_class``, but instead of a general
@@ -791,7 +838,7 @@ def unzip_sequence_pants_twist(tt_map,pants_decomposition,codomain_embedding,pan
 
     - ``pants_decomposition`` -- 
 
-    - ``codomain_embedding`` -- 
+    - ``label_to_branch`` -- 
 
     - ``pants_curve`` -- the index of the pants curve about which we twist
 
@@ -801,9 +848,9 @@ def unzip_sequence_pants_twist(tt_map,pants_decomposition,codomain_embedding,pan
 
     OUTPUT:
 
-    a Dehn-Thurston train track (`\tau_0`), its embedding to the new
-    pants decomposition and the ``CarryingData`` for `f(\tau)` being
-    carried on `\tau_0`.
+    a Dehn-Thurston train track (`\tau_0`), its embedding
+    (label-to-branch map) to the new pants decomposition and the
+    ``CarryingData`` for `f(\tau)` being carried on `\tau_0`.
 
     """
 
@@ -832,14 +879,24 @@ def unzip_sequence_pants_twist(tt_map,pants_decomposition,codomain_embedding,pan
 
     
     tt_map.compute_measure_on_codomain()
+
+    pants_branch = label_to_branch['t_%d'] % (pants_curve)
+    pants_switch = cod.branch_endpoint(-pants_branch)
+
+    twisting = 'left' if cod.outgoing_branches(0) == pants_branch else 'right'
     
     if power > 0:
-        if 
-
-
-
+        if twisting == 'left':
+            tt_map.unzip_codomain_right_of(pants_branch)        
+        # if twisting is to the right, no splitting is needed
+            
     if power < 0:
+        if twisting == 'right':
+            tt_map.unzip_codomain_left_of(pants_branch)
+        # if twisting is to the left, no splitting is needed
 
+        # WARNING: Currently we ignore powers.
+        
     pass
 
 
@@ -850,7 +907,7 @@ def unzip_sequence_pants_twist(tt_map,pants_decomposition,codomain_embedding,pan
     
 
 def unzip_sequence_elementary_move(tt_map,pants_decomposition,
-                                   codomain_embedding,pants_curve):
+                                   label_to_branch,pants_curve):
     r"""Perform unzips determined by an elementary move on the pants decomposition.
 
     Same as ``unzip_sequence_mapping_class``, but instead of a mapping
@@ -865,14 +922,15 @@ def unzip_sequence_elementary_move(tt_map,pants_decomposition,
 
     - ``pants_decomposition`` -- 
 
-    - ``codomain_embedding`` -- 
+    - ``label_to_branch`` -- 
 
     - ``pants_curve`` -- the index of the pants curve on which the
       elementary move is performed
 
     OUTPUT:
 
-    a Dehn-Thurston train track (`\tau_0`), its embedding to the
+    a Dehn-Thurston train track (`\tau_0`), its embedding
+    (label-to-branch map) to the
     pants decomposition and the ``CarryingData``
     for `f(\tau)` being carried on `\tau_0`.
 
