@@ -722,7 +722,7 @@ class TrainTrackInPants(TrainTrack):
 
 
 
-def unzip_sequence_mapping_class(tt_map,pants_decomposition,label_to_branch,mapping_class):
+def unzip_sequence_mapping_class(tt_map,pants_decomposition,mapping_class):
     r"""Perform unzips determined by twisting about a pants curve.
 
     We are handed a train track map whose domain `\mu` is any measured train
@@ -753,13 +753,10 @@ def unzip_sequence_mapping_class(tt_map,pants_decomposition,label_to_branch,mapp
     INPUT:
 
     - ``tt_map`` -- a TrainTrackMap whose codomain is a
-      Dehn-Thurston train track and whose domain is a measured train track
+      Dehn-Thurston train track (TrainTrackInPants) and whose domain is a measured train track
 
     - ``pants_decomposition`` -- the pants decomposition of the
       Dehn-Thurston train track
-
-    - ``label_to_branch`` -- the embedding of the codomain train
-      track in the pants decomposition
 
     - ``mapping_class`` -- a list of DehnTwists, encoding a product of
       powers of Dehn twists, read left to right
@@ -778,10 +775,8 @@ def unzip_sequence_mapping_class(tt_map,pants_decomposition,label_to_branch,mapp
     for twist in dehn_twists:
         # changing the pants decomposition
         for move in twist.elementary_moves:
-            dt_tt, label_to_branch, cdata = \
-                unzip_sequence_elementary_move(tt_map, p,
-                                               label_to_branch,
-                                               move)
+            dt_tt, cdata = \
+                unzip_sequence_elementary_move(tt_map, p, move)
             # p is now the pants decomposition after the elementary
             # move. Both the domain and the codomain of tt_map are
             # changed by unzipping
@@ -790,9 +785,8 @@ def unzip_sequence_mapping_class(tt_map,pants_decomposition,label_to_branch,mapp
                                    cdata*tt_map.carrying_data)
 
         # applying the twist
-        dt_tt, label_to_branch, cdata = \
+        dt_tt, cdata = \
                 unzip_sequence_pants_twist(tt_map, p,
-                                           label_to_branch,
                                            twist.pants_curve,
                                            twist.power)
 
@@ -801,10 +795,8 @@ def unzip_sequence_mapping_class(tt_map,pants_decomposition,label_to_branch,mapp
 
         # changing back the pants decomposition
         for move in reversed(twist.elementary_moves):
-            dt_tt, label_to_branch, cdata = \
-                unzip_sequence_elementary_move(tt_map, p,
-                                               label_to_branch,
-                                               move)
+            dt_tt, cdata = \
+                unzip_sequence_elementary_move(tt_map, p, move)
             
             tt_map = TrainTrackMap(dom, dt_tt,
                                    cdata*tt_map.carrying_data)
@@ -816,7 +808,7 @@ def unzip_sequence_mapping_class(tt_map,pants_decomposition,label_to_branch,mapp
             # type 1 moves, the above two line may need to be
             # called three times in order to get the inverse.
 
-    return dt_tt, label_to_branch, cdata
+    return dt_tt, cdata
         
 
 
@@ -826,7 +818,7 @@ def unzip_sequence_mapping_class(tt_map,pants_decomposition,label_to_branch,mapp
 
 
 
-def unzip_sequence_pants_twist(tt_map,pants_decomposition,label_to_branch,pants_curve,power=1):
+def unzip_sequence_pants_twist(tt_map,pants_decomposition,pants_curve,power=1):
     r"""Perform unzips determined by twisting about a pants curve.
 
     Same as ``unzip_sequence_mapping_class``, but instead of a general
@@ -838,8 +830,6 @@ def unzip_sequence_pants_twist(tt_map,pants_decomposition,label_to_branch,pants_
 
     - ``pants_decomposition`` -- 
 
-    - ``label_to_branch`` -- 
-
     - ``pants_curve`` -- the index of the pants curve about which we twist
 
     - ``power`` -- (default:1) the power of the Dehn twist
@@ -848,8 +838,8 @@ def unzip_sequence_pants_twist(tt_map,pants_decomposition,label_to_branch,pants_
 
     OUTPUT:
 
-    a Dehn-Thurston train track (`\tau_0`), its embedding
-    (label-to-branch map) to the new pants decomposition and the
+    a Dehn-Thurston train track (`\tau_0`) which is a
+    TrainTrackInPants object and the
     ``CarryingData`` for `f(\tau)` being carried on `\tau_0`.
 
     """
@@ -876,11 +866,11 @@ def unzip_sequence_pants_twist(tt_map,pants_decomposition,label_to_branch,pants_
     # Without Decisions:
     dom = tt_map.domain
     cod = tt_map.codomain
-
+    p = pants_decomposition
     
     tt_map.compute_measure_on_codomain()
 
-    pants_branch = label_to_branch['t_%d'] % (pants_curve)
+    pants_branch = cod.label_to_branch('t_%d' % (pants_curve))
     pants_switch = cod.branch_endpoint(-pants_branch)
 
     twisting = 'left' if cod.outgoing_branches(0) == pants_branch else 'right'
@@ -907,7 +897,7 @@ def unzip_sequence_pants_twist(tt_map,pants_decomposition,label_to_branch,pants_
     
 
 def unzip_sequence_elementary_move(tt_map,pants_decomposition,
-                                   label_to_branch,pants_curve):
+                                   pants_curve):
     r"""Perform unzips determined by an elementary move on the pants decomposition.
 
     Same as ``unzip_sequence_mapping_class``, but instead of a mapping
@@ -922,17 +912,14 @@ def unzip_sequence_elementary_move(tt_map,pants_decomposition,
 
     - ``pants_decomposition`` -- 
 
-    - ``label_to_branch`` -- 
-
     - ``pants_curve`` -- the index of the pants curve on which the
       elementary move is performed
 
     OUTPUT:
 
-    a Dehn-Thurston train track (`\tau_0`), its embedding
-    (label-to-branch map) to the
-    pants decomposition and the ``CarryingData``
-    for `f(\tau)` being carried on `\tau_0`.
+    a Dehn-Thurston train track (`\tau_0`) which is TrainTrackInPants
+    object and the ``CarryingData`` for `f(\tau)` being carried on
+    `\tau_0`.
 
     """
     pass
