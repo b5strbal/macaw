@@ -31,7 +31,7 @@ from train_track import TrainTrack
 import collections
 
 class PantsCoordinates(namedtuple("PantsCoordinates",
-                                  "l11 l22 l33 l12 l13 l23")):
+                                  "l11 l22 l33 l12 l23 l31")):
     r"""
     The `\lambda_{ij}` for a pair of pants. `\lambda_{ij}` is the
     measure of the branch connecting the boundary components i and j.
@@ -154,110 +154,6 @@ class PantsDecomposition(Surface):
         """
         pass
     
-<<<<<<< HEAD
-    def splitting_sequence_from_twist(self,curve,direction,measured_tt,power=1):
-        """Return a sequence in the splitting tree for the Dehn twist.
-
-        INPUT:
-
-        - ``curve`` -- ``curve[:-1]`` is the list of pants curves on which a sequence of
-          elementary moves are performed, and ``curve[-1]`` is the
-          pants curve in the final pants decomposition on which the
-          twist occurs.
-
-        - ``direction`` -- 'left' or 'right' specifying the direction
-          of the twist.
-        
-        - ``measured_tt`` -- a measured Dehn-Thurston train track
-          whose splitting sequence is computed.
-
-        - ``power`` -- (default:1) the power of the Dehn twist performed.
-
-        OUTPUT:
-
-        - a tuple (``splitting_sequence``,``carrying_map``) where both
-          entries are train track maps. ``splitting_sequence`` is a
-          splitting sequence from ``measured_tt`` to some train track `\tau`
-          and ``carrying_map`` is a train track map from `\tau` to
-          another Dehn-Thurston train track of self.
-        """
-
-        # Use self._splitting_sequence_from_elementary_move first, then
-        # self._splitting_sequence_from_pants_twist, then
-        # self._splitting_sequence_from_elementary_move again to change
-        # back the marking, and put together the pieces.
-        pass
-
-
-    
-    def _splitting_sequence_from_pants_twist(self,pants_curve,direction,measured_tt,power=1):
-        """Return a sequence in the splitting tree for twisting about a
-        pants curve.
-
-        INPUT:
-
-        - ``pants_curve`` -- the index of the pants curve.
-
-        - ``direction`` -- 'L' or 'R' specifying the direction
-          of the twist.
-        
-        - ``measured_tt`` -- a measured Dehn-Thurston train track
-          whose splitting sequence is computed.
-
-        - ``power`` -- (default:1) the power of the Dehn twist performed.
-
-        OUTPUT:
-
-        - a tuple (``splitting_sequence``,``carrying_map``) where both
-          entries are train track maps. ``splitting_sequence`` is a
-          splitting sequence from ``measured_tt`` to some train track `\tau`
-          and ``carrying_map`` is a train track map from `\tau` to
-          another Dehn-Thurston train track of self.
-
-          measured_tt: t_i
-
-        """
-
-        t_i = measured_tt.measure()[pants_curve]
-
-        if t_i == 0:
-            pass
-        elif t_i < 0 and direction == 'L':
-            pass
-        elif t_i > 0 and direction == 'R':
-            pass
-
-        pass
-
-    
-
-    def _splitting_sequence_from_elementary_move(self,pants_curve,measured_tt):
-        """Return a sequence in the splitting tree for performing an
-        elementary move.
-
-        INPUT:
-
-        - ``pants_curve`` -- the index of the pants curve on which the
-          elementary move is applied.
-        
-        - ``measured_tt`` -- a measured Dehn-Thurston train track
-          whose splitting sequence is computed.
-
-        OUTPUT:
-
-        - a tuple (``splitting_sequence``,``carrying_map``) where both
-          entries are train track maps. ``splitting_sequence`` is a
-          splitting sequence from ``measured_tt`` to some train track `\tau`
-          and ``carrying_map`` is a train track map from `\tau` to
-          a Dehn-Thurston train track of pants decomposition obtained
-          by an elementary move.
-
-        """
-        pass
-
-    
-=======
->>>>>>> Sketch methods constructing unzipping sequences
 
     
         
@@ -357,15 +253,77 @@ class PantsDecomposition(Surface):
             return PantsDecomposition(rt_ls)
 
       
+    def dehn_thurston_tt_new(self,pants_pieces,annulus_pieces):
+        """
+        Construct a Dehn-Thurston train track.
 
+        INPUT:
+
+        - ``pants_coordinates`` -- list of PantsCoordinates, one for
+        each pair of pants
+
+        - ``twist_coordinates`` -- list of integers, twisting numbers
+        for pants curves
+
+        OUTPUT:
+
+        the Dehn-Thurston train track and a label-to-branch
+        dictionary. The keys in the dictionary are 't_i' and
+        (k,'l_ij'), representing pants curves and branches connecting
+        boundary components in the `k`th pair of pants. The value is
+        the number of the branch in the gluing list of the train
+        track. If a branch is not part of the train track, the value
+        is zero.
+
+        EXAMPLES::
+
+            sage: p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
+            sage: p_coord1 = PantsCoordinates([0,0,0,1,1,2])
+            sage: p_coord2 = PantsCoordinates([3,0,0,0,5,1])
+            sage: tt, label_to_branch = p.dehn_thurston_tt_new([p_coord1,p_coord2],[-1,3,-2])
+            sage: tt
+            Train track on the surface of genus 2 with 4 punctures
+            sage: label_to_branch['t_1']
+            1
+            sage: label_to_branch['t_2']
+            1
+            sage: label_to_branch['t_3']
+            1
+            sage: label_to_branch[(1,'l_11')]
+            0
+            sage: label_to_branch[(1,'l_22')]
+            0
+            sage: label_to_branch[(1,'l_33')]
+            0
+            sage: label_to_branch[(1,'l_12')]
+            4
+            sage: label_to_branch[(1,'l_23')]
+            -6
+            sage: label_to_branch[(1,'l_31')]
+            -5
+            sage: label_to_branch[(2,'l_11')]
+            9
+            sage: label_to_branch[(2,'l_22')]
+            0
+            sage: label_to_branch[(2,'l_33')]
+            0
+            sage: label_to_branch[(2,'l_12')]
+            0
+            sage: label_to_branch[(2,'l_23')]
+            7
+            sage: label_to_branch[(2,'l_31')]
+            -8
+
+        The non-zero values are arbitrarily assigned, it is okay if
+        the implementation is different. There should be a convention
+        for the orientation of the branches `t_i` and (k,'l_ij'), so
+        the values represent oriented branches according to this convention.
+        """
 
     
     def dehn_thurston_tt(self,pants_pieces,annulus_pieces):
-
-
         """
         Return a Dehn-Thurston train track.
-<<<<<<< HEAD
 
         INPUT:
 
@@ -373,9 +331,6 @@ class PantsDecomposition(Surface):
         
         - ``annulus_pieces`` -- dictionary of connector type 'L' or 'R' 
 
-=======
-v
->>>>>>> Sketch methods constructing unzipping sequences
         EXAMPLES::
 
             sage: p = PantsDecomposition([[1,-1,2],[-2,4,3],[-3,5,6],[-5,-4,-6]])
