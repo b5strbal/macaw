@@ -44,6 +44,9 @@ CENTRAL_SPLIT = 3
 FOLD = 4
 SHIFT = 5
 
+LEFT = 0
+RIGHT = 1
+
 class TrainTrack(SageObject):
     r"""A train track on a surface.
 
@@ -786,39 +789,249 @@ class CarryingData(SageObject):
         # this case, maybe None is also an acceptable value for the
         # image of a half-branch.
 
-        -switch_map: A dictionary (NOT NEEDED?)
-
-        -position_of_strands: A dictionary
+        -hb_between_branches: A dictionary
     """
-    def __init__(self,edge_matrix,half_branch_map,
-                 switch_map,position_of_strands,sparse=False):
-        self._edge_map = edge_map
+    def __init__(self,branch_matrix,half_branch_map,
+                 hb_between_branches,sparse=False):
+        """
+        
+
+        EXAMPLES:
+
+        The carrying data for splitting of the train track on the
+        torus with two branches::
+
+            sage: branch_matrix = matrix([[1,1],[0,1]])
+            sage: half_branch_map = {1:1,2:1,-1:-1,-2:-2}
+            sage: hb_between_branches = {1:[0,0],2:[0,1],-1:[0,1],-2:[0,0]}
+            sage: CarryingData(branch_matrix, half_branch_map, hb_between_branches)
+
+        
+        
+        """
+        
+        self._branch_matrix = branch_matrix
         self._half_branch_map = half_branch_map
-        self._switch_map = switch_map #NOT NEEDED?
-        self._position_of_strands = position_of_strands
+        self._hb_between_branches = hb_between_branches
+
         
-    def __mul__(self,other):
-        pass
+    def image_of_half_branch(self,half_branch):
+        """
+        Return the image of a half-branch in the domain.
 
+        EXAMPLES:
 
+        The carrying data for splitting of the train track on the
+        torus with two branches::
 
+            sage: branch_matrix = matrix([[1,1],[0,1]])
+            sage: half_branch_map = {1:1,2:1,-1:-1,-2:-2}
+            sage: hb_between_branches = {1:[0,0],2:[0,1],-1:[0,1],-2:[0,0]}
+            sage: c = CarryingData(branch_matrix, half_branch_map, hb_between_branches)
+            sage: [c.image_of_half_branch(i) for i in [-2,-1,1,2]]
+            [-2, -1, 2, 1]
+        
 
+        """
+        return self._half_branch_map[half_branch]
+        
+    def image_of_branch(self,branch):
+        """
+        Return the image of a brach in the domain as a measure.
 
+        INPUT: 
 
+        - ``branch`` -- a branch, either as a positive or negative
+          number. The orientation is ignored.
 
+        EXAMPLES::
 
+            sage: branch_matrix = matrix([[1,1],[0,1]])
+            sage: half_branch_map = {1:1,2:1,-1:-1,-2:-2}
+            sage: hb_between_branches = {1:[0,0],2:[0,1],-1:[0,1],-2:[0,0]}
+            sage: c = CarryingData(branch_matrix, half_branch_map, hb_between_branches)
+            sage: c.image_of_branch(1)
+            (1, 0)
+            sage: c.image_of_branch(-1)
+            (1, 0)
+            sage: c.image_of_branch(2)
+            (1, 1)
+            sage: c.image_of_branch(-2)
+            (1, 1)
 
+        """
+        return self._branch_matrix.column(abs(branch)-1)
 
+    def preimage_of_branch(self,branch):
+        """
+        Return the preimage of a branch in the codomain as a measure.
 
+        INPUT: 
+
+        - ``branch`` -- a branch, either as a positive or negative
+          number. The orientation is ignored.
+
+        EXAMPLES::
+
+            sage: branch_matrix = matrix([[1,1],[0,1]])
+            sage: half_branch_map = {1:1,2:1,-1:-1,-2:-2}
+            sage: hb_between_branches = {1:[0,0],2:[0,1],-1:[0,1],-2:[0,0]}
+            sage: c = CarryingData(branch_matrix, half_branch_map, hb_between_branches)
+            sage: c.preimage_of_branch(1)
+            (1, 1)
+            sage: c.preimage_of_branch(-1)
+            (1, 1)
+            sage: c.preimage_of_branch(2)
+            (0, 1)
+            sage: c.preimage_of_branch(-2)
+            (0, 1)
+
+        """
+        return self._branch_matrix[abs(branch)-1]
     
+    def strands_on_side(self,half_branch,side,branch_to_count=None):
+        """Return the number of strands to the left of to the right of a
+        half-branch of the domain.
+
+        INPUT:
+
+        - ``half_branch`` -- a half-branch of the domain train track
+
+        - ``side`` -- LEFT or RIGHT, depending on which side the
+          strands are counted on
+
+        - ``branch_to_count`` -- (default: None) If None, a list is
+          returned counting the strands for every branch. Otherwise it
+          can be the (positive) number of a branch in the domain train
+          track and only the strands contained in this branch are
+          counted
+    
+        OUTPUT:
+
+        A list or an integer.
+
+        EXAMPLES::
+
+            sage: branch_matrix = matrix([[1,1],[0,1]])
+            sage: half_branch_map = {1:1,2:1,-1:-1,-2:-2}
+            sage: hb_between_branches = {1:[0,0],2:[0,1],-1:[0,1],-2:[0,0]}
+            sage: c = CarryingData(branch_matrix, half_branch_map, hb_between_branches)
+            sage: c.strands_on_side(1, LEFT)
+            [0, 0]
+            sage: c.strands_on_side(-1, LEFT)
+            [0, 1]
+            sage: c.strands_on_side(2, LEFT)
+            [1, 0]
+            sage: c.strands_on_side(-2, LEFT)
+            [0, 0]
+            sage: c.strands_on_side(-1, LEFT, 1)
+            0
+            sage: c.strands_on_side(-1, LEFT, 2)
+            1
+
+       
+        """
+        all_data = self._hb_between_branches[half_branch]
+        if side == LEFT:
+            if branch_to_count == None:
+                return all_data
+            return all_data[branch_to_count-1]
+        else:
+            raise NotImplementedError()
         
+        
+    # def h(n):
+    #     r"""
+    #     Merge map from `[1,\infy)\cup(-\infty,-1)` to `[0,\infty).
+    #     """
+    #     return 2*n-2 if n>0 else -2*n-1
+
+    # def hinv(n):
+    #     r"""
+    #     The inverse of the merge map from `[1,\infy)\cup(-\infty,-1)` to `[0,\infty).
+    #     """
+    #     return n//2+1 if n%2 == 0 else -n//2-1
+    
+    def __mul__(self,other):
+        """Return a composition of two carrying maps.
+
+        INPUT:
+
+        - ``other`` -- a CarryingData object. The product is read from
+          right-to-left, so ``other`` is the first map and ``self`` is
+          the second map.
+
+        """
+
+        
+        # Number of branches in the domain train track of other
+        n = other._branch_matrix.ncols()
+        branch_matrix = self._branch_matrix * other._branch_matrix
+        half_branch_map = {}
+        for i in range(1,n+1):
+            for j in {i,-i}:
+                if other._half_branch_map[j] == None:
+                    half_branch_map[j] = None
+                else:
+                    half_branch_map[j] = self._half_branch_map[other._half_branch_map[j]]
+
+        hb_between_branches = {}
+
+        # iterate over half-branches of the domain of other
+        for i in range(1,n+1):
+            for hb in {i,-i}:
+                hb_between_branches[hb] = [0]*n
+                
+                # the image half-branch of hb under other
+                mid_hb = other.image_of_half_branch(hb)
+
+                # the vector of branches on the left of mid_hb in the
+                # codomain of other (the intermediate train track)
+                left_strands = self.strands_on_side(mid_hb,LEFT)
+
+                # iterate over branches of the domain of other
+                for k in range(1,n+1):
+
+                    # the vector counting the strands on each of the
+                    # strands to the left of mid_hb that are contained in
+                    # the branch k
+                    k_strands = other.image_of_branch(k)
+
+                    print vector(left_strands)
+                    print k_strands
+                    # total number of strands on the left of mid_hb that
+                    # are contained in branch k
+                    hb_between_branches[hb][k-1] += vector(left_strands)*vector(k_strands)
+
+                    # adding the strands to the left of hb that also map
+                    # onto mid_hb
+                    hb_between_branches[hb][k-1] += other.strands_on_side(hb,LEFT,k)
+
+                    
+
+        return CarryingData(branch_matrix,half_branch_map,hb_between_branches)
+         
+         
+         
+         
+         
+branch_matrix = matrix([[1,1],[0,1]])
+half_branch_map = {1:1,2:1,-1:-1,-2:-2}
+hb_between_branches = {1:[0,0],2:[0,1],-1:[0,1],-2:[0,0]}
+c = CarryingData(branch_matrix, half_branch_map, hb_between_branches)
+         
+            
+         
+         
+         
+         
 class TrainTrackMap(SageObject):
     """
     A map between two train tracks.
 
     The train track map is stored in one of two ways (or both).
 
-    1. By the edge_map. This is the detailed description of the train
+    1. By the branch map. This is the detailed description of the train
     track map. The image of every branch is stored as a train path.
     The advantage of this representation is that this can be used to
     compute Alexander and Teichmuller polynomials of mapping tori,
@@ -844,20 +1057,20 @@ class TrainTrackMap(SageObject):
     def __init__(self,domain,codomain,carrying_data):
         """
 
-        INPUT:
+         INPUT:
 
-        - ``domain`` -- The domain Train Track
+         - ``domain`` -- The domain Train Track
 
-        - ``codomain`` -- The codomain Train Track
+         - ``codomain`` -- The codomain Train Track
 
-        - ``carrying_data`` -- a CarryingData object specifying how
-          the domain is carried on the codomain
+         - ``carrying_data`` -- a CarryingData object specifying how
+            the domain is carried on the codomain
 
-        EXAMPLES:: 
+         EXAMPLES:: 
 
-        <write examples>
-        
-        """
+         <write examples>
+
+         """
         self._domain = domain
         self._codomain = codomain
         self._carrying_map = carrying_map
@@ -869,17 +1082,11 @@ class TrainTrackMap(SageObject):
     def codomain(self):
         return self._codomain
 
-    def edge_matrix(self):
-        return self._edge_matrix
+     # def half_branch_map(self):
+     # return self._half_branch_map
 
-    def half_branch_map(self):
-        return self._half_branch_map
-
-    def switch_map(self):
-        return self._switch_map
-
-    def position_of_strands(self):
-        return self._position_of_strands
+     # def hb_between_branches(self):
+     # return self._hb_between_branches
 
     def __mul__(self):
         """
@@ -890,155 +1097,156 @@ class TrainTrackMap(SageObject):
     def compute_measure_on_codomain(self):
         """
         Compute the measure on the codomain from the measure of the
-        domain.
-        """
+         domain.
+         """
         pass
 
     def unzip_codomain(self,branch):
-        """Unzips the codomain and, if necessary, the domain, too.
+         """Unzips the codomain and, if necessary, the domain, too.
 
-        The domain has to be a measured train track. If there is a way
-        to unzip the codomain so that the domain is carried, then that
-        unzipping is performed and the domain does not change. In this
-        case, the measure on the domain does not play a role. If there
-        is no way to split the codomain so that the domain is carried,
-        then the domain is unzipped according to the measure, and the
-        codomain is unzipped accordingly to preserve the carrying
-        relationship. If there are multiple way to unzip the domain
-        according to the measure, then one of the possible unzips is
-        performed - it is not specified which one.
+     The domain has to be a measured train track. If there is a way
+         to unzip the codomain so that the domain is carried, then that
+         unzipping is performed and the domain does not change. In this
+         case, the measure on the domain does not play a role. If there
+         is no way to split the codomain so that the domain is carried,
+         then the domain is unzipped according to the measure, and the
+         codomain is unzipped accordingly to preserve the carrying
+         relationship. If there are multiple way to unzip the domain
+         according to the measure, then one of the possible unzips is
+         performed - it is not specified which one.
 
-        Nothing is returned, all components of the carrying map are
-        changed internally.
+     Nothing is returned, all components of the carrying map are
+         changed internally.
 
-        INPUT:
+     INPUT:
 
-        - ``branch`` --
+     - ``branch`` --
 
-        """
+     """
+         pass
 
 
-    
 
-    # ------------------------------------------------------------
-    # Teichmuller/Alexander polynomial computation.
+     # ------------------------------------------------------------
+     # Teichmuller/Alexander polynomial computation.
 
-    
+
     def action_on_cohomology(self):
         pass
-
+ 
     def invariant_cohomology(self):
         pass
-
+    
     def teichmuller_polynomial(self):
         pass
 
-    # ------------------------------------------------------------
+     # ------------------------------------------------------------
 
 
 
 
 
-    
-
-    
 
 
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+# class TrainTrackLamination(SageObject):
+#      """
+#      A measured lamination represented with respect to a train track.
+
+#      The lamination may be carried, may be tranverse, or may even be a
+#      combination of the two, but in minimal position
+#      with the train track. 
+
+#      There is a finite collection of arcs such that every lamination
+#      can be composed by these arcs. These arcs are either:
+#      - branches of the train track
+#      - arcs in the complementary regions of the train track connecting
+#      a branch with another branch such that the intersection with the
+#      branches are perpendicular
+#      - arcs in the complementary regions connecting a cusp with a
+#      branch such that the intersection with the branch is
+#      perpendicular
+#      - arcs in the complementary regions connecting the puncture in the
+#      region to either a branch or a cusp
 
 
-        
+#      The main use of this class is the following:
+#      - when we find the flat structure of a pA, we put the repelling
+#      lamination in minimal position, and split towards the attracting
+#      lamination until the repelling lamination becomes transverse.
+#      """
 
+#      def __init__(self,train_track,arcs_with_measures):
+#      """
 
-        
+#      """
 
+#      def put_in_minimal_position(self):
+#      """
+#      Put the lamination in minimal position.
+#      """
 
+#      def is_transverse(self):
+#      """
+#      Decide if the lamination is transverse to the train track.
+#      """
 
-    
+#      def is_carried(self):
+#      """
+#      Decide if the lamination is carried on the train track.
+#      """
 
-class TrainTrackLamination(SageObject):
-    """
-    A measured lamination represented with respect to a train track.
+#      def find_carrying_branch(self):
+#      """
+#      Find a branch carrying the lamination in minimal position.
 
-    The lamination may be carried, may be tranverse, or may even be a
-    combination of the two, but in minimal position
-    with the train track. 
+#      This branch should be a branch that *must* carry the
+#      lamination. For a combed curve, the curve can be pushed off to
+#      still be in minimal position and in fact become transverse. So
+#      these carrying branches are not obstructions for being
+#      transverse. 
+#      """
 
-    There is a finite collection of arcs such that every lamination
-    can be composed by these arcs. These arcs are either:
-    - branches of the train track
-    - arcs in the complementary regions of the train track connecting
-    a branch with another branch such that the intersection with the
-    branches are perpendicular
-    - arcs in the complementary regions connecting a cusp with a
-    branch such that the intersection with the branch is
-    perpendicular
-    - arcs in the complementary regions connecting the puncture in the
-    region to either a branch or a cusp
+#      def split(self,branch,how_to_split):
+#      """
+#      Split the branch in the direction specified and update the
+#      lamination in minimal position.
+#      """
 
+#      def dehn_twist(self):
+#      """
+#      If the lamination is a two-sided curve, return the Dehn twist
+#      about it.
 
-    The main use of this class is the following:
-    - when we find the flat structure of a pA, we put the repelling
-    lamination in minimal position, and split towards the attracting
-    lamination until the repelling lamination becomes transverse.
-    """
+#      OUTPUT: A MappingClass object.
+#      """
 
-    def __init__(self,train_track,arcs_with_measures):
-        """
-        
-        """
+#      def __rmul__(self,mapping_class):
+#      """
 
-    def put_in_minimal_position(self):
-        """
-        Put the lamination in minimal position.
-        """
+#      INPUT: A simple mapping class, usually a Dehn twist about a
+#      simple curve.
 
-    def is_transverse(self):
-        """
-        Decide if the lamination is transverse to the train track.
-        """
+#      OUTPUT: the image under the mapping class.
 
-    def is_carried(self):
-        """
-        Decide if the lamination is carried on the train track.
-        """
+#      First implement it assuming that the two curves are already
+#      transverse, then try the case when they are almost transverse
+#      but not quite.
+#      """
 
-    def find_carrying_branch(self):
-        """
-        Find a branch carrying the lamination in minimal position.
-
-        This branch should be a branch that *must* carry the
-        lamination. For a combed curve, the curve can be pushed off to
-        still be in minimal position and in fact become transverse. So
-        these carrying branches are not obstructions for being
-        transverse. 
-        """
-
-    def split(self,branch,how_to_split):
-        """
-        Split the branch in the direction specified and update the
-        lamination in minimal position.
-        """
-
-    def dehn_twist(self):
-        """
-        If the lamination is a two-sided curve, return the Dehn twist
-        about it.
-
-        OUTPUT: A MappingClass object.
-        """
-
-    def __rmul__(self,mapping_class):
-        """
-
-        INPUT: A simple mapping class, usually a Dehn twist about a
-        simple curve.
-
-        OUTPUT: the image under the mapping class.
-
-        First implement it assuming that the two curves are already
-        transverse, then try the case when they are almost transverse
-        but not quite.
-        """
 
 
 
