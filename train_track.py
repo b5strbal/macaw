@@ -310,6 +310,58 @@ class TrainTrack(SageObject):
         return self._measure[abs(branch) - 1]
 
 
+    def branch_with_label(self,label):
+        """Return the branch number of labelled branch.
+
+        TODO: How should the labels change after unzipping?
+
+        INPUT:
+
+        - ``label`` -- 
+
+        OUTPUT:
+
+        The number of the branch corresponding to the label. The the
+        label is invalid, 0 is returned.
+        
+        EXAMPLES:
+
+            sage: tt = TrainTrack([[1, 2], [-1, -2]],labels=['a','b'])
+            sage: tt.branch_with_label('a')
+            1
+            sage: tt.branch_with_label('b')
+            2
+            sage: tt.branch_with_label('-a')
+            -1
+            sage: tt.branch_with_label('-b')
+            -2
+            sage: tt.branch_with_label('c')
+            0
+
+        """
+        pass
+
+    def label_of_branch(self,branch):
+        """Return the label of a branch.
+
+        EXAMPLES:
+
+            sage: tt = TrainTrack([[1, 2], [-1, -2]],labels=['a','b'])
+            sage: tt.label_of_branch(1)
+            'a'
+            sage: tt.label_of_branch(2)
+            'b'
+            sage: tt.label_of_branch(-1)
+            '-a'
+            sage: tt.label_of_branch(-2)
+            '-b'
+
+        """
+        pass
+    
+
+    
+
     # ----------------------------------------------------------------
     # BASIC PROPERTIES OF TRAIN TRACKS
     # ----------------------------------------------------------------

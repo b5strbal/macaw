@@ -156,9 +156,14 @@ class PantsDecomposition(Surface):
 
 
 
-    def construct_train_track_from_measure(self):
+    def train_track_from_measure(self):
+        """
+        Return the Dehn-Thurston train track for the current measure.
+        """
         pass
 
+
+    
     def measure_of(self,label):
         """
         EXAMPLE:
@@ -487,109 +492,7 @@ class PantsCoordinates(namedtuple("PantsCoordinates",
 
     
 
-class TrainTrackInPants(TrainTrack):
-    """
-    Train track carried on a Dehn-Thurston train track.
 
-    The __init__ method initializes a Dehn-Thurston train track.
-    Other train tracks can be obtained by unzipping.
-
-    INPUT:
-
-    - ``pants_decomposition`` -- a pants decomposition
-
-    - ``pants_coordinates`` -- list of PantsCoordinates, one for
-    each pair of pants
-
-    - ``twist_coordinates`` -- list of integers, twisting numbers
-    for pants curves
-
-    EXAMPLES::
-
-        sage: p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
-        sage: p_coord1 = PantsCoordinates([0,0,0,1,1,2])
-        sage: p_coord2 = PantsCoordinates([3,0,0,0,5,1])
-        sage: tt = TrainTrackInPants(p,[p_coord1,p_coord2],[-1,3,-2])
-        sage: tt
-        Train track on the surface of genus 2 with 4 punctures
-
-    """    
-    def __init__(self,pants_decomposition,
-                 pants_coordinates,twist_coordinates):
-        pass
-
-    def label_to_branch(self,label):
-        """Return the branch number of labelled branch.
-
-        TODO: What should this method do if we have an unzipped train track?
-
-        INPUT:
-
-        - ``label`` -- 't_i' or (k,'l_ij'), representing pants curves
-        and branches connecting boundary components in the `k`th pair
-        of pants. 
-
-        OUTPUT:
-
-        The number of the branch in the gluing list of the train
-        track. If a branch is not part of the train track, the value
-        is zero.
-        
-        EXAMPLES::
-
-            sage: p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
-            sage: p_coord1 = PantsCoordinates([0,0,0,1,1,2])
-            sage: p_coord2 = PantsCoordinates([3,0,0,0,5,1])
-            sage: tt = TrainTrackInPants(p,[p_coord1,p_coord2],[-1,3,-2])
-            sage: tt
-            Train track on the surface of genus 2 with 4 punctures
-            sage: self.label_to_branch('t_1')
-            1
-            sage: self.label_to_branch('t_2')
-            2
-            sage: self.label_to_branch('t_3')
-            3
-            sage: self.label_to_branch((1,'l_11'))
-            0
-            sage: self.label_to_branch((1,'l_22'))
-            0
-            sage: self.label_to_branch((1,'l_33'))
-            0
-            sage: self.label_to_branch((1,'l_12'))
-            4
-            sage: self.label_to_branch((1,'l_23'))
-            -6
-            sage: self.label_to_branch((1,'l_31'))
-            -5
-            sage: self.label_to_branch((2,'l_11'))
-            9
-            sage: self.label_to_branch((2,'l_22'))
-            0
-            sage: self.label_to_branch((2,'l_33'))
-            0
-            sage: self.label_to_branch((2,'l_12'))
-            0
-            sage: self.label_to_branch((2,'l_23'))
-            7
-            sage: self.label_to_branch((2,'l_31'))
-            -8
-
-        The non-zero values are arbitrarily assigned, it is okay if
-        the implementation is different. There should be a convention
-        for the orientation of the branches `t_i` and (k,'l_ij'), so
-        the values represent oriented branches according to this convention.
-
-
-        """
-        pass
-
-    def branch_to_label(self,branch):
-        pass
-    
-    def unzip(self,branch):
-        # Calls the unzip of the parent class and updates the
-        # branch-to-label dictionaries.
-        pass
         
     
 
