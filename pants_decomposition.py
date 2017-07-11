@@ -141,15 +141,48 @@ class PantsDecomposition(Surface):
         return 'Pants decomposition of ' + super(PantsDecomposition,self).__repr__().lower()
 
 
-    def pants_curve_as_tt(self,pants_curve):
+    def construct_measure_from_pants_curve(self,pants_curve):
         """
-        Return a measured train track representing the pants curve.
+        Construct the measured corresponding to a pants curve.
+
+        EXAMPLE:
+
+        sage: p = PantsDecomposition([[1,2,3],[-1,-3,-2]])
+        sage: p.construct_measure_from_pants_curve(2)
+        
+        """
+        self._measure = {} # initialize
+
+
+
+
+    def construct_train_track_from_measure(self):
+        pass
+
+    def measure_of(self,label):
+        """
+        EXAMPLE:
+
+        sage: p = PantsDecomposition([[1,2,3],[-1,-3,-2]])
+        sage: p.construct_measure_from_pants_curve(2)
+        sage: p.measure_of('t1')
+        0
+        sage: p.measure_of('t2')
+        1
+        sage: p.measure_of((1,'l11'))
+        0
+        sage: p.measure_of((2,'l23'))
+        0
+        sage: p.measure_of('m2')
+        0
         """
         pass
     
 
-    
-        
+    def apply_twist(self,pants_curve,power=1):
+        m_i = self.measure_of('m%d' % (pants_curve))
+        self._coordinates['t%d' % (pants_curve)] += power * m_i
+
     
     def apply_elementary_move(self,pants_curve):
         """
@@ -189,6 +222,15 @@ class PantsDecomposition(Surface):
             sage: p4 = p1.apply_elementary_move(1)
             Pants decomposition of genus 2 orientable closed surface
 
+        If we have a measure, it is updated:
+
+            sage: p = PantsDecomposition([[1,2,3],[-1,-3,-2]])
+            sage: p.construct_measure_from_pants_curve(2)
+            sage: p.apply_elementary_move(2)
+            sage: p.measure_of('t2')
+            0
+            sage: p.measure_of('m2')
+            1
 
         """
         if not self.is_orientable():
@@ -204,47 +246,58 @@ class PantsDecomposition(Surface):
             raise ValueError('Specified curve is not glued.')
         if p1 == p2:
             return PantsDecomposition(self._p_list)
-        else:
-            p1_tuple = self._p_list[p1]
-            p2_tuple = self._p_list[p2]
-            punc_11_idx = p1_tuple.index(curve_key)
-            punc_11 = p1_tuple[punc_11_idx]
-            punc_21_idx = p2_tuple.index(-curve_key)
-            punc_21 = p2_tuple[punc_21_idx]
-            punc_12 = p1_tuple[(punc_11_idx+1)%3]
-            punc_13 = p1_tuple[(punc_11_idx+2)%3]
-            punc_22 = p2_tuple[(punc_21_idx+1)%3]
-            punc_23 = p2_tuple[(punc_21_idx+2)%3]
-            mapping_punc_dict = {}
-            mapping_punc_dict[punc_12] = punc_13
-            mapping_punc_dict[punc_13] = punc_22
-            mapping_punc_dict[punc_22] = punc_23
-            mapping_punc_dict[punc_23] = punc_12
-            if -punc_12 not in mapping_punc_dict:
-                mapping_punc_dict[-punc_12] = -punc_13
-            if -punc_13 not in mapping_punc_dict:
-                mapping_punc_dict[-punc_13] = -punc_22
-            if -punc_22 not in mapping_punc_dict:
-                mapping_punc_dict[-punc_22] = -punc_23
-            if -punc_23 not in mapping_punc_dict:
-                mapping_punc_dict[-punc_23] = -punc_12
-            punc_ls = [abs(punc_11), abs(punc_12), abs(punc_13), abs(punc_22), abs(punc_23)]
-            change_pant_set = set()
-            rt_ls = list(self._p_list)
-            for p in punc_ls:
-                change_pant_set.add(self._p_map[p][0])
-                if self._p_map[p][1]:
-                    change_pant_set.add(self._p_map[p][1])
-            for pant_idx in change_pant_set:
-                cp_ls = list(rt_ls[pant_idx])
-                for i in range(3):
-                    ch_key = rt_ls[pant_idx][i]
-                    if ch_key in mapping_punc_dict.keys():
-                        cp_ls[i] = mapping_punc_dict[ch_key]
-                rt_ls[pant_idx] = cp_ls
-            #print rt_ls
-            return PantsDecomposition(rt_ls)
 
+        p1_tuple = self._p_list[p1]
+        p2_tuple = self._p_list[p2]
+        punc_11_idx = p1_tuple.index(curve_key)
+        punc_11 = p1_tuple[punc_11_idx]
+        punc_21_idx = p2_tuple.index(-curve_key)
+        punc_21 = p2_tuple[punc_21_idx]
+        punc_12 = p1_tuple[(punc_11_idx+1)%3]
+        punc_13 = p1_tuple[(punc_11_idx+2)%3]
+        punc_22 = p2_tuple[(punc_21_idx+1)%3]
+        punc_23 = p2_tuple[(punc_21_idx+2)%3]
+        mapping_punc_dict = {}
+        mapping_punc_dict[punc_12] = punc_13
+        mapping_punc_dict[punc_13] = punc_22
+        mapping_punc_dict[punc_22] = punc_23
+        mapping_punc_dict[punc_23] = punc_12
+        if -punc_12 not in mapping_punc_dict:
+            mapping_punc_dict[-punc_12] = -punc_13
+        if -punc_13 not in mapping_punc_dict:
+            mapping_punc_dict[-punc_13] = -punc_22
+        if -punc_22 not in mapping_punc_dict:
+            mapping_punc_dict[-punc_22] = -punc_23
+        if -punc_23 not in mapping_punc_dict:
+            mapping_punc_dict[-punc_23] = -punc_12
+        punc_ls = [abs(punc_11), abs(punc_12), abs(punc_13), abs(punc_22), abs(punc_23)]
+        change_pant_set = set()
+        rt_ls = list(self._p_list)
+        for p in punc_ls:
+            change_pant_set.add(self._p_map[p][0])
+            if self._p_map[p][1]:
+                change_pant_set.add(self._p_map[p][1])
+        for pant_idx in change_pant_set:
+            cp_ls = list(rt_ls[pant_idx])
+            for i in range(3):
+                ch_key = rt_ls[pant_idx][i]
+                if ch_key in mapping_punc_dict.keys():
+                    cp_ls[i] = mapping_punc_dict[ch_key]
+            rt_ls[pant_idx] = cp_ls
+        #print rt_ls
+
+        # ALSO UPDATE THE MEASURE
+
+        # compute new values of variables using Penner's formulas,
+        # make changes internally
+
+        return PantsDecomposition(rt_ls)
+
+    
+    
+
+        
+        
       
 
     
@@ -418,7 +471,10 @@ class PantsDecomposition(Surface):
 
 
 
-    
+        
+
+
+        
 
 class PantsCoordinates(namedtuple("PantsCoordinates",
                                   "l11 l22 l33 l12 l23 l31")):
@@ -877,7 +933,16 @@ def unzip_sequence_pants_twist(tt_map,pants_decomposition,pants_curve,power=1):
     
     if power > 0:
         if twisting == 'left':
-            tt_map.unzip_codomain_right_of(pants_branch)        
+            # Unzipping the codomain train track
+            tt_map.unzip_codomain_right_of(pants_branch)
+
+            # Computing new coordinates
+            
+            # Constructing the new DT train track
+            new_tt = p.dehn_thurston_tt()
+
+            # Constructing branch map
+            
         # if twisting is to the right, no splitting is needed
             
     if power < 0:
