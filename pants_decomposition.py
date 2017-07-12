@@ -26,167 +26,328 @@ EXAMPLES::
 
 
 from surface import Surface
-from sage.all import Graph, preparser
+from sage.structure.sage_object import SageObject
+from sage.graphs.graph import Graph
 from train_track import TrainTrack
-import collections
+from collections import namedtuple
 
 
-
+LEFT = 0
+RIGHT = 1
     
 
 class PantsDecomposition(Surface):
     """A pants decomposition of a surface.
 
-    Pants decompositions can be encoded by a list of list. The list in the position of index i would be considered as pant i.
-    Each pants is a list with 3 entries indicating 3 punctures in certain direction. Punctures are denoted by integer. Punctures of same value would be glued in the orientable direction 
-    while punctures who are binary complement would be glued in opposite direction.
+    Pants decompositions can be encoded by a list of list. The list in
+    the position of index i would be considered as pant i. Each pants
+    is a list with 3 entries indicating 3 punctures in certain
+    direction. Punctures are denoted by integer. Punctures of same
+    value would be glued in the orientable direction while punctures
+    who are binary complement would be glued in opposite direction.
     
     INPUT:
 
-    - ``p_list`` -- a list of list. The nested list should of definite length of three.
+    - ``gluing_list`` -- a list of lists with three nonzero integers. 
     
     EXAMPLES::
 
-        sage: PantsDecomposition([[1,2,3],[1,2,3]])
-        Pants decomposition of genus 2 orientable closed surface
-
-        sage: PantsDecomposition([[1,2,~2]])
-        Pants decomposition of klein bottle with 1 puncture
+        sage: PantsDecomposition([[1,2,3],[-3,-2,-1]])
+        Pants decomposition of the closed surface of genus 2
 
         sage: PantsDecomposition([[1,2,2]])
-        Pants decomposition of torus surface with 1 puncture
+        Pants decomposition of the klein bottle with 1 puncture
 
+        sage: PantsDecomposition([[1,2,-2]])
+        Pants decomposition of the torus with 1 puncture
+
+        sage: PantsDecomposition([[1,-1,2],[-2,4,3],[-3,5,6],[-5,-4,-6]])
+        Pants decomposition of the closed surface of genus 3
 
     """
-    def __init__(self, p_list):
-        
+    def __init__(self, gluing_list):
+        self._gluing_list = gluing_list        
         # punc => +-1 ~ +- inf
         # pant_name => idx
 
-        try:
-            preparser(False)
-        except:
-            raise ValueError('Sage preparser issue')
+        # try:
+        #     preparser(False)
+        # except:
+        #     raise ValueError('Sage preparser issue')
 
-        num_pants = len(p_list)
-        punc_map = {}
-        edge_ls = []
+        num_pants = len(gluing_list)
+        self._pants_next_to_pants_curve = {}
         #gluing_cnt = 0
-        gluing_set = set()
-        non_ori_punc_set = set()
+        # inner_pants_curves = set()
+        # non_ori_bdy_set = set()
 
 
-        for i in range(len(p_list)):
-            pant = p_list[i]
+        for i in range(len(gluing_list)):
+            pant = gluing_list[i]
             if len(pant) != 3:
-                raise ValueError('One pant should have three punctures')
-            for punc in pant:
-                if punc == 0:
-                    raise ValueError('Punctures should be named as non-zero integer')
-                punc_key = abs(punc)
-                if punc in punc_map.keys() and punc_map[punc][0]:
-                    weight = 1
-                    non_ori_punc_set.add(punc)
-                else:
-                    weight = 0
-                if punc_key in punc_map.keys():
-                    if punc_map[punc_key][1] != None and punc_map[punc_key][0] != None:
-                        raise ValueError("Each puncture can only be glued once")
-                    #gluing_cnt += 1
-                    gluing_set.add(punc_key)
-                    if punc < 0:
-                        punc_map[punc_key][1] = i
-                    else:
-                        punc_map[punc_key][0] = i
-                    edge_ls.append((punc_map[punc_key][0], punc_map[punc_key][1], weight))
-                    gluing_set.add(punc_key)
-                else:
-                    if punc < 0:
-                        punc_map[punc_key] = [None, i]
-                    else:
-                        punc_map[punc_key] = [i, None]
+                raise ValueError('All pants should have three boundaries')
+            for bdy in pant:
+                if bdy == 0:
+                    raise ValueError('Pants curves should be numbered '
+                                     'by non-zero integers') 
+                pants_curve = abs(bdy)
+                # self._pants_next_to_pants_curve[pants_curve] = 
+                if pants_curve not in self._pants_next_to_pants_curve.keys():
+                    self._pants_next_to_pants_curve[pants_curve] = [[],[]]
+                side = LEFT if bdy>0 else RIGHT
+                self._pants_next_to_pants_curve[pants_curve][side].append(i)
+                
+                    # inner_pants_curves.add(pants_curve)
+                #     if bdy < 0:
+                #         pants_next_to_pants_curve[pants_curve][1] = i
+                #     else:
+                #         pants_next_to_pants_curve[pants_curve][0] = i
+                #     inner_pants_curves.add(pants_curve)
+                # else:
+                #     if bdy < 0:
+                #         pants_next_to_pants_curve[pants_curve] = [None, i]
+                #     else:
+                #         pants_next_to_pants_curve[pants_curve] = [i, None]
 
-        # check for connectedness
-        #print edge_ls
-        g = Graph(edge_ls)
 
-        print g
 
-        if not g.is_connected():
-            raise ValueError('Invalid input. Surface should be connect')
-
-        # orientation
-        orientable = True ### DEBUG
-        #orientable = PantsDecomposition._is_orientable(g) ### DEBUG
-
-        euler_char = -1*num_pants 
-        num_puncture = num_pants*3 - 2*len(gluing_set)
-        super(PantsDecomposition,self).__init__(euler_char = euler_char, num_punctures = num_puncture, is_orientable = orientable)
+        super(PantsDecomposition,self).__init__(\
+                    euler_char = -1*num_pants,
+                    num_punctures = self.num_boundary_pants_curves(),
+                    is_orientable = self._compute_orientable())
         #print self.__repr__()
-        self._p_list = p_list
-        self._p_map = punc_map
-        self._gluing_set = gluing_set
-        self._non_ori_punc_set = non_ori_punc_set
 
-    def _is_orientable(g):
-        orientable = True
-        for cycle in g.cycle_basis(output='edge'):
-            cycle_weight = sum([e[2] for e in cycle])
-            if cycle_weight % 2 == 1:
-                orientable = False
-        return orientable
+        # self._pants_next_to_pants_curve = pants_next_to_pants_curve
+        # self._inner_pants_curves = inner_pants_curves
+        # self._non_ori_bdy_set = non_ori_bdy_set
 
+    def dual_graph(self):
+        edge_ls = []
+        for c in self.inner_pants_curves():
+            left, right = self.pants_next_to_pants_curve(c)
+            if len(left) == 1: # orientation-preserving gluing
+                edge_ls.append((left[0], right[0], 0))
+            elif len(left) == 2: # orientation-reversion gluing
+                # two pants on the left
+                edge_ls.append((left[0], left[1], 1))
+            else:
+                # two pants on the right
+                edge_ls.append((right[0], right[1], 1))
+        return Graph(edge_ls,multiedges=True,loops=True)
 
-    def __repr__(self):
-        return 'Pants decomposition of ' + super(PantsDecomposition,self).__repr__().lower()
+    def _compute_orientable(self):
 
+        # do a search in the dual graph, looking for an
+        # orientation-reversing cycle
+        pant = 0
+        value = {0:0}
+        seen_pants_curves = set()
+        next_pants_curves = list(self.pants_curves_next_to_pant(pant))
+        while len(next_pants_curves) > 0:
+            # print pant, seen_pants_curves, next_pants_curves, value
+            c = next_pants_curves.pop()
+            if abs(c) in seen_pants_curves:
+                continue
+            seen_pants_curves.add(abs(c))
+            if abs(c) in self.boundary_pants_curves():
+                continue
+            ps = self.pants_next_to_pants_curve(abs(c))
+            change = 0 if len(ps[0]) == 1 else 1
+            assert(len(ps[0]+ps[1]) == 2)
+            p1, p2 = ps[0]+ps[1]
+            assert(p1 in value.keys() or p2 in value.keys())
+            if p1 in value.keys() and p2 in value.keys():
+                if (value[p1] - value[p2] - change) % 2 == 1:
+                    return False
+            if p1 in value.keys():
+                value[p2] = value[p1] + change
+            else:
+                value[p1] = value[p2] + change
 
-    def construct_measure_from_pants_curve(self,pants_curve):
-        """
-        Construct the measured corresponding to a pants curve.
+        return True
+            
 
-        EXAMPLE:
-
-        sage: p = PantsDecomposition([[1,2,3],[-1,-3,-2]])
-        sage: p.construct_measure_from_pants_curve(2)
+    def is_connected(self):
+        return self.dual_graph().is_connected()
         
+    def __repr__(self):
+        return 'Pants decomposition of the ' + super(PantsDecomposition,self).__repr__().lower()
+
+    def pants_next_to_pants_curve(self,pants_curve):
         """
-        self._measure = {} # initialize
+        EXAMPLES::
 
+            sage: p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
+            sage: p.pants_next_to_pants_curve(1)
+            [[0], [1]]
+            sage: p.pants_next_to_pants_curve(2)
+            [[0], [1]]
+            sage: p.pants_next_to_pants_curve(3)
+            [[0], [1]]
 
+            sage: p = PantsDecomposition([[1,2,-2]])
+            sage: p.pants_next_to_pants_curve(1)
+            [[0], []]
+            sage: p.pants_next_to_pants_curve(2)
+            [[0], [0]]
 
+            sage: p = PantsDecomposition([[1,2,2]])
+            sage: p.pants_next_to_pants_curve(2)
+            [[0, 0], []]
 
-    def train_track_from_measure(self):
+            sage: p = PantsDecomposition([[1,-2,-2]])
+            sage: p.pants_next_to_pants_curve(2)
+            [[], [0, 0]]
+
+            sage: p = PantsDecomposition([[1,-1,2],[-2,4,3],[-3,5,6],[-5,-4,-6]])
+            sage: p.pants_next_to_pants_curve(3)
+            [[1], [2]]
         """
-        Return the Dehn-Thurston train track for the current measure.
+        return self._pants_next_to_pants_curve[pants_curve]
+
+    def pants_curves_next_to_pant(self,pant):
         """
-        pass
+        EXAMPLES::
 
-
+            sage: p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
+            sage: p.pants_curves_next_to_pant(0)
+            [1, 2, 3]
+            sage: p.pants_curves_next_to_pant(1)
+            [-3, -2, -1]
+        """
+        return self._gluing_list[pant]
     
-    def measure_of(self,label):
+    def num_pants(self):
         """
-        EXAMPLE:
+        EXAMPLES::
 
-        sage: p = PantsDecomposition([[1,2,3],[-1,-3,-2]])
-        sage: p.construct_measure_from_pants_curve(2)
-        sage: p.measure_of('t1')
-        0
-        sage: p.measure_of('t2')
-        1
-        sage: p.measure_of((1,'l11'))
-        0
-        sage: p.measure_of((2,'l23'))
-        0
-        sage: p.measure_of('m2')
-        0
+            sage: p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
+            sage: p.num_pants()
+            2
+
+            sage: p = PantsDecomposition([[1,2,-2]])
+            sage: p.num_pants()
+            1
+
+            sage: p = PantsDecomposition([[1,-1,2],[-2,4,3],[-3,5,6],[-5,-4,-6]])
+            sage: p.num_pants()
+            4
         """
-        pass
+        return len(self._gluing_list)
+
+    def pants_curves(self):
+        """
+        EXAMPLES::
+
+            sage: p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
+            sage: p.pants_curves() == {1,2,3}
+            True
+
+            sage: p = PantsDecomposition([[1,2,-2]])
+            sage: p.pants_curves() == {1,2}
+            True
+
+            sage: p = PantsDecomposition([[1,-1,2],[-2,4,3],[-3,5,6],[-5,-4,-6]])
+            sage: p.pants_curves() == {1,2,3,4,5,6}
+            True
+        """
+        return set(range(1,len(self._pants_next_to_pants_curve)+1))
     
+    def inner_pants_curves(self):
+        """
+        EXAMPLES::
 
-    def apply_twist(self,pants_curve,power=1):
-        m_i = self.measure_of('m%d' % (pants_curve))
-        self._coordinates['t%d' % (pants_curve)] += power * m_i
+            sage: p = PantsDecomposition([[1,2,3],[4,5,-1]])
+            sage: p.inner_pants_curves() == {1}
+            True
+
+            sage: p = PantsDecomposition([[1,2,-2]])
+            sage: p.inner_pants_curves() == {2}
+            True
+
+            sage: p = PantsDecomposition([[1,-1,2],[-2,4,3],[-3,5,6],[-5,-4,-6]])
+            sage: p.inner_pants_curves() == {1,2,3,4,5,6}
+            True
+        """
+        x = set()
+        for c in self.pants_curves():
+            a = self.pants_next_to_pants_curve(c)
+            if len(a[0]) + len(a[1]) == 2:
+                x.add(c)
+        return x
+
+    def boundary_pants_curves(self):
+        """
+        EXAMPLES::
+
+            sage: p = PantsDecomposition([[1,2,3],[4,5,-1]])
+            sage: p.boundary_pants_curves() == {2,3,4,5}
+            True
+
+            sage: p = PantsDecomposition([[1,2,-2]])
+            sage: p.boundary_pants_curves() == {1}
+            True
+
+            sage: p = PantsDecomposition([[1,-1,2],[-2,4,3],[-3,5,6],[-5,-4,-6]])
+            sage: p.boundary_pants_curves() == set()
+            True
+        """
+        return self.pants_curves() - self.inner_pants_curves()
+
+    def num_pants_curves(self):
+        """
+        EXAMPLES::
+
+            sage: p = PantsDecomposition([[1,2,3],[4,5,-1]])
+            sage: p.num_pants_curves()
+            5
+
+            sage: p = PantsDecomposition([[1,2,-2]])
+            sage: p.num_pants_curves()
+            2
+
+            sage: p = PantsDecomposition([[1,-1,2],[-2,4,3],[-3,5,6],[-5,-4,-6]])
+            sage: p.num_pants_curves()
+            6
+        """
+        return len(self.pants_curves())
+    
+    def num_inner_pants_curves(self):
+        """
+        EXAMPLES::
+
+            sage: p = PantsDecomposition([[1,2,3],[4,5,-1]])
+            sage: p.num_inner_pants_curves() 
+            1
+
+            sage: p = PantsDecomposition([[1,2,-2]])
+            sage: p.num_inner_pants_curves() 
+            1
+
+            sage: p = PantsDecomposition([[1,-1,2],[-2,4,3],[-3,5,6],[-5,-4,-6]])
+            sage: p.num_inner_pants_curves()
+            6
+        """
+        return len(self.inner_pants_curves())
+
+    def num_boundary_pants_curves(self):
+        """
+        EXAMPLES::
+
+            sage: p = PantsDecomposition([[1,2,3],[4,5,-1]])
+            sage: p.num_boundary_pants_curves() 
+            4
+
+            sage: p = PantsDecomposition([[1,2,-2]])
+            sage: p.num_boundary_pants_curves() 
+            1
+
+            sage: p = PantsDecomposition([[1,-1,2],[-2,4,3],[-3,5,6],[-5,-4,-6]])
+            sage: p.num_boundary_pants_curves()
+            0
+        """
+        return len(self.boundary_pants_curves())
+
 
     
     def apply_elementary_move(self,pants_curve):
@@ -201,41 +362,41 @@ class PantsDecomposition(Surface):
 
         - ``pants_curve`` -- selected curve to apply elementary move on.
 
-        EXAMPLES::
+        EXAMPLES:
 
-        Type 1 elementary move::
+        Type 1 elementary move:
 
-            sage: p1 = PantsDecomposition([[1, 2, -2]])
-            sage: p1.apply_elementary_move(2)
-            Pants decomposition of torus surface with 1 puncture
+            # sage: p1 = PantsDecomposition([[1, 2, -2]])
+            # sage: p1.apply_elementary_move(2)
+            # Pants decomposition of torus surface with 1 puncture
 
         The resulting (marked) pants decomposition is isomorphic to
         the original one.
 
         Type 2 elementary move, resulting in a pants decomposition
-        with a separating curve::
+        with a separating curve:
 
-            sage: p2 = PantsDecomposition([[1,2,3],[-1,-3,-2]])
-            sage: p2.apply_elementary_move(1)
-            Pants decomposition of genus 2 orientable closed surface
+            # sage: p2 = PantsDecomposition([[1,2,3],[-1,-3,-2]])
+            # sage: p2.apply_elementary_move(1)
+            # Pants decomposition of genus 2 orientable closed surface
 
         A type 2 elementary move on the same curve of the same pants
         decomposition but with a different marking. The resulting
-        pants decomposition now does not have a separating curve::
+        pants decomposition now does not have a separating curve:
 
-            sage: p3 = PantsDecomposition([[1,2,3],[-1,-2,-3]])
-            sage: p4 = p1.apply_elementary_move(1)
-            Pants decomposition of genus 2 orientable closed surface
+            # sage: p3 = PantsDecomposition([[1,2,3],[-1,-2,-3]])
+            # sage: p4 = p1.apply_elementary_move(1)
+            # Pants decomposition of genus 2 orientable closed surface
 
         If we have a measure, it is updated:
 
-            sage: p = PantsDecomposition([[1,2,3],[-1,-3,-2]])
-            sage: p.construct_measure_from_pants_curve(2)
-            sage: p.apply_elementary_move(2)
-            sage: p.measure_of('t2')
-            0
-            sage: p.measure_of('m2')
-            1
+            # sage: p = PantsDecomposition([[1,2,3],[-1,-3,-2]])
+            # sage: p.construct_measure_from_pants_curve(2)
+            # sage: p.apply_elementary_move(2)
+            # sage: p.measure_of('t2')
+            # 0
+            # sage: p.measure_of('m2')
+            # 1
 
         """
         if not self.is_orientable():
@@ -243,17 +404,17 @@ class PantsDecomposition(Surface):
 
         curve_key = abs(pants_curve)
 
-        if curve_key not in self._p_map.keys():
+        if curve_key not in self._pants_next_to_pants_curve.keys():
             raise ValueError('No such puncture exsit.')
-        p1 = self._p_map[curve_key][0]
-        p2 = self._p_map[curve_key][1]
+        p1 = self._pants_next_to_pants_curve[curve_key][0]
+        p2 = self._pants_next_to_pants_curve[curve_key][1]
         if p2 == None or p1 == None:
             raise ValueError('Specified curve is not glued.')
         if p1 == p2:
-            return PantsDecomposition(self._p_list)
+            return PantsDecomposition(self._gluing_list)
 
-        p1_tuple = self._p_list[p1]
-        p2_tuple = self._p_list[p2]
+        p1_tuple = self._gluing_list[p1]
+        p2_tuple = self._gluing_list[p2]
         punc_11_idx = p1_tuple.index(curve_key)
         punc_11 = p1_tuple[punc_11_idx]
         punc_21_idx = p2_tuple.index(-curve_key)
@@ -277,11 +438,11 @@ class PantsDecomposition(Surface):
             mapping_punc_dict[-punc_23] = -punc_12
         punc_ls = [abs(punc_11), abs(punc_12), abs(punc_13), abs(punc_22), abs(punc_23)]
         change_pant_set = set()
-        rt_ls = list(self._p_list)
+        rt_ls = list(self._gluing_list)
         for p in punc_ls:
-            change_pant_set.add(self._p_map[p][0])
-            if self._p_map[p][1]:
-                change_pant_set.add(self._p_map[p][1])
+            change_pant_set.add(self._pants_next_to_pants_curve[p][0])
+            if self._pants_next_to_pants_curve[p][1]:
+                change_pant_set.add(self._pants_next_to_pants_curve[p][1])
         for pant_idx in change_pant_set:
             cp_ls = list(rt_ls[pant_idx])
             for i in range(3):
@@ -318,34 +479,34 @@ class PantsDecomposition(Surface):
 
         EXAMPLES::
 
-            sage: p = PantsDecomposition([[1,-1,2],[-2,4,3],[-3,5,6],[-5,-4,-6]])
-            sage: p
-            Pants decomposition of closed surface of genus 3
-            sage: p.dehn_thurston_tt([0,0,0,0],{1:'L',2:'L',3:'R',4:'R',5:'R',6:'R'})
-            Train track on surface of genus 4 with 8 punctures.
+            # sage: p = PantsDecomposition([[1,-1,2],[-2,4,3],[-3,5,6],[-5,-4,-6]])
+            # sage: p
+            # Pants decomposition of closed surface of genus 3
+            # sage: p.dehn_thurston_tt([0,0,0,0],{1:'L',2:'L',3:'R',4:'R',5:'R',6:'R'})
+            # Train track on surface of genus 4 with 8 punctures.
         
         For the following pants decomposition, there are only two
         Dehn-Thurston train tracks::
 
-            sage: p = PantsDecomposition([[1,2,3],[-1,-3,-2]])
-            sage: p
-            Pants decomposition of closed surface of genus 2
-            sage: p.dehn_thurston_tt([0,0], {1:'L',2:'L',3:'L'})
-            Train track on the closed surface of genus 2
-            sage: p.dehn_thurston_tt([3,1],{1:'R',2:'L',3:'R'})
-            Train track on surface of genus 3 with 4 punctures.
+            # sage: p = PantsDecomposition([[1,2,3],[-1,-3,-2]])
+            # sage: p
+            # Pants decomposition of closed surface of genus 2
+            # sage: p.dehn_thurston_tt([0,0], {1:'L',2:'L',3:'L'})
+            # Train track on the closed surface of genus 2
+            # sage: p.dehn_thurston_tt([3,1],{1:'R',2:'L',3:'R'})
+            # Train track on surface of genus 3 with 4 punctures.
 
         For the following pants decomposition, there are 16
         Dehn-Thurston train tracks (two choices for each pants and two
         choices for each pants curve)::
 
-            sage: p = PantsDecomposition([[0,1,1,2],[0,2,1,1]])
-            sage: p
-            Pants decomposition of the 
-            sage: p.dehn_thurston_tt([(0,1),(1,2)],[(0,1,'L'),(0,2,'R')])
-            Train track on the torus with 2 punctures
-            sage: p.dehn_thurston_tt([(0,2),(1,1)],[(0,1,'R'),(0,2,'L')])
-            Train track on the torus with 2 punctures
+            # sage: p = PantsDecomposition([[0,1,1,2],[0,2,1,1]])
+            # sage: p
+            # Pants decomposition of the 
+            # sage: p.dehn_thurston_tt([(0,1),(1,2)],[(0,1,'L'),(0,2,'R')])
+            # Train track on the torus with 2 punctures
+            # sage: p.dehn_thurston_tt([(0,2),(1,1)],[(0,1,'R'),(0,2,'L')])
+            # Train track on the torus with 2 punctures
 
         """
         #help method
@@ -358,26 +519,27 @@ class PantsDecomposition(Surface):
         else:
             train_track_ls = []
 
-            if len(pants_pieces) != len(self._p_list):
+            if len(pants_pieces) != len(self._gluing_list):
                 raise ValueError('Need to specify type for each pants')
 
-            baseoffset = len(self._p_map)
+            baseoffset = len(self._pants_next_to_pants_curve)
 
             for punc_key in annulus_pieces.keys():
 
-                if punc_key not in self._gluing_set:
+                if punc_key not in self._pants_curves:
                     raise ValueError('Selected puncture is not glued.')
 
-                if punc_key in self._non_ori_punc_set:
+                if not self.is_orientable():
+                # if punc_key in self._non_ori_punc_set:
                     raise NotImplementedError('Train Track for non-orientable gluing have not been implemented yet.')
 
                 orientation = annulus_pieces[punc_key]
                 # first list '+'
                 if orientation == 'L':
-                    p_ls_idx = self._p_map[punc_key][1]
-                    p_ls_idx_neg = self._p_map[punc_key][0]
-                    p_ls = self._p_list[p_ls_idx]
-                    p_ls_neg = self._p_list[p_ls_idx_neg]
+                    p_ls_idx = self._pants_next_to_pants_curve[punc_key][1]
+                    p_ls_idx_neg = self._pants_next_to_pants_curve[punc_key][0]
+                    p_ls = self._gluing_list[p_ls_idx]
+                    p_ls_neg = self._gluing_list[p_ls_idx_neg]
                     base_idx = p_ls.index(-punc_key)
                     base_idx_neg = p_ls_neg.index(punc_key)
                     p_type = pants_pieces[p_ls_idx]
@@ -406,10 +568,10 @@ class PantsDecomposition(Surface):
                         train_track_ls.append(filter_ls([-punc_key, -self._offset(baseoffset, punc_n2)]))
 
                 elif orientation == 'R':
-                    p_ls_idx = self._p_map[punc_key][0]
-                    p_ls_idx_neg = self._p_map[punc_key][1]
-                    p_ls = self._p_list[p_ls_idx]
-                    p_ls_neg = self._p_list[p_ls_idx_neg]
+                    p_ls_idx = self._pants_next_to_pants_curve[punc_key][0]
+                    p_ls_idx_neg = self._pants_next_to_pants_curve[punc_key][1]
+                    p_ls = self._gluing_list[p_ls_idx]
+                    p_ls_neg = self._gluing_list[p_ls_idx_neg]
                     base_idx = p_ls.index(punc_key)
                     base_idx_neg = p_ls_neg.index(-punc_key)
                     p_type = pants_pieces[p_ls_idx]
@@ -447,7 +609,7 @@ class PantsDecomposition(Surface):
         pass
         
     def _offset(self, baseoffset, x):
-        if abs(x) in self._gluing_set:
+        if abs(x) in self._pants_curves:
             if x>0:
                 return x + baseoffset
             else:
@@ -481,14 +643,6 @@ class PantsDecomposition(Surface):
 
         
 
-class PantsCoordinates(namedtuple("PantsCoordinates",
-                                  "l11 l22 l33 l12 l23 l31")):
-    r"""
-    The `\lambda_{ij}` for a pair of pants. `\lambda_{ij}` is the
-    measure of the branch connecting the boundary components i and j.
-    At most three of them can be nonzero.
-    """
-
 
     
 
@@ -499,7 +653,7 @@ class PantsCoordinates(namedtuple("PantsCoordinates",
 
 
 def unzip_sequence_mapping_class(tt_map,pants_decomposition,mapping_class):
-    r"""Perform unzips determined by twisting about a pants curve.
+    r"""Perform unzips determined by a mapping class.
 
     We are handed a train track map whose domain `\mu` is any measured train
     track and whose codomain `\tau` is a Dehn-Thurston train track for some
@@ -639,7 +793,6 @@ def unzip_sequence_pants_twist(tt_map,pants_decomposition,pants_curve,power=1):
     #
     # 
     # ----------------------------------------
-    # Without Decisions:
     dom = tt_map.domain
     cod = tt_map.codomain
     p = pants_decomposition
@@ -710,7 +863,7 @@ def unzip_sequence_elementary_move(tt_map,pants_decomposition,
     pass
 
 
-class DehnTwist(namedtuple(elementary_moves,pants_curve,power)):
+class DehnTwist(namedtuple("DehnTwist",["elementary_moves","pants_curve","power"])):
     """
     - ``elementary_moves`` -- a list of pants curve indices on which
     elementary moves are performed.
@@ -722,9 +875,121 @@ class DehnTwist(namedtuple(elementary_moves,pants_curve,power)):
       performed. Power `n` means right twisting `n` times. Power
       `-n` means twisting left `n` times.
     """
+    pass
+
+class MeasuredLamination(SageObject):
+    pass
+
+ 
+class PantsCoordinates(namedtuple("PantsCoordinates",
+                                  "l11 l22 l33 l12 l23 l31")):
+    r"""
+    The `\lambda_{ij}` for a pair of pants. `\lambda_{ij}` is the
+    measure of the branch connecting the boundary components i and j.
+    At most three of them can be nonzero.
+    """
+    def __new__(cls,l11=0,l22=0,l33=0,l12=0,l23=0,l31=0):
+        self = super(PantsCoordinates, cls).__new__(cls,l11,l22,l33,l12,l23,l31)
+        return self
+
+class DehnThurstonCoordinates(MeasuredLamination):
+    """
+    Dehn-Thurston coordinates of a measured lamination.
+
+    EXAMPLES:
+
+    # sage: p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
+    # sage: DehnThurstonCoordinates(p,[0,1,2],[1,-2,-1])
+    # Measured lamination on the closed surface of genus 2
+
+    """
+    def __init__(self,pants_decomposition,twists,pants_coordinates):
+        """
+        """
+        self._pants_decomposition = pants_decomposition
+        self._twists = twists
+        self._pants_coordinates = pants_coordinates
+
+    def m(self,i):
+        """
+        Return `m_i`.
+        """
+        pass
+    
+    def t(self,i):
+        """
+        Return `t_i`.
+        """
+        pass
+
+    def l(self,i,j,pair_of_pants):
+        r"""
+        Return `\lambda_{ij}` in the specified pair of pants.
+
+        INPUT: 1<= i,j <=3
+      
+        """
+        pass
+
+    def pants_decomposition(self):
+        """
+        Return the underlying pants decomposition.
+        """
+        pass
 
 
+    @classmethod
+    def from_pants_curve(cls,pants_decomposition,pants_curve):
+        """
+        Construct the measured corresponding to a pants curve.
 
+        EXAMPLE:
+
+        # sage: p = PantsDecomposition([[1,2,3],[-1,-3,-2]])
+
+        
+        """
+        p = pants_decomposition
+        t = [0]*p.num_inner_pants_curves()
+        t[pants_curve-1] = 1
+        l = PantsCoordinates()*p.num_pants()
+        return cls(p,t,l)
+
+
+    def construct_train_track(self):
+        """
+        Return the Dehn-Thurston train track for the current measure.
+        """
+        pass
 
     
+    def apply_twist(self,pants_curve,power=1):
+        # TODO
+        # m_i = self.measure_of('m%d' % (pants_curve))
+        # self._coordinates['t%d' % (pants_curve)] += power * m_i
+        pass
+
+    def apply_elementary_move(self,pants_curve):
+        pass
+
+
+class MappingClass(SageObject):
+    def __init__(self,dehn_twists):
+        self._dehn_twists = dehn_twists
+
+    def __mul__(self,other):
+        if isinstance(other, 'MappingClass'):
+            return MappingClass(self._dehn_twists +
+        other._dehn_twists)
+
+        # if isinstance(other)
     
+    
+# The classification
+
+# p = PantsDecomposition([[1,2,3],[-1,-3,-2]])
+
+# # the product of the two twists in the middle of the genus 2 surface
+# mapping = [DehnTwist([],2,1),DehnTwist([2],2,1)]
+
+# c = DehnThurstonCoordinates.from_pants_curve(p, 2)

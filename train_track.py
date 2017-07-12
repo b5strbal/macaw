@@ -1067,10 +1067,10 @@ class CarryingData(SageObject):
          
          
          
-branch_matrix = matrix([[1,1],[0,1]])
-half_branch_map = {1:1,2:1,-1:-1,-2:-2}
-hb_between_branches = {1:[0,0],2:[0,1],-1:[0,1],-2:[0,0]}
-c = CarryingData(branch_matrix, half_branch_map, hb_between_branches)
+# branch_matrix = matrix([[1,1],[0,1]])
+# half_branch_map = {1:1,2:1,-1:-1,-2:-2}
+# hb_between_branches = {1:[0,0],2:[0,1],-1:[0,1],-2:[0,0]}
+# c = CarryingData(branch_matrix, half_branch_map, hb_between_branches)
          
             
          
