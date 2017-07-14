@@ -38,6 +38,10 @@ RIGHT = 1
 PANT = 0
 BDY_IDX = 1
 
+BOUNDARY = 0
+TYPE_1 = 1
+TYPE_2 = 2
+
 class PantsDecomposition(Surface):
     """A pants decomposition of a surface.
 
@@ -183,8 +187,9 @@ class PantsDecomposition(Surface):
     def is_connected(self):
         return self.dual_graph().is_connected()
         
-    def __repr__(self):
-        return 'Pants decomposition of the ' + super(PantsDecomposition,self).__repr__().lower()
+    def _repr_(self):
+        return 'Pants decomposition with gluing list ' + repr(self._gluing_list)
+        # return 'Pants decomposition of the ' + super(PantsDecomposition,self).__repr__().lower()
 
     def adjacent_pants(self,pants_curve):
         """
@@ -197,12 +202,22 @@ class PantsDecomposition(Surface):
             [[(0, 1)], [(1, 1)]]
             sage: p.adjacent_pants(3)
             [[(0, 2)], [(1, 0)]]
+            sage: p.adjacent_pants(-1)
+            [[(1, 2)], [(0, 0)]]
+            sage: p.adjacent_pants(-2)
+            [[(1, 1)], [(0, 1)]]
+            sage: p.adjacent_pants(-3)
+            [[(1, 0)], [(0, 2)]]
 
             sage: p = PantsDecomposition([[1,2,-2]])
             sage: p.adjacent_pants(1)
             [[(0, 0)], []]
             sage: p.adjacent_pants(2)
             [[(0, 1)], [(0, 2)]]
+            sage: p.adjacent_pants(-1)
+            [[], [(0, 0)]]
+            sage: p.adjacent_pants(-2)
+            [[(0, 2)], [(0, 1)]]
 
             sage: p = PantsDecomposition([[1,2,2]])
             sage: p.adjacent_pants(2)
@@ -216,7 +231,9 @@ class PantsDecomposition(Surface):
             sage: p.adjacent_pants(3)
             [[(1, 2)], [(2, 0)]]
         """
-        return self._adjacent_pants[pants_curve]
+        if pants_curve > 0:
+            return self._adjacent_pants[pants_curve]
+        return list(reversed(self._adjacent_pants[-pants_curve]))
 
     def adjacent_curves(self,pant):
         """
@@ -362,15 +379,14 @@ class PantsDecomposition(Surface):
 
     def elementary_move_type(self,pants_curve):
         if pants_curve in self.boundary_pants_curves():
-            return 0
+            return BOUNDARY
         left, right = self.adjacent_pants(pants_curve)
-        return 1 if left[0][0] == right[0][0] else 2
+        return TYPE_1 if left[0][PANT] == right[0][PANT] else TYPE_2
 
 
     
     def apply_elementary_move(self,pants_curve):
-        """
-        Create a new pants decomposition by changing one pants curve.
+        """Create a new pants decomposition by changing one pants curve.
 
         The pants have to be marked by cyclic order of the boundary
         components in each pair of pants, otherwise the elementary
@@ -382,103 +398,67 @@ class PantsDecomposition(Surface):
 
         EXAMPLES:
 
-        Type 1 elementary move:
+        Type 1 elementary move::
 
-            # sage: p1 = PantsDecomposition([[1, 2, -2]])
-            # sage: p1.apply_elementary_move(2)
-            # Pants decomposition of torus surface with 1 puncture
+            sage: p = PantsDecomposition([[1, 2, -2]])
+            sage: p.apply_elementary_move(2); p
+            Pants decomposition with gluing list [[1, 2, -2]]
 
+            sage: p = PantsDecomposition([[-1,1,2],[-2,3,-3]])
+            sage: p.apply_elementary_move(1); p
+            Pants decomposition with gluing list [[-1, 1, 2], [-2, 3, -3]]
+        
         The resulting (marked) pants decomposition is isomorphic to
-        the original one.
+        the original one. WARNING: we might need to worry about the orientation
+        of the curves.
 
         Type 2 elementary move, resulting in a pants decomposition
-        with a separating curve:
+        with a separating curve::
 
-            # sage: p2 = PantsDecomposition([[1,2,3],[-1,-3,-2]])
-            # sage: p2.apply_elementary_move(1)
-            # Pants decomposition of genus 2 orientable closed surface
+            sage: p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
+            sage: p.apply_elementary_move(2)
+            Pants decomposition with gluing list [[2, 1, -1], [-2, -3, 3]]
+            sage: p.apply_elementary_move(-2)
+            Pants decomposition with gluing list [[2, 1, -1], [-2, -3, 3]]
+
 
         A type 2 elementary move on the same curve of the same pants
         decomposition but with a different marking. The resulting
         pants decomposition now does not have a separating curve:
 
-            # sage: p3 = PantsDecomposition([[1,2,3],[-1,-2,-3]])
-            # sage: p4 = p1.apply_elementary_move(1)
-            # Pants decomposition of genus 2 orientable closed surface
+            sage: p = PantsDecomposition([[1,2,3],[-1,-2,-3]])
+            sage: p.apply_elementary_move(2)
+            Pants decomposition with gluing list [[2, 1, -3], [-2, -1, 3]]
+            sage: p.apply_elementary_move(-2)
+            Pants decomposition with gluing list [[2, 1, -3], [-2, -1, 3]]
 
-        If we have a measure, it is updated:
-
-            # sage: p = PantsDecomposition([[1,2,3],[-1,-3,-2]])
-            # sage: p.construct_measure_from_pants_curve(2)
-            # sage: p.apply_elementary_move(2)
-            # sage: p.measure_of('t2')
-            # 0
-            # sage: p.measure_of('m2')
-            # 1
+        As demonstrated by the above examples, the orientation of the input
+        pants curve does not matter.
 
         """
         if not self.is_orientable():
-            raise NotImplementedError('Elementary move for non-orientable surface has not been implement yet.')
+            raise NotImplementedError('Elementary moves for non-orientable '
+                                      'surface have not been implemented yet.')
 
-        curve_key = abs(pants_curve)
-
-        if curve_key not in self._adjacent_pants.keys():
-            raise ValueError('No such puncture exsit.')
-        p1 = self._adjacent_pants[curve_key][0]
-        p2 = self._adjacent_pants[curve_key][1]
-        if p2 == None or p1 == None:
-            raise ValueError('Specified curve is not glued.')
-        if p1 == p2:
+        typ = self.elementary_move_type(pants_curve)
+        if typ == BOUNDARY:
+            raise ValueError("Cannot do an elementary move about a boundary curve.")
+        elif typ == TYPE_1:
+            # combinatorics of the pants decomposition does not change when we
+            # do a first elementary move
             return PantsDecomposition(self._gluing_list)
-
-        p1_tuple = self._gluing_list[p1]
-        p2_tuple = self._gluing_list[p2]
-        punc_11_idx = p1_tuple.index(curve_key)
-        punc_11 = p1_tuple[punc_11_idx]
-        punc_21_idx = p2_tuple.index(-curve_key)
-        punc_21 = p2_tuple[punc_21_idx]
-        punc_12 = p1_tuple[(punc_11_idx+1)%3]
-        punc_13 = p1_tuple[(punc_11_idx+2)%3]
-        punc_22 = p2_tuple[(punc_21_idx+1)%3]
-        punc_23 = p2_tuple[(punc_21_idx+2)%3]
-        mapping_punc_dict = {}
-        mapping_punc_dict[punc_12] = punc_13
-        mapping_punc_dict[punc_13] = punc_22
-        mapping_punc_dict[punc_22] = punc_23
-        mapping_punc_dict[punc_23] = punc_12
-        if -punc_12 not in mapping_punc_dict:
-            mapping_punc_dict[-punc_12] = -punc_13
-        if -punc_13 not in mapping_punc_dict:
-            mapping_punc_dict[-punc_13] = -punc_22
-        if -punc_22 not in mapping_punc_dict:
-            mapping_punc_dict[-punc_22] = -punc_23
-        if -punc_23 not in mapping_punc_dict:
-            mapping_punc_dict[-punc_23] = -punc_12
-        punc_ls = [abs(punc_11), abs(punc_12), abs(punc_13), abs(punc_22), abs(punc_23)]
-        change_pant_set = set()
-        rt_ls = list(self._gluing_list)
-        for p in punc_ls:
-            change_pant_set.add(self._adjacent_pants[p][0])
-            if self._adjacent_pants[p][1]:
-                change_pant_set.add(self._adjacent_pants[p][1])
-        for pant_idx in change_pant_set:
-            cp_ls = list(rt_ls[pant_idx])
-            for i in range(3):
-                ch_key = rt_ls[pant_idx][i]
-                if ch_key in mapping_punc_dict.keys():
-                    cp_ls[i] = mapping_punc_dict[ch_key]
-            rt_ls[pant_idx] = cp_ls
-        #print rt_ls
-
-        # ALSO UPDATE THE MEASURE
-
-        # compute new values of variables using Penner's formulas,
-        # make changes internally
-
-        return PantsDecomposition(rt_ls)
-
     
-    
+        ap = [self.adjacent_pants(pants_curve)[i][0] for i in [LEFT,RIGHT]]
+        # print ap
+        gl = list(self._gluing_list)
+        # print gl
+        old_lists = [[gl[ap[side][PANT]][(ap[side][BDY_IDX]+k)%3] for k in range(3)] for side in [LEFT,RIGHT]]
+        # print old_lists
+        
+        for side in [LEFT,RIGHT]:
+            gl[ap[side][PANT]] = [old_lists[side][0], old_lists[side][2], old_lists[(side+1)%2][1]]
+            
+        return PantsDecomposition(gl)
 
         
         
