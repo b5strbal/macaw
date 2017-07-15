@@ -463,6 +463,13 @@ class PantsDecomposition(Surface):
         
         
       
+    def _torus_boundary_curve(self,pants_curve):
+        assert(self.elementary_move_type(pants_curve) == TYPE_1)
+        pant = self.adjacent_pants(pants_curve)[LEFT][0][PANT]
+        for k in range(3):
+            if abs(self.adjacent_curves(pant)[k]) != pants_curve:
+                torus_boundary_curve = abs(p.adjacent_curves(pant)[k])
+                return torus_boundary_curve, k
 
     
     def dehn_thurston_tt(self,pants_pieces,annulus_pieces):
@@ -1005,10 +1012,10 @@ class PantsLamination(MeasuredLamination):
             1
         
         """
-        if not i in self._pants_decomposition.inner_pants_curves():
+        if not abs(i) in self._pants_decomposition.inner_pants_curves():
             raise ValueError("Twist numbers are defined only for inner "
                              "pants curves.")
-        return self._coordinates[i][1]
+        return self._coordinates[abs(i)][1]
         # return self._twists[i]
 
     def l(self,i,j,pair_of_pants):
@@ -1110,6 +1117,8 @@ class PantsLamination(MeasuredLamination):
         d[pants_curve][1] += d[pants_curve][0]*power
         return PantsLamination(p, d)
 
+
+        
         
     def apply_elementary_move(self,pants_curve,debug=False):
         """
@@ -1132,42 +1141,83 @@ class PantsLamination(MeasuredLamination):
         sage: lam.apply_elementary_move(1)
         Measured lamination: (0, 0, 0, 1, 0, 0)
 
-        """        
+        sage: lam = PantsLamination(p, {1:[1,0], 2:[2,1], 3:[1,0]})
+        sage: lam = lam.apply_elementary_move(2); lam
+        Measured lamination: (1, 1, 2, -1, 1, 1)
+        sage: lam = lam.apply_elementary_move(2); lam
+        Measured lamination: (1, 0, 2, 1, 1, 0)
+
+        sage: lam = PantsLamination(p, {1:[1,0], 2:[2,0], 3:[1,0]})
+        sage: lam = lam.apply_elementary_move(2); lam
+        Measured lamination: (1, 0, 0, 0, 1, 0)
+        sage: lam = lam.apply_elementary_move(2); lam
+        Measured lamination: (1, 0, 2, 0, 1, 0)
+
+        """
         p = self._pants_decomposition
-        if p.elementary_move_type(pants_curve) == 1:
-            pant, bdy_idx = p.adjacent_pants(pants_curve)[LEFT][0]
+        typ = p.elementary_move_type(pants_curve)
+        # print typ
+        sides = [LEFT,RIGHT] if typ == TYPE_2 else [LEFT]
 
-            # numbers of boundary curves inside torus
-            # cs = [p.adjacent_pants(pants_curve)[i][1] for i in range(2)]
+        # print sides
+        pant, bdy_idx = [[p.adjacent_pants(pants_curve)[side][0][info]
+                          for side in sides] for info in [PANT,BDY_IDX]]
+        # print pant, bdy_idx
+        shift = [0,0]
+        if typ == TYPE_1:
+            torus_boundary_curve, shift[LEFT] = p._torus_boundary_curve(pants_curve)
+        else:
+            shift = bdy_idx
+            if debug == True:
+                print "shift: ", shift
+                print "pant: ", pant
+            bdy_curves = [p.adjacent_curves(pant[side])[(shift[side] + i) % 3]
+                for (side,i) in [(LEFT,2),(LEFT,1),(RIGHT,1),(RIGHT,2)]]
+            if debug == True:
+                print "Bdy curves: ", bdy_curves
+            
 
-            # finding the index of curve bounding the torus
-            # this is how much all indices will be shifted
-            for k in range(3):
-                if abs(p.adjacent_curves(pant)[k]) != pants_curve:
-                    torus_boundary_curve = abs(p.adjacent_curves(pant)[k])
-                    break
 
-            # old coordinates
-            a = [k, (k+1)%3, (k+2)%3]
-            t = [self.t(pants_curve), self.t(p.adjacent_curves(pant)[k])]
-            l = matrix(QQ,3)
+        # old coordinates
+        a = []
+        l = [matrix(QQ,3), matrix(QQ,3)]
+        for side in sides:
+            a.append([shift[side], (shift[side]+1)%3, (shift[side]+2)%3])
             for i in range(3):
                 for j in range(3):
-                    l[i,j] = self.l(a[i],a[j],pant)
+                    # print l[side]
+                    # print l[side][i,j]
+                    # print a[i]
+                    # print a[j]
+                    # print pant[side]
+                    # print self.l(a[side][i],a[side][j],pant[side])
+                    l[side][i,j] = self.l(a[side][i],a[side][j],pant[side])
+
+        # old coordinates
+        t = [self.t(pants_curve)]
+        if typ == TYPE_1:            
+            t.append(self.t(torus_boundary_curve))
+            l = l[LEFT]
             r = l[0,1]
-            
-            def sg(x):
-                return -1 if x == 0 else sign(x)
-            
-            # new coordinates
+        else:
+            t.extend([ self.t(c) for c in bdy_curves ])
+
+
+        
+        d = dict(self._coordinates)
+
+        # new coordinates
+        if typ == TYPE_1:
             ll = matrix(QQ,3)
             ll[0,0] = max(r-abs(t[0]),0)
             L = r - ll[0,0]
             ll[0,1] = ll[1,0] = ll[0,2] = ll[2,0] = L + l[0,0]
             ll[1,2] = ll[2,1] = abs(t[0]) - L
             tt = [0,0]
-            tt[0] = t[1] + l[0,0] + max(0, min(L, t[0]))
-            tt[1] = -sg(t[0]) * (l[1,2] + L)
+            tt[1] = t[1] + l[0,0] + max(0, min(L, t[0]))
+            def sg(x):
+                return -1 if x == 0 else sign(x)
+            tt[0] = -sg(t[0]) * (l[1,2] + L)
             # do first elementary move
 
             if debug:
@@ -1179,29 +1229,150 @@ class PantsLamination(MeasuredLamination):
                 print "New l: ", ll
                 print "New t: ", tt
                 
+            # mm = [2*ll[0,0]+ll[0,1]+ll[0,2], ll[1,2]+ll[1,0]]
+            mm = ll[1,2]+ll[1,0]
+            d[pants_curve] = [mm, tt[0]]
+            d[torus_boundary_curve][1] = tt[1]
+
+        else:
+            ll = [matrix(QQ,3), matrix(QQ,3)]
+            K = [l[(side+1)%2][0,0] + t[0] for side in sides]
+            tt_change = [0,0,0,0,0]
+            for side in sides:
+                ll[side][0,0] = l[side][1,1] + l[(side+1)%2][2,2] +\
+                               max(0, K[side] - l[side][0,2]) +\
+                               max(0, -K[side] - l[(side+1)%2][0,1])
+                ll[side][1,1] = max(0, min( K[side], l[(side+1)%2][0,0],
+                            l[side][0,2] - l[(side+1)%2][0,1] - K[side] ))
+                ll[side][2,2] = max(0, min( -K[side], l[side][0,0],
+                            l[(side+1)%2][0,1] - l[side][0,2] + K[side] ))
+                ll[side][1,2] = max(0, min( l[side][0,2], l[(side+1)%2][0,1],
+                                           l[side][0,2] - K[side],
+                                           l[(side+1)%2][0,1] + K[side]))
+                ll[side][0,1] = -2*ll[side][1,1] - ll[side][1,2] + \
+                                l[side][0,2] + l[side][1,2] + 2*l[side][2,2]
+                ll[side][0,2] = -2*ll[side][2,2] - ll[side][1,2] + \
+                                l[(side+1)%2][0,1] + l[(side+1)%2][1,2] + 2*l[(side+1)%2][1,1]
+                tt_change[4-3*side] = l[side][2,2] + \
+                    max(0, min(l[side][0,2] - ll[side][1,2] - 2*ll[side][1,1],
+                               K[side] + ll[side][2,2] - ll[side][1,1]))
+                tt_change[side+2] = - ll[side][2,2] + \
+                    min(0, max(K[side] + ll[side][2,2] - ll[side][1,1],
+                               ll[side][1,2] + 2*ll[side][2,2] -
+                               l[(side+1)%2][0,1] )) # this is wrong
+            def sg(x):
+                if x == 0:
+                    if l[RIGHT][0,1] - 2*ll[LEFT][2,2] - ll[RIGHT][1,2] != 0:
+                        return 1
+                    return -1
+                return sign(x)
+
+            tt0 = l[LEFT][1,1] + l[RIGHT][1,1] + l[LEFT][2,2] + \
+                    l[RIGHT][2,2] - (ll[LEFT][0,0] + ll[RIGHT][0,0] + \
+                                     tt_change[1] + tt_change[4] ) + \
+                    sg(sum(K) + ll[LEFT][2,2] - ll[LEFT][1,1] + \
+                       ll[RIGHT][2,2] - ll[RIGHT][1,1]) * \
+                       (t[0] + ll[LEFT][2,2] + ll[RIGHT][2,2])
+
+                
+            mm = 2*ll[LEFT][0,0] + ll[LEFT][0,1] + ll[LEFT][0,2]
+
+            d[pants_curve] = [mm, tt0]
+            for i in range(4):
+                d[abs(bdy_curves[i])][1] += tt_change[i+1]
+
+
+            if debug:
+                print "a: ", a
+                print "t: ", t
+                print "l: ", l
+                print "K: ", K
+                print "New l: ", ll
+                print "New t: ", tt0
+                print "Change of t: ", tt_change
+                print "New m: ", mm
+                print "New gluing list: ", d
+                
+        return PantsLamination(p.apply_elementary_move(pants_curve),d)
             
-            mm = [2*ll[0,0]+ll[0,1]+ll[0,2], ll[1,2]+ll[1,0]]
-            d = dict(self._coordinates)
-            d[pants_curve] = [mm[1],tt[1]]
-            d[torus_boundary_curve] = [mm[0],tt[0]]
-            return PantsLamination(p,d)
+            
+        # if p.elementary_move_type(pants_curve) == 1:
+            # pant, bdy_idx = p.adjacent_pants(pants_curve)[LEFT][0]
+
+            # numbers of boundary curves inside torus
+            # cs = [p.adjacent_pants(pants_curve)[i][1] for i in range(2)]
+
+            # finding the index of curve bounding the torus
+            # this is how much all indices will be shifted
+            # for k in range(3):
+            #     if abs(p.adjacent_curves(pant)[k]) != pants_curve:
+            #         torus_boundary_curve = abs(p.adjacent_curves(pant)[k])
+            #         break
+
+            # old coordinates
+            # a = [k, (k+1)%3, (k+2)%3]
+            # t = [self.t(pants_curve), self.t(p.adjacent_curves(pant)[k])]
+            # l = matrix(QQ,3)
+            # for i in range(3):
+            #     for j in range(3):
+            #         l[i,j] = self.l(a[i],a[j],pant)
+            # r = l[0,1]
+            
+            
+            # new coordinates
+            # ll = matrix(QQ,3)
+            # ll[0,0] = max(r-abs(t[0]),0)
+            # L = r - ll[0,0]
+            # ll[0,1] = ll[1,0] = ll[0,2] = ll[2,0] = L + l[0,0]
+            # ll[1,2] = ll[2,1] = abs(t[0]) - L
+            # tt = [0,0]
+            # tt[0] = t[1] + l[0,0] + max(0, min(L, t[0]))
+            # tt[1] = -sg(t[0]) * (l[1,2] + L)
+            # # do first elementary move
+
+            # if debug:
+            #     print "a: ", a
+            #     print "t: ", t
+            #     print "l: ", l
+            #     print "r: ", r
+            #     print "L: ", L
+            #     print "New l: ", ll
+            #     print "New t: ", tt
+                
+            
+            # mm = [2*ll[0,0]+ll[0,1]+ll[0,2], ll[1,2]+ll[1,0]]
+            # d = dict(self._coordinates)
+            # d[pants_curve] = [mm[1],tt[1]]
+            # d[torus_boundary_curve] = [mm[0],tt[0]]
+            # return PantsLamination(p,d)
         
         # do second elementery move
-        left_pant = p.adjacent_pants(pants_curve)[LEFT][0]
-        right_pant = p.adjacent_pants(pants_curve)[RIGHT][0]
+        # left_pant = p.adjacent_pants(pants_curve)[LEFT][0]
+        # right_pant = p.adjacent_pants(pants_curve)[RIGHT][0]
 
         
         # p.apply_elementary_move(pants_curve)
     
 
     def apply_elementary_move_inverse(self,pants_curve):
-        if p.elementary_move_type(pants_curve) == 1:
-            # second iterate is the identity
-            return p.apply_elementary_move(pants_curve)
+        p = self._pants_decomposition
+        lam = self
+        if p.elementary_move_type(pants_curve) == TYPE_1:
+            # fourth iterate differs from the original by a Dehn twist about
+            # the curve bounding the torus
+            for i in range(3):
+                lam = lam.apply_elementary_move(pants_curve)
+            p.adjacent_pants(pants_curve)[LEFT]
+            c = p._torus_boundary_curve(pants_curve)[0]
+            lam = lam.apply_twist(c, power = -1)
+            return lam
+
+        # One iteration could also be enough. It doesn't matter for the
+        # coordinates, but the orientation of a pants curve changes.
         for i in range(3):
-            # fourth iterate is the identity
-            p = p.apply_elementary_move(pants_curve)
-        return p
+            lam = lam.apply_elementary_move(pants_curve)
+            return lam
+            
 
     
 p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
