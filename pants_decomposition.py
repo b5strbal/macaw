@@ -30,7 +30,7 @@ from sage.structure.sage_object import SageObject
 from sage.graphs.graph import Graph
 from train_track import TrainTrack
 from collections import namedtuple
-from sage.all import matrix, vector, QQ, sign
+from sage.all import matrix, vector, QQ, sign, Integer
 
 LEFT = 0
 RIGHT = 1
@@ -59,16 +59,16 @@ class PantsDecomposition(Surface):
     EXAMPLES::
 
         sage: PantsDecomposition([[1,2,3],[-3,-2,-1]])
-        Pants decomposition of the closed surface of genus 2
+        Pants decomposition with gluing list [[1, 2, 3], [-3, -2, -1]]
 
         sage: PantsDecomposition([[1,2,2]])
-        Pants decomposition of the klein bottle with 1 puncture
+        Pants decomposition with gluing list [[1, 2, 2]]
 
         sage: PantsDecomposition([[1,2,-2]])
-        Pants decomposition of the torus with 1 puncture
+        Pants decomposition with gluing list [[1, 2, -2]]
 
         sage: PantsDecomposition([[1,-1,2],[-2,4,3],[-3,5,6],[-5,-4,-6]])
-        Pants decomposition of the closed surface of genus 3
+        Pants decomposition with gluing list [[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]]
 
     """
     def __init__(self, gluing_list):
@@ -408,11 +408,11 @@ class PantsDecomposition(Surface):
         Type 1 elementary move::
 
             sage: p = PantsDecomposition([[1, 2, -2]])
-            sage: p.apply_elementary_move(2); p
+            sage: p.apply_elementary_move(2)
             Pants decomposition with gluing list [[1, 2, -2]]
 
             sage: p = PantsDecomposition([[-1,1,2],[-2,3,-3]])
-            sage: p.apply_elementary_move(1); p
+            sage: p.apply_elementary_move(1)
             Pants decomposition with gluing list [[-1, 1, 2], [-2, 3, -3]]
         
         The resulting (marked) pants decomposition is isomorphic to
@@ -939,7 +939,7 @@ class PantsLamination(MeasuredLamination):
     EXAMPLES:
 
     sage: p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
-    sage: PantsLamination(p, [2, -2, 4, 1, 0, 0]})
+    sage: PantsLamination(p, [2, -2, 4, 1, 0, 0])
     Measured lamination: (2, -2, 4, 1, 0, 0)
 
     """
@@ -987,7 +987,7 @@ class PantsLamination(MeasuredLamination):
         EXAMPLES:
 
             sage: p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
-            sage: lam = PantsLamination(p, {1:[2,-2], 2:[4,1], 3:[0,1]})
+            sage: lam = PantsLamination(p, [2,-2, 4,1,0,1])
             sage: lam.m(1)
             2
             sage: lam.m(2)
@@ -1023,7 +1023,7 @@ class PantsLamination(MeasuredLamination):
         EXAMPLES:
         
             sage: p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
-            sage: lam = PantsLamination(p, {1:[2,-2], 2:[4,-1], 3:[0,1]})
+            sage: lam = PantsLamination(p, [2,-2,4,-1,0,1])
             sage: lam.t(1)
             -2
             sage: lam.t(2)
@@ -1045,7 +1045,7 @@ class PantsLamination(MeasuredLamination):
         TESTS::
         
             sage: p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
-            sage: lam = PantsLamination(p, {1:[2,-2], 2:[7,1], 3:[1,1]})
+            sage: lam = PantsLamination(p, [2,-2,7,1,1,1])
             sage: lam.l(0,0,0)
             0
             sage: lam.l(1,1,0)
@@ -1179,29 +1179,29 @@ class PantsLamination(MeasuredLamination):
         EXAMPLES::
 
         sage: p = PantsDecomposition([[-1,1,2],[-2,3,-3]])
-        sage: lam = PantsLamination(p, {1:[2,-2], 2:[7,1], 3:[1,1]})
+        sage: lam = PantsLamination(p, [2,-2,7,1,1,1])
         sage: lam.apply_elementary_move(1)
         Measured lamination: (7/2, 2, 7, 5/2, 1, 1) 
 
-        sage: lam = PantsLamination(p, {1:[1,0], 2:[0,0], 3:[1,0]})
+        sage: lam = PantsLamination(p, [1,0,0,0,1,0])
         sage: lam.apply_elementary_move(1)
         Measured lamination: (0, 1, 0, 0, 1, 0)
 
-        sage: lam = PantsLamination(p, {1:[0,1], 2:[0,0], 3:[1,0]})
+        sage: lam = PantsLamination(p, [0,1,0,0,1,0])
         sage: lam.apply_elementary_move(1)
         Measured lamination: (1, 0, 0, 0, 1, 0)
         
-        sage: lam = PantsLamination(p, {1:[0,0], 2:[0,1], 3:[0,0]})
+        sage: lam = PantsLamination(p, [0,0,0,1,0,0])
         sage: lam.apply_elementary_move(1)
         Measured lamination: (0, 0, 0, 1, 0, 0)
 
-        sage: lam = PantsLamination(p, {1:[1,0], 2:[2,1], 3:[1,0]})
+        sage: lam = PantsLamination(p, [1,0,2,1,1,0])
         sage: lam = lam.apply_elementary_move(2); lam
         Measured lamination: (1, 1, 2, -1, 1, 1)
         sage: lam = lam.apply_elementary_move(2); lam
         Measured lamination: (1, 0, 2, 1, 1, 0)
 
-        sage: lam = PantsLamination(p, {1:[1,0], 2:[2,0], 3:[1,0]})
+        sage: lam = PantsLamination(p, [1,0,2,0,1,0])
         sage: lam = lam.apply_elementary_move(2); lam
         Measured lamination: (1, 0, 0, 0, 1, 0)
         sage: lam = lam.apply_elementary_move(2); lam
@@ -1211,7 +1211,9 @@ class PantsLamination(MeasuredLamination):
         p = self._pants_decomposition
         typ = p.elementary_move_type(pants_curve)
         if debug:
-            print
+            print 
+            print "Elementary move"
+            print "-----------------------"
             print self
             print p
             print "Pants curve: ", pants_curve
@@ -1232,12 +1234,12 @@ class PantsLamination(MeasuredLamination):
             torus_boundary_curve, shift[LEFT] = p._torus_boundary_curve(pants_curve)
         else:
             shift = bdy_idx
-            if debug == True:
+            if debug:
                 print "shift: ", shift
                 print "pant: ", pant
             bdy_curves = [p.adjacent_curves(pant[side])[(shift[side] + i) % 3]
                 for (side,i) in [(LEFT,2),(LEFT,1),(RIGHT,1),(RIGHT,2)]]
-            if debug == True:
+            if debug:
                 print "Bdy curves: ", bdy_curves
             
         # print "2: ", self
@@ -1269,7 +1271,11 @@ class PantsLamination(MeasuredLamination):
         # print "3: ", self
         
         coord_list = list(self._coordinates)
-                         
+
+        def sg(x):
+            return -1 if x == 0 else sign(x)
+
+        
         # new coordinates
         if typ == TYPE_1:
             ll = matrix(QQ,3)
@@ -1279,8 +1285,6 @@ class PantsLamination(MeasuredLamination):
             ll[1,2] = ll[2,1] = abs(t[0]) - L
             tt = [0,0]
             tt[1] = t[1] + l[0,0] + max(0, min(L, t[0]))
-            def sg(x):
-                return -1 if x == 0 else sign(x)
             tt[0] = -sg(t[0]) * (l[1,2] + L)
             # do first elementary move
 
@@ -1332,22 +1336,31 @@ class PantsLamination(MeasuredLamination):
                                ll[side][1,2] + 2*ll[side][2,2] -
                                l[(side+1)%2][0,1] )) # this is wrong
             # print "5: ", self
-            def sg(x):
-                if x == 0:
-                    if l[RIGHT][0,1] - 2*ll[LEFT][2,2] - ll[RIGHT][1,2] != 0:
-                        return 1
-                    return -1
-                return sign(x)
+            # def sg(x):
+            #     if x == 0:
+                    # if debug:
+                    #     print "0 decision: ", l[RIGHT][0,1] - 2*ll[LEFT][2,2] - ll[RIGHT][1,2]
+                    # if l[RIGHT][0,1] - 2*ll[LEFT][2,2] - ll[RIGHT][1,2] != 0:
+                    #     # BUG: Something is wrong with this formula.
+                    #     if debug:
+                    #         print "A"
+                    #     return 1
+                    # if debug:
+                    #     print "B"
+                #     return -1
+                # return sign(x)
 
             tt0 = l[LEFT][1,1] + l[RIGHT][1,1] + l[LEFT][2,2] + \
                     l[RIGHT][2,2] - (ll[LEFT][0,0] + ll[RIGHT][0,0] + \
                                      tt_change[1] + tt_change[4] ) + \
-                    sg(sum(K) + ll[LEFT][2,2] - ll[LEFT][1,1] + \
+                    sg(K[LEFT] + K[RIGHT] + ll[LEFT][2,2] - ll[LEFT][1,1] + \
                        ll[RIGHT][2,2] - ll[RIGHT][1,1]) * \
                        (t[0] + ll[LEFT][2,2] + ll[RIGHT][2,2])
 
                 
             mm = 2*ll[LEFT][0,0] + ll[LEFT][0,1] + ll[LEFT][0,2]
+            if mm == 0:
+                tt0 = abs(tt0)
             # print "4: ", self
             i = p.index_of_inner_pants_curve(pants_curve)
             coord_list[2*i] = mm
@@ -1356,7 +1369,7 @@ class PantsLamination(MeasuredLamination):
             # print "5: ", self
             for i in range(4):
                 k = p.index_of_inner_pants_curve(bdy_curves[i])
-                print k, tt_change[i+1]
+                # print k, tt_change[i+1]
                 coord_list[2*k+1] += tt_change[i+1]
 
             # print "6: ", self
@@ -1433,29 +1446,33 @@ class PantsLamination(MeasuredLamination):
         # p.apply_elementary_move(pants_curve)
     
 
-    def apply_elementary_move_inverse(self,pants_curve,debug=True):
+    def apply_elementary_move_inverse(self,pants_curve,debug=False):
         """
         EXAMPLES::
 
         sage: p = PantsDecomposition([[-1,1,2],[-2,3,-3]])
         sage: x = [PantsLamination.random(p) for i in range(100)]
-        sage: all(x[i].apply_elementary_move(1).apply_elementary_move_inverse(1).to_vector() == x[i].to_vector() for i in range(100))
+        sage: all(x[i].apply_elementary_move(1).apply_elementary_move_inverse(1) == x[i] for i in range(100))
         True
-        sage: all(x[i].apply_elementary_move(2).apply_elementary_move_inverse(2).to_vector() == x[i].to_vector() for i in range(100))
+        sage: all(x[i].apply_elementary_move(2).apply_elementary_move_inverse(2) == x[i] for i in range(100))
         True
-        sage: all(x[i].apply_elementary_move(2).apply_elementary_move_inverse(2).to_vector() == x[i].to_vector() for i in range(100))
+        sage: all(x[i].apply_elementary_move(3).apply_elementary_move_inverse(3) == x[i] for i in range(100))
         True
 
         sage: p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
         sage: x = [PantsLamination.random(p) for i in range(100)]
-        sage: all(x[i].apply_elementary_move(1).apply_elementary_move_inverse(1).to_vector() == x[i].to_vector() for i in range(100))
+        sage: all(x[i].apply_elementary_move(1).apply_elementary_move_inverse(1) == x[i] for i in range(100))
         True
-        sage: all(x[i].apply_elementary_move(2).apply_elementary_move_inverse(2).to_vector() == x[i].to_vector() for i in range(100))
+        sage: all(x[i].apply_elementary_move(2).apply_elementary_move_inverse(2) == x[i] for i in range(100))
         True
-        sage: all(x[i].apply_elementary_move(2).apply_elementary_move_inverse(2).to_vector() == x[i].to_vector() for i in range(100))
+        sage: all(x[i].apply_elementary_move(3).apply_elementary_move_inverse(3) == x[i] for i in range(100))
         True
 
         """
+        if debug:
+            print 
+            print "Elementary move inverse"
+            print "-----------------------"
         p = self._pants_decomposition
         lam = self
         if p.elementary_move_type(pants_curve) == TYPE_1:
@@ -1471,8 +1488,10 @@ class PantsLamination(MeasuredLamination):
         # One iteration could also be enough. It doesn't matter for the
         # coordinates, but the orientation of a pants curve changes.
         for i in range(3):
-            # print "Self: ", self
-            print lam
+            if debug:
+                print "i: ", i
+                print "Self: ", self
+                print lam
             lam = lam.apply_elementary_move(pants_curve,debug)
         return lam
             
@@ -1550,14 +1569,14 @@ class PantsMappingClass(MappingClass):
             for pants_twist in reversed(self._pants_twists):
                 # print other
                 for curve in pants_twist.elementary_moves:
-                    print lam
+                    # print lam
                     lam = lam.apply_elementary_move(curve)
                     # print other
-                print lam
+                # print lam
                 lam = lam.apply_twist(pants_twist.pants_curve,pants_twist.power)
                 # print other
                 for curve in reversed(pants_twist.elementary_moves):
-                    print lam
+                    # print lam
                     lam = lam.apply_elementary_move_inverse(curve)
                     # print other
             return lam
@@ -1584,22 +1603,55 @@ class PantsMappingClass(MappingClass):
         p = self._pants_decomposition
         for c in p.inner_pants_curves():
             lam = PantsLamination.from_pants_curve(p,c)
-            print "1:", lam
+            # print "1:", lam
             # print lam.parent()
             # print isinstance(lam,PantsLamination)
-            print "2:", self * lam
+            # print "2:", self * lam
             # print (self * lam).parent()
             # return (lam,self*lam)
             if lam != self * lam:
                 return False
             lam = PantsLamination.from_transversal(p,c)
-            print "3:", lam
-            print "4:", self * lam
+            # print "3:", lam
+            # print "4:", self * lam
             if lam != self * lam:
                 return False
         return True
 
     def __eq__(self,other):
+        """
+        TESTS::
+
+            sage: A, B, c = humphries_generators(2)
+            sage: A[0]*A[1] == A[1]*A[0]
+            True
+            sage: A[0]*B[1] == B[1]*A[0]
+            True
+            sage: A[0]*c == c*A[0]
+            True
+            sage: A[0]*B[0] == B[0]*A[0]
+            False
+            sage: A[0]*B[0]*A[0] == B[0]*A[0]*B[0]
+            True
+            sage: B[0]*c == c*B[0]
+            True
+            sage: B[0]*B[1] == B[1]*B[0]
+            True
+            sage: B[0]*A[1] == A[1]*B[0]
+            False
+            sage: B[0]*A[1]*B[0] == A[1]*B[0]*A[1]
+            True
+            sage: A[1]*c == c*A[1]
+            True
+            sage: A[1]*B[1] == B[1]*A[1] 
+            False
+            sage: A[1]*B[1]*A[1] == B[1]*A[1]*B[1]
+            True
+            sage: B[1]*c == c*B[1]
+            False
+            sage: B[1]*c*B[1] == c*B[1]*c
+            True
+        """
         if not isinstance(other,PantsMappingClass):
             return False
         if other._pants_decomposition != self._pants_decomposition:
@@ -1639,7 +1691,7 @@ def humphries_generators(g):
     c = PantsMappingClass(p,[PantsTwist([],3)])
     return (a, b, c)
 
-A, B, C = humphries_generators(2)
+A, B, c = humphries_generators(2)
 f = A[0]*A[1]*B[0]*B[1]
 p = f._pants_decomposition
 lam = PantsLamination.from_pants_curve(p,1)
