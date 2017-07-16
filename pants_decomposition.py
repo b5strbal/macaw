@@ -30,7 +30,7 @@ from sage.structure.sage_object import SageObject
 from sage.graphs.graph import Graph
 from train_track import TrainTrack
 from collections import namedtuple
-from sage.all import matrix, vector, QQ, sign, Integer
+from sage.all import matrix, vector, QQ, sign, Integer, n, norm
 
 LEFT = 0
 RIGHT = 1
@@ -1480,14 +1480,18 @@ class PantsMappingClass(MappingClass):
 
     def _repr_(self):
         return "Mapping class; product of the twists " + repr(self._pants_twists)
-        
+
+    @classmethod
+    def identity(cls,pants_decomposition):
+        return cls(pants_decomposition)
+    
     def __mul__(self,other):
         if isinstance(other, PantsMappingClass):
-            if self._pants_decomposition !=\
-               other._pants_decomposition:
-                raise ValueError("Cannot multiply two PantsMappingClasses "
-                                 "corresponding to different pants "
-                                 "decompositions")
+            # if self._pants_decomposition !=\
+            #    other._pants_decomposition:
+            #     raise ValueError("Cannot multiply two PantsMappingClasses "
+            #                      "corresponding to different pants "
+            #                      "decompositions")
             p = self._pants_decomposition
             return PantsMappingClass(p,self._pants_twists +
                                      other._pants_twists)
@@ -1495,11 +1499,12 @@ class PantsMappingClass(MappingClass):
         if isinstance(other, PantsLamination):
             lam = other
             p = self._pants_decomposition
-            if p != lam._pants_decomposition:
-                raise ValueError("Cannot multiply a PantsMappingClass "
-                                 "and PantsLamination "
-                                 "corresponding to different pants "
-                                 "decompositions")
+            # if p != lam._pants_decomposition:
+            #     raise ValueError("Cannot multiply a PantsMappingClass "
+            #                      "and PantsLamination "
+            #                      "corresponding to different pants "
+            #                      "decompositions")
+
             # apply twists from right to left
             for pants_twist in reversed(self._pants_twists):
                 # print other
@@ -1603,14 +1608,26 @@ class PantsMappingClass(MappingClass):
         c = PantsLamination.from_pants_curve(p,inner_curve)
 
     def stretch_factor(self):
+        """
+        TESTS::
+
+        sage: A, B, c = humphries_generators(2)
+        sage: f = A[0]*B[0]^(-1)
+        sage: n(f.stretch_factor(),digits=4)
+        2.618
+
+        """
         p = self._pants_decomposition
 
         # pick a curve to iterate
         inner_curve = p.inner_pants_curves()[0]
-        c = PantsLamination.from_pants_curve(inner_curve)
-
-        cc = self^100 * c
-        return norm(self*cc)/norm(cc)
+        c = PantsLamination.random(p)
+        # print c
+        
+        cc = (self**100) * c
+        # print self**100
+        # print cc
+        return n(norm((self*cc).to_vector())/norm(cc.to_vector()))
 
 
 
