@@ -31,18 +31,3 @@ from sage.structure.sage_object import SageObject
 from pants_decomposition import PantsDecomposition, PantsTwist, PantsMappingClass
 
 
-def humphries_generators(g):
-    p = PantsDecomposition.humphries(g)
-    a = [ PantsMappingClass(p,[PantsTwist([],1)]) ]
-    for i in range(g-1):
-        a.append(PantsMappingClass(p,[ PantsTwist([3*i+2],3*i+2)]))
-    b = [PantsTwist([1],1)]
-    for i in range(g-2):
-        b.append(PantsMappingClass(p,[PantsTwist([3*i+3,3*i+4],3*i+4)]))
-    b.append(PantsMappingClass(p,[PantsTwist([3*g-3],3*g-3)]))
-    c = PantsMappingClass(p,[PantsTwist([],3)])
-    return (a, b, c)
-
-A, B, C = humphries_generators(0)
-f = A[0]*A[1]*B[0]*B[1]
-f.nielsen_thurston_type()

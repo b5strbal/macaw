@@ -117,6 +117,10 @@ class PantsDecomposition(Surface):
                 #         adjacent_pants[pants_curve] = [i, None]
 
 
+        self._index_of_inner_pants_curve = {}
+        for i in range(self.num_inner_pants_curves()):
+            c = self.inner_pants_curves()[i]
+            self._index_of_inner_pants_curve[c] = i
 
         super(PantsDecomposition,self).__init__(\
                     euler_char = -1*num_pants,
@@ -304,6 +308,9 @@ class PantsDecomposition(Surface):
             return len(a[0]) + len(a[1]) == 2
         return filter(is_inner, self.pants_curves())
 
+    def index_of_inner_pants_curve(self,pants_curve):
+        return self._index_of_inner_pants_curve[abs(pants_curve)]
+        
     def boundary_pants_curves(self):
         """
         EXAMPLES::
@@ -460,7 +467,8 @@ class PantsDecomposition(Surface):
             
         return PantsDecomposition(gl)
 
-        
+
+
         
       
     def _torus_boundary_curve(self,pants_curve):
@@ -468,7 +476,7 @@ class PantsDecomposition(Surface):
         pant = self.adjacent_pants(pants_curve)[LEFT][0][PANT]
         for k in range(3):
             if abs(self.adjacent_curves(pant)[k]) != pants_curve:
-                torus_boundary_curve = abs(p.adjacent_curves(pant)[k])
+                torus_boundary_curve = abs(self.adjacent_curves(pant)[k])
                 return torus_boundary_curve, k
 
     
@@ -607,7 +615,7 @@ class PantsDecomposition(Surface):
                     raise ValueError('Specify connector type by \'L\' and \'R\'')            
             
             #traintrack = TrainTrack(train_track_ls)            
-            print train_track_ls
+            # print train_track_ls
             traintrack = TrainTrack(train_track_ls)       
             #print repr(traintrack)
             return traintrack
@@ -649,6 +657,7 @@ class PantsDecomposition(Surface):
         
 
 
+    
         
 
 
@@ -879,7 +888,7 @@ class PantsCoordinates(SageObject):
     At most three of them can be nonzero.
     """
     def __init__(self,l00=0,l11=0,l22=0,l01=0,l12=0,l20=0):
-        self._matrix = matrix([ [l00,l01,l20], [l01,l11,l12], [l20,l12,l22]])
+        self._matrix = matrix(QQ,[ [l00,l01,l20], [l01,l11,l12], [l20,l12,l22]])
 
     def get(self,i,j):
         return self._matrix[i,j]
@@ -890,7 +899,7 @@ class PantsCoordinates(SageObject):
     @classmethod
     def from_m_i(cls,a,b,c):
         m = [a,b,c]
-
+        # print type(a), type(b), type(c)
         # self-connecting branches
         x1 = [max(m[i] - m[(i+1)%3] - m[(i+2)%3],0) / 2 for i in range(3)]
 
@@ -916,6 +925,7 @@ class MeasuredLamination(SageObject):
         return "Measured lamination: " + repr(self.to_vector())
  
 
+    
 
 class PantsLamination(MeasuredLamination):
     """
@@ -929,20 +939,30 @@ class PantsLamination(MeasuredLamination):
     EXAMPLES:
 
     sage: p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
-    sage: PantsLamination(p, {1:(2,-2), 2:[4,1], 3:[0,0]})
+    sage: PantsLamination(p, [2, -2, 4, 1, 0, 0]})
     Measured lamination: (2, -2, 4, 1, 0, 0)
 
     """
     def __init__(self,pants_decomposition,coordinates):
         """
         """
-        for coord in coordinates.values():
-            if coord[0] < 0:
+        # print coordinates
+        n = pants_decomposition.num_inner_pants_curves()
+        if len(coordinates) != 2*n:
+            raise ValueError("The number of the coordinates should be twice the "
+                             "number of inner pants curves.")
+        ipc = pants_decomposition.inner_pants_curves()
+        self._m = {}
+        self._t = {}
+        for i in range(n):
+            if coordinates[2*i] < 0:
                 raise ValueError("The m_i have to be nonnegative")
-            if coord[0] == 0 and coord[1] < 0:
+            if coordinates[2*i] == 0 and coordinates[2*i+1] < 0:
                 raise ValueError("If m_i = 0, then t_i has to be nonnegative")
+            self._m[ipc[i]] = coordinates[2*i]
+            self._t[ipc[i]] = coordinates[2*i+1]
         self._pants_decomposition = pants_decomposition
-        self._coordinates = coordinates
+        self._coordinates = list(coordinates)
         self._compute_l()
         # self._twists = twists # dictionary, keys are inner pants curves
         # self._pants_coordinates = pants_coordinates
@@ -979,7 +999,7 @@ class PantsLamination(MeasuredLamination):
         if not i in self._pants_decomposition.inner_pants_curves():
             raise ValueError("The intersection numbers m_i are defined only for inner "
                              "pants curves.")
-        return self._coordinates[i][0]
+        return self._m[abs(i)]
         # return sum(self.l(*x) for x in self.l_ij_left_of(i)) 
     
     def l_ij_left_of(self,k):
@@ -1015,7 +1035,7 @@ class PantsLamination(MeasuredLamination):
         if not abs(i) in self._pants_decomposition.inner_pants_curves():
             raise ValueError("Twist numbers are defined only for inner "
                              "pants curves.")
-        return self._coordinates[abs(i)][1]
+        return self._t[abs(i)]
         # return self._twists[i]
 
     def l(self,i,j,pair_of_pants):
@@ -1065,13 +1085,20 @@ class PantsLamination(MeasuredLamination):
             0
         """
         return self._l[pair_of_pants].get(i,j)
-
+    
     def pants_decomposition(self):
         """
         Return the underlying pants decomposition.
         """
         return self._pants_decomposition
 
+    @classmethod
+    def from_transversal(cls,pants_decomposition,pants_curve):
+        p = pants_decomposition
+        l = []
+        for c in p.inner_pants_curves():
+            l.extend([Integer(0),Integer(0)] if c != pants_curve else [Integer(1),Integer(0)])
+        return cls(p,l)
 
     @classmethod
     def from_pants_curve(cls,pants_decomposition,pants_curve):
@@ -1084,38 +1111,65 @@ class PantsLamination(MeasuredLamination):
         
         """
         p = pants_decomposition
-        l = {}
+        l = []
         for c in p.inner_pants_curves():
-            l[c] = [0,0] if c != pants_curve else [0,1]
+            l.extend([Integer(0),Integer(0)] if c != pants_curve else [Integer(0),Integer(1)])
         # t = [0]*p.num_inner_pants_curves()
         # t[pants_curve-1] = 1
         # l = PantsCoordinates()*p.num_pants()
         return cls(p,l)
 
-    def to_vector(self):
-        p = self._pants_decomposition
+    @classmethod
+    def random(cls,pants_decomposition,max_values=100):
+        import random
+        p = pants_decomposition
         l = []
         for c in p.inner_pants_curves():
-            l.extend(self._coordinates[c])
-        return vector(l)
+            l.extend([Integer(random.randint(0,max_values)),None])
+            min_value = 0 if l[-2] == 0 else -max_values
+            l[-1] = Integer(random.randint(min_value,max_values))
+        return cls(p,l)
+    
+    def to_vector(self):
+        return vector(self._coordinates)
 
+    def __eq__(self,other):
+        if not isinstance(other,PantsLamination):
+            # print 'a'
+            return False
+        # if self.pants_decomposition() != other.pants_decomposition():
+        #     # TODO: PantsDecomposition.__eq__ not yet implemented.
+        #     print 'b'
+        #     return False
+        # print 'c'
+        return self.to_vector() == other.to_vector()
+
+    def __ne__(self,other):
+        return not self.__eq__(other)
+    
     def construct_train_track(self):
         """
         Return the Dehn-Thurston train track for the current measure.
         """
         pass
 
-    def __mul__(self,pants_twist):
-        pass
+    # def __mul__(self,pants_twist):
+    #     pass
     
     def apply_twist(self,pants_curve,power=1):
         # TODO
         # m_i = self.measure_of('m%d' % (pants_curve))
         # self._coordinates['t%d' % (pants_curve)] += power * m_i
         p = self._pants_decomposition
-        d = dict(self._coordinates)
-        d[pants_curve][1] += d[pants_curve][0]*power
-        return PantsLamination(p, d)
+        ipc = p.inner_pants_curves()
+        c = []
+        for i in range(len(ipc)):
+            c.append(self._coordinates[2*i])
+            if ipc[i] == pants_curve:
+                c.append(self._coordinates[2*i+1] +self._coordinates[2*i]*power)
+            else:
+                c.append(self._coordinates[2*i+1])
+        return PantsLamination(p, c)
 
 
         
@@ -1156,13 +1210,23 @@ class PantsLamination(MeasuredLamination):
         """
         p = self._pants_decomposition
         typ = p.elementary_move_type(pants_curve)
-        # print typ
+        if debug:
+            print
+            print self
+            print p
+            print "Pants curve: ", pants_curve
+            print "Elementary move type: ", typ
         sides = [LEFT,RIGHT] if typ == TYPE_2 else [LEFT]
-
-        # print sides
+        # print "1: ", self
+            
+        if debug:
+            print "Sides: ", sides
         pant, bdy_idx = [[p.adjacent_pants(pants_curve)[side][0][info]
                           for side in sides] for info in [PANT,BDY_IDX]]
-        # print pant, bdy_idx
+        if debug:
+            print "Pant: ", pant
+            print "Bdy index: ", bdy_idx
+            
         shift = [0,0]
         if typ == TYPE_1:
             torus_boundary_curve, shift[LEFT] = p._torus_boundary_curve(pants_curve)
@@ -1176,7 +1240,7 @@ class PantsLamination(MeasuredLamination):
             if debug == True:
                 print "Bdy curves: ", bdy_curves
             
-
+        # print "2: ", self
 
         # old coordinates
         a = []
@@ -1202,10 +1266,10 @@ class PantsLamination(MeasuredLamination):
         else:
             t.extend([ self.t(c) for c in bdy_curves ])
 
-
+        # print "3: ", self
         
-        d = dict(self._coordinates)
-
+        coord_list = list(self._coordinates)
+                         
         # new coordinates
         if typ == TYPE_1:
             ll = matrix(QQ,3)
@@ -1231,10 +1295,15 @@ class PantsLamination(MeasuredLamination):
                 
             # mm = [2*ll[0,0]+ll[0,1]+ll[0,2], ll[1,2]+ll[1,0]]
             mm = ll[1,2]+ll[1,0]
-            d[pants_curve] = [mm, tt[0]]
-            d[torus_boundary_curve][1] = tt[1]
+
+            i = p.index_of_inner_pants_curve(pants_curve)
+            coord_list[2*i] = mm
+            coord_list[2*i+1] = tt[0]
+            i = p.index_of_inner_pants_curve(torus_boundary_curve)
+            coord_list[2*i+1] = tt[1]
 
         else:
+            # print "4: ", self
             ll = [matrix(QQ,3), matrix(QQ,3)]
             K = [l[(side+1)%2][0,0] + t[0] for side in sides]
             tt_change = [0,0,0,0,0]
@@ -1253,13 +1322,16 @@ class PantsLamination(MeasuredLamination):
                                 l[side][0,2] + l[side][1,2] + 2*l[side][2,2]
                 ll[side][0,2] = -2*ll[side][2,2] - ll[side][1,2] + \
                                 l[(side+1)%2][0,1] + l[(side+1)%2][1,2] + 2*l[(side+1)%2][1,1]
-                tt_change[4-3*side] = l[side][2,2] + \
+                # tt_change[4-3*side]
+                tt_change[1+3*side] = l[side][2,2] + \
                     max(0, min(l[side][0,2] - ll[side][1,2] - 2*ll[side][1,1],
                                K[side] + ll[side][2,2] - ll[side][1,1]))
-                tt_change[side+2] = - ll[side][2,2] + \
+                # tt_change[side+2]
+                tt_change[3-side] = - ll[side][2,2] + \
                     min(0, max(K[side] + ll[side][2,2] - ll[side][1,1],
                                ll[side][1,2] + 2*ll[side][2,2] -
                                l[(side+1)%2][0,1] )) # this is wrong
+            # print "5: ", self
             def sg(x):
                 if x == 0:
                     if l[RIGHT][0,1] - 2*ll[LEFT][2,2] - ll[RIGHT][1,2] != 0:
@@ -1276,12 +1348,18 @@ class PantsLamination(MeasuredLamination):
 
                 
             mm = 2*ll[LEFT][0,0] + ll[LEFT][0,1] + ll[LEFT][0,2]
+            # print "4: ", self
+            i = p.index_of_inner_pants_curve(pants_curve)
+            coord_list[2*i] = mm
+            coord_list[2*i+1] = tt0
 
-            d[pants_curve] = [mm, tt0]
+            # print "5: ", self
             for i in range(4):
-                d[abs(bdy_curves[i])][1] += tt_change[i+1]
+                k = p.index_of_inner_pants_curve(bdy_curves[i])
+                print k, tt_change[i+1]
+                coord_list[2*k+1] += tt_change[i+1]
 
-
+            # print "6: ", self
             if debug:
                 print "a: ", a
                 print "t: ", t
@@ -1291,9 +1369,10 @@ class PantsLamination(MeasuredLamination):
                 print "New t: ", tt0
                 print "Change of t: ", tt_change
                 print "New m: ", mm
-                print "New gluing list: ", d
+                print "New coordinates: ", coord_list
+        # print "7: ", self
                 
-        return PantsLamination(p.apply_elementary_move(pants_curve),d)
+        return PantsLamination(p.apply_elementary_move(pants_curve),coord_list)
             
             
         # if p.elementary_move_type(pants_curve) == 1:
@@ -1354,14 +1433,36 @@ class PantsLamination(MeasuredLamination):
         # p.apply_elementary_move(pants_curve)
     
 
-    def apply_elementary_move_inverse(self,pants_curve):
+    def apply_elementary_move_inverse(self,pants_curve,debug=True):
+        """
+        EXAMPLES::
+
+        sage: p = PantsDecomposition([[-1,1,2],[-2,3,-3]])
+        sage: x = [PantsLamination.random(p) for i in range(100)]
+        sage: all(x[i].apply_elementary_move(1).apply_elementary_move_inverse(1).to_vector() == x[i].to_vector() for i in range(100))
+        True
+        sage: all(x[i].apply_elementary_move(2).apply_elementary_move_inverse(2).to_vector() == x[i].to_vector() for i in range(100))
+        True
+        sage: all(x[i].apply_elementary_move(2).apply_elementary_move_inverse(2).to_vector() == x[i].to_vector() for i in range(100))
+        True
+
+        sage: p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
+        sage: x = [PantsLamination.random(p) for i in range(100)]
+        sage: all(x[i].apply_elementary_move(1).apply_elementary_move_inverse(1).to_vector() == x[i].to_vector() for i in range(100))
+        True
+        sage: all(x[i].apply_elementary_move(2).apply_elementary_move_inverse(2).to_vector() == x[i].to_vector() for i in range(100))
+        True
+        sage: all(x[i].apply_elementary_move(2).apply_elementary_move_inverse(2).to_vector() == x[i].to_vector() for i in range(100))
+        True
+
+        """
         p = self._pants_decomposition
         lam = self
         if p.elementary_move_type(pants_curve) == TYPE_1:
             # fourth iterate differs from the original by a Dehn twist about
             # the curve bounding the torus
             for i in range(3):
-                lam = lam.apply_elementary_move(pants_curve)
+                lam = lam.apply_elementary_move(pants_curve,debug)
             p.adjacent_pants(pants_curve)[LEFT]
             c = p._torus_boundary_curve(pants_curve)[0]
             lam = lam.apply_twist(c, power = -1)
@@ -1370,23 +1471,25 @@ class PantsLamination(MeasuredLamination):
         # One iteration could also be enough. It doesn't matter for the
         # coordinates, but the orientation of a pants curve changes.
         for i in range(3):
-            lam = lam.apply_elementary_move(pants_curve)
-            return lam
+            # print "Self: ", self
+            print lam
+            lam = lam.apply_elementary_move(pants_curve,debug)
+        return lam
             
 
     
-p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
+# p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
 # c1 = PantsCoordinates(0,0,0,2,3,1) # type 0
 # c2 = PantsCoordinates(0,0,4,0,1,2) # type 3
 # l = PantsLamination(p, {1:-2, 2:4, 3:0}, [c1, c2])
-l = PantsLamination(p, {1:(1,2), 2:(4,1), 3:(0,0)})
+# l = PantsLamination(p, {1:(1,2), 2:(4,1), 3:(0,0)})
 
 
     
 
 from mapping_class import MappingClass
 
-class PantsTwist(namedtuple("PantsTwist",["elementary_moves","pants_curve","power"])):
+class PantsTwist(SageObject):
     """
     - ``elementary_moves`` -- a list of pants curve indices on which
     elementary moves are performed.
@@ -1398,12 +1501,21 @@ class PantsTwist(namedtuple("PantsTwist",["elementary_moves","pants_curve","powe
       performed. Power `n` means right twisting `n` times. Power
       `-n` means twisting left `n` times.
     """
+    def __init__(self,elementary_moves,pants_curve,power=1):
+        self.elementary_moves = elementary_moves
+        self.pants_curve = pants_curve
+        self.power = power
 
+    def _repr_(self):
+        return str((self.elementary_moves,self.pants_curve,self.power))
+        
     def __pow__(self,k):
         if k == 0:
             raise ValueError("Power has to be non-zero")
         return PantsTwist(self.elementary_moves,self.pants_curve,power*k)
 
+    def inverse(self):
+        return PantsTwist(self.elementary_moves,self.pants_curve,-self.power)
     
     
 
@@ -1412,6 +1524,9 @@ class PantsMappingClass(MappingClass):
         self._pants_twists = pants_twists
         self._pants_decomposition = pants_decomposition
 
+    def _repr_(self):
+        return "Mapping class; product of the twists " + repr(self._pants_twists)
+        
     def __mul__(self,other):
         if isinstance(other, PantsMappingClass):
             if self._pants_decomposition !=\
@@ -1423,8 +1538,8 @@ class PantsMappingClass(MappingClass):
             return PantsMappingClass(p,self._pants_twists +
                                      other._pants_twists)
 
-        if isinstance(pants_lamination, PantsLamination):
-            lam = pants_lamination
+        if isinstance(other, PantsLamination):
+            lam = other
             p = self._pants_decomposition
             if p != lam._pants_decomposition:
                 raise ValueError("Cannot multiply a PantsMappingClass "
@@ -1433,11 +1548,18 @@ class PantsMappingClass(MappingClass):
                                  "decompositions")
             # apply twists from right to left
             for pants_twist in reversed(self._pants_twists):
+                # print other
                 for curve in pants_twist.elementary_moves:
+                    print lam
                     lam = lam.apply_elementary_move(curve)
-                lam.apply_twist(pants_twist.pants_curve,power)
+                    # print other
+                print lam
+                lam = lam.apply_twist(pants_twist.pants_curve,pants_twist.power)
+                # print other
                 for curve in reversed(pants_twist.elementary_moves):
+                    print lam
                     lam = lam.apply_elementary_move_inverse(curve)
+                    # print other
             return lam
 
         raise ValueError
@@ -1453,17 +1575,45 @@ class PantsMappingClass(MappingClass):
         if k > 0:
             return PantsMappingClass(p,twists)
         if k < 0:
-            return PantsMappingClass(p,reversed(twists))
+            return PantsMappingClass(p,[t.inverse() for t in reversed(twists)])
                                      
     def inverse(self):
+        return self**(-1)
+
+    def is_identity(self):
         p = self._pants_decomposition
-        return p^(-1)
+        for c in p.inner_pants_curves():
+            lam = PantsLamination.from_pants_curve(p,c)
+            print "1:", lam
+            # print lam.parent()
+            # print isinstance(lam,PantsLamination)
+            print "2:", self * lam
+            # print (self * lam).parent()
+            # return (lam,self*lam)
+            if lam != self * lam:
+                return False
+            lam = PantsLamination.from_transversal(p,c)
+            print "3:", lam
+            print "4:", self * lam
+            if lam != self * lam:
+                return False
+        return True
+
+    def __eq__(self,other):
+        if not isinstance(other,PantsMappingClass):
+            return False
+        if other._pants_decomposition != self._pants_decomposition:
+            return False
+        return (self * other.inverse()).is_identity()
+
+    def __ne__(self,other):
+        return not self.__eq__(other)
     
         # if isinstance(other)
     def nielsen_thurston_type(self):
         p = self._pants_decomposition
         inner_curve = p.inner_pants_curves()[0]
-        c = PantsLamination.from_pants_curve(inner_curve)
+        c = PantsLamination.from_pants_curve(p,inner_curve)
 
     def stretch_factor(self):
         p = self._pants_decomposition
@@ -1474,3 +1624,23 @@ class PantsMappingClass(MappingClass):
 
         cc = self^100 * c
         return norm(self*cc)/norm(cc)
+
+
+
+def humphries_generators(g):
+    p = PantsDecomposition.humphries(g)
+    a = [ PantsMappingClass(p,[PantsTwist([],1)]) ]
+    for i in range(g-1):
+        a.append(PantsMappingClass(p,[ PantsTwist([3*i+2],3*i+2)]))
+    b = [PantsMappingClass(p,[ PantsTwist([1],1) ])]
+    for i in range(g-2):
+        b.append(PantsMappingClass(p,[PantsTwist([3*i+3,3*i+4],3*i+4)]))
+    b.append(PantsMappingClass(p,[PantsTwist([3*g-3],3*g-3)]))
+    c = PantsMappingClass(p,[PantsTwist([],3)])
+    return (a, b, c)
+
+A, B, C = humphries_generators(2)
+f = A[0]*A[1]*B[0]*B[1]
+p = f._pants_decomposition
+lam = PantsLamination.from_pants_curve(p,1)
+# f.nielsen_thurston_type()
