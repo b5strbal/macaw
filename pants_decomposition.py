@@ -156,36 +156,6 @@ class PantsDecomposition(Surface):
                 return False
         return True
     
-    # def _compute_orientable(self):
-
-    #     # do a search in the dual graph, looking for an
-    #     # orientation-reversing cycle
-    #     pant = 0
-    #     value = {0:0}
-    #     seen_pants_curves = set()
-    #     next_pants_curves = list(self.adjacent_curves(pant))
-    #     while len(next_pants_curves) > 0:
-    #         # print pant, seen_pants_curves, next_pants_curves, value
-    #         c = next_pants_curves.pop()
-    #         if abs(c) in seen_pants_curves:
-    #             continue
-    #         seen_pants_curves.add(abs(c))
-    #         if abs(c) in self.boundary_pants_curves():
-    #             continue
-    #         ps = self.adjacent_pants(abs(c))
-    #         change = 0 if len(ps[0]) == 1 else 1
-    #         assert(len(ps[0]+ps[1]) == 2)
-    #         p1, p2 = ps[0]+ps[1]
-    #         assert(p1 in value.keys() or p2 in value.keys())
-    #         if p1 in value.keys() and p2 in value.keys():
-    #             if (value[p1] - value[p2] - change) % 2 == 1:
-    #                 return False
-    #         if p1 in value.keys():
-    #             value[p2] = value[p1] + change
-    #         else:
-    #             value[p1] = value[p2] + change
-
-    #     return True
             
 
     def is_connected(self):
