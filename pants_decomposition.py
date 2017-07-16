@@ -42,6 +42,9 @@ BOUNDARY = 0
 TYPE_1 = 1
 TYPE_2 = 2
 
+OUT = 1
+IN = -1
+
 class PantsDecomposition(Surface):
     """A pants decomposition of a surface.
 
@@ -449,164 +452,25 @@ class PantsDecomposition(Surface):
                 torus_boundary_curve = abs(self.adjacent_curves(pant)[k])
                 return torus_boundary_curve, k
 
-    
-    def dehn_thurston_tt(self,pants_pieces,annulus_pieces):
+    def _l_ij_left_of(self,pants_curve):
         """
-        Return a Dehn-Thurston train track.
+        Return the arcs `l_{ij}` on the left side of an oriented pants curve.
 
-        INPUT:
-
-        - ``pants_pieces`` -- list of pant type 0~3
-        
-        - ``annulus_pieces`` -- dictionary of connector type 'L' or 'R' 
-
-        EXAMPLES::
-
-            # sage: p = PantsDecomposition([[1,-1,2],[-2,4,3],[-3,5,6],[-5,-4,-6]])
-            # sage: p
-            # Pants decomposition of closed surface of genus 3
-            # sage: p.dehn_thurston_tt([0,0,0,0],{1:'L',2:'L',3:'R',4:'R',5:'R',6:'R'})
-            # Train track on surface of genus 4 with 8 punctures.
-        
-        For the following pants decomposition, there are only two
-        Dehn-Thurston train tracks::
-
-            # sage: p = PantsDecomposition([[1,2,3],[-1,-3,-2]])
-            # sage: p
-            # Pants decomposition of closed surface of genus 2
-            # sage: p.dehn_thurston_tt([0,0], {1:'L',2:'L',3:'L'})
-            # Train track on the closed surface of genus 2
-            # sage: p.dehn_thurston_tt([3,1],{1:'R',2:'L',3:'R'})
-            # Train track on surface of genus 3 with 4 punctures.
-
-        For the following pants decomposition, there are 16
-        Dehn-Thurston train tracks (two choices for each pants and two
-        choices for each pants curve)::
-
-            # sage: p = PantsDecomposition([[0,1,1,2],[0,2,1,1]])
-            # sage: p
-            # Pants decomposition of the 
-            # sage: p.dehn_thurston_tt([(0,1),(1,2)],[(0,1,'L'),(0,2,'R')])
-            # Train track on the torus with 2 punctures
-            # sage: p.dehn_thurston_tt([(0,2),(1,1)],[(0,1,'R'),(0,2,'L')])
-            # Train track on the torus with 2 punctures
-
+        They are listed from bottom to top.
         """
-        #help method
-        def filter_ls(ls):
-            return [x for x in ls if x != 0]
+        # side = LEFT if pants_curve > 0 else RIGHT
+        pant, bdy_index = self.adjacent_pants(pants_curve)[LEFT][0]
+        print "Pant: ", pant
+        print "Bdy index: ", bdy_index
+        return [((bdy_index+2)%3,bdy_index,pant,1,IN),
+                (bdy_index,bdy_index,pant,IN),
+                (bdy_index,(bdy_index+1)%3,pant,OUT),
+                (bdy_index,bdy_index,pant,OUT)]
 
-        # for strange torus
-        if self._genus == 1:
-            raise NotImplementedError('Dehn-Thurston traintrack on torus is not implemented yet')
-        else:
-            train_track_ls = []
-
-            if len(pants_pieces) != len(self._gluing_list):
-                raise ValueError('Need to specify type for each pants')
-
-            baseoffset = len(self._adjacent_pants)
-
-            for punc_key in annulus_pieces.keys():
-
-                if punc_key not in self._pants_curves:
-                    raise ValueError('Selected puncture is not glued.')
-
-                if not self.is_orientable():
-                # if punc_key in self._non_ori_punc_set:
-                    raise NotImplementedError('Train Track for non-orientable gluing have not been implemented yet.')
-
-                orientation = annulus_pieces[punc_key]
-                # first list '+'
-                if orientation == 'L':
-                    p_ls_idx = self._adjacent_pants[punc_key][1]
-                    p_ls_idx_neg = self._adjacent_pants[punc_key][0]
-                    p_ls = self._gluing_list[p_ls_idx]
-                    p_ls_neg = self._gluing_list[p_ls_idx_neg]
-                    base_idx = p_ls.index(-punc_key)
-                    base_idx_neg = p_ls_neg.index(punc_key)
-                    p_type = pants_pieces[p_ls_idx]
-                    p_type_neg = pants_pieces[p_ls_idx_neg]
-                    punc_p2 = p_ls[(base_idx+1)%3]
-                    punc_p3 = p_ls[(base_idx+2)%3]
-                    punc_n2 = p_ls_neg[(base_idx_neg+1)%3]
-                    punc_n3 = p_ls_neg[(base_idx_neg+2)%3]
-                    # '+' branch
-                    if p_type == 0: # type 0                       
-                        train_track_ls.append(filter_ls([punc_key, -self._offset(baseoffset, punc_p2), self._offset(baseoffset, punc_p3)]))
-                    elif p_type == base_idx+1: # type 1
-                        train_track_ls.append(filter_ls([punc_key, -self._offset(baseoffset, punc_p2), self._offset(baseoffset, -punc_key), self._offset(baseoffset, punc_p3),-self._offset(baseoffset, -punc_key)]))
-                    elif (p_type - base_idx)%3 == 2: # type 2
-                        train_track_ls.append(filter_ls([punc_key, self._offset(baseoffset, punc_p3)]))
-                    else: # type 3
-                        train_track_ls.append(filter_ls([punc_key, -self._offset(baseoffset, punc_p2)]))
-                    # '-' branch
-                    if p_type_neg == 0: # type 0
-                        train_track_ls.append(filter_ls([-punc_key, -self._offset(baseoffset, punc_n2), -self._offset(baseoffset, punc_n3)]))
-                    elif p_type_neg == base_idx_neg+1: # type 1
-                        train_track_ls.append(filter_ls([-punc_key, -self._offset(baseoffset, punc_n2), -self._offset(baseoffset, punc_key), -self._offset(baseoffset, punc_n3), -self._offset(baseoffset, punc_key)]))
-                    elif (p_type_neg- base_idx_neg)%3 == 2:  # type 2
-                        train_track_ls.append(filter_ls([-punc_key, -self._offset(baseoffset, punc_n3)]))
-                    else: # type 3
-                        train_track_ls.append(filter_ls([-punc_key, -self._offset(baseoffset, punc_n2)]))
-
-                elif orientation == 'R':
-                    p_ls_idx = self._adjacent_pants[punc_key][0]
-                    p_ls_idx_neg = self._adjacent_pants[punc_key][1]
-                    p_ls = self._gluing_list[p_ls_idx]
-                    p_ls_neg = self._gluing_list[p_ls_idx_neg]
-                    base_idx = p_ls.index(punc_key)
-                    base_idx_neg = p_ls_neg.index(-punc_key)
-                    p_type = pants_pieces[p_ls_idx]
-                    p_type_neg = pants_pieces[p_ls_idx_neg]
-                    punc_p2 = p_ls[(base_idx+1)%3]
-                    punc_p3 = p_ls[(base_idx+2)%3]
-                    punc_n2 = p_ls_neg[(base_idx_neg+1)%3]
-                    punc_n3 = p_ls_neg[(base_idx_neg+2)%3]
-                    # '+' branch
-                    if p_type == 0: # type 0                      
-                        train_track_ls.append(filter_ls([-self._offset(baseoffset, punc_p2), self._offset(baseoffset, punc_p3), punc_key]))
-                    elif p_type == base_idx+1: # type 1 
-                        train_track_ls.append(filter_ls([-self._offset(baseoffset, punc_p2), self._offset(baseoffset, -punc_key), self._offset(baseoffset, punc_p3),-self._offset(baseoffset, -punc_key), punc_key]))
-                    elif (p_type - base_idx)%3 == 2: # type 2
-                        train_track_ls.append(filter_ls([self._offset(baseoffset, punc_p3), punc_key]))
-                    else: # type 3
-                        train_track_ls.append(filter_ls([-self._offset(baseoffset, punc_p2), punc_key]))
-                    # '-' branch
-                    if p_type_neg == 0: # type 0    
-                        train_track_ls.append(filter_ls([self._offset(baseoffset, punc_n2), -self._offset(baseoffset, punc_n3), -punc_key]))
-                    elif p_type_neg == base_idx_neg+1: # type 1
-                        train_track_ls.append(filter_ls([self._offset(baseoffset, punc_n2), -self._offset(baseoffset, -punc_key), -self._offset(baseoffset, punc_n3), self._offset(baseoffset, -punc_key), -punc_key]))
-                    elif (p_type_neg-base_idx_neg)%3 == 2: # type 2
-                        train_track_ls.append(filter_ls([-self._offset(baseoffset, punc_n3), -punc_key]))
-                    else: # type 3
-                        train_track_ls.append(filter_ls([self._offset(baseoffset, punc_n2), -punc_key]))
-                else:
-                    raise ValueError('Specify connector type by \'L\' and \'R\'')            
-            
-            #traintrack = TrainTrack(train_track_ls)            
-            # print train_track_ls
-            traintrack = TrainTrack(train_track_ls)       
-            #print repr(traintrack)
-            return traintrack
-        pass
-        
-    def _offset(self, baseoffset, x):
-        if abs(x) in self._pants_curves:
-            if x>0:
-                return x + baseoffset
-            else:
-                return abs(x)+2*baseoffset
-        else:
-            return 0
-    
-        
-    def generating_curves(self):
-        """
-        Return a list of curves whose twists generate.
-
-        """
-        pass
+    @staticmethod
+    def _create_label(tup):
+        sg = '-' if tup[3] == IN else ''
+        return sg + 'l_' + str(tup[0]+1) + str(tup[1]+1) + '_' + str(tup[2])
         
     
     @classmethod
@@ -972,19 +836,6 @@ class PantsLamination(MeasuredLamination):
         return self._m[abs(i)]
         # return sum(self.l(*x) for x in self.l_ij_left_of(i)) 
     
-    def l_ij_left_of(self,k):
-        """
-        Return the arcs `l_{ij}` on the left side of the oriented pants curve k.
-
-        They are listed from top to bottom.
-        """
-        p = self._pants_decomposition
-        side = LEFT if k > 0 else RIGHT
-        pant, bdy_index = p.adjacent_pants(k)[side][0]
-        return [(bdy_index,bdy_index,pant),
-                (bdy_index,(bdy_index+1)%3,pant),
-                (bdy_index,bdy_index,pant),
-                ((bdy_index+2)%3,bdy_index,pant)]
     
     def t(self,i):
         """
@@ -1116,12 +967,192 @@ class PantsLamination(MeasuredLamination):
 
     def __ne__(self,other):
         return not self.__eq__(other)
+
+    def dehn_thurston_tt(self,pants_pieces,annulus_pieces):
+        """
+        Return a Dehn-Thurston train track.
+
+        INPUT:
+
+        - ``pants_pieces`` -- list of pant type 0~3
+        
+        - ``annulus_pieces`` -- dictionary of connector type 'L' or 'R' 
+
+        EXAMPLES::
+
+            # sage: p = PantsDecomposition([[1,-1,2],[-2,4,3],[-3,5,6],[-5,-4,-6]])
+            # sage: p
+            # Pants decomposition of closed surface of genus 3
+            # sage: p.dehn_thurston_tt([0,0,0,0],{1:'L',2:'L',3:'R',4:'R',5:'R',6:'R'})
+            # Train track on surface of genus 4 with 8 punctures.
+        
+        For the following pants decomposition, there are only two
+        Dehn-Thurston train tracks::
+
+            # sage: p = PantsDecomposition([[1,2,3],[-1,-3,-2]])
+            # sage: p
+            # Pants decomposition of closed surface of genus 2
+            # sage: p.dehn_thurston_tt([0,0], {1:'L',2:'L',3:'L'})
+            # Train track on the closed surface of genus 2
+            # sage: p.dehn_thurston_tt([3,1],{1:'R',2:'L',3:'R'})
+            # Train track on surface of genus 3 with 4 punctures.
+
+        For the following pants decomposition, there are 16
+        Dehn-Thurston train tracks (two choices for each pants and two
+        choices for each pants curve)::
+
+            # sage: p = PantsDecomposition([[0,1,1,2],[0,2,1,1]])
+            # sage: p
+            # Pants decomposition of the 
+            # sage: p.dehn_thurston_tt([(0,1),(1,2)],[(0,1,'L'),(0,2,'R')])
+            # Train track on the torus with 2 punctures
+            # sage: p.dehn_thurston_tt([(0,2),(1,1)],[(0,1,'R'),(0,2,'L')])
+            # Train track on the torus with 2 punctures
+
+        """
+        #help method
+        def filter_ls(ls):
+            return [x for x in ls if x != 0]
+
+        # for strange torus
+        if self._genus == 1:
+            raise NotImplementedError('Dehn-Thurston traintrack on torus is not implemented yet')
+        else:
+            train_track_ls = []
+
+            if len(pants_pieces) != len(self._gluing_list):
+                raise ValueError('Need to specify type for each pants')
+
+            baseoffset = len(self._adjacent_pants)
+
+            for punc_key in annulus_pieces.keys():
+
+                if punc_key not in self._pants_curves:
+                    raise ValueError('Selected puncture is not glued.')
+
+                if not self.is_orientable():
+                # if punc_key in self._non_ori_punc_set:
+                    raise NotImplementedError('Train Track for non-orientable gluing have not been implemented yet.')
+
+                orientation = annulus_pieces[punc_key]
+                # first list '+'
+                if orientation == 'L':
+                    p_ls_idx = self._adjacent_pants[punc_key][1]
+                    p_ls_idx_neg = self._adjacent_pants[punc_key][0]
+                    p_ls = self._gluing_list[p_ls_idx]
+                    p_ls_neg = self._gluing_list[p_ls_idx_neg]
+                    base_idx = p_ls.index(-punc_key)
+                    base_idx_neg = p_ls_neg.index(punc_key)
+                    p_type = pants_pieces[p_ls_idx]
+                    p_type_neg = pants_pieces[p_ls_idx_neg]
+                    punc_p2 = p_ls[(base_idx+1)%3]
+                    punc_p3 = p_ls[(base_idx+2)%3]
+                    punc_n2 = p_ls_neg[(base_idx_neg+1)%3]
+                    punc_n3 = p_ls_neg[(base_idx_neg+2)%3]
+                    # '+' branch
+                    if p_type == 0: # type 0                       
+                        train_track_ls.append(filter_ls([punc_key, -self._offset(baseoffset, punc_p2), self._offset(baseoffset, punc_p3)]))
+                    elif p_type == base_idx+1: # type 1
+                        train_track_ls.append(filter_ls([punc_key, -self._offset(baseoffset, punc_p2), self._offset(baseoffset, -punc_key), self._offset(baseoffset, punc_p3),-self._offset(baseoffset, -punc_key)]))
+                    elif (p_type - base_idx)%3 == 2: # type 2
+                        train_track_ls.append(filter_ls([punc_key, self._offset(baseoffset, punc_p3)]))
+                    else: # type 3
+                        train_track_ls.append(filter_ls([punc_key, -self._offset(baseoffset, punc_p2)]))
+                    # '-' branch
+                    if p_type_neg == 0: # type 0
+                        train_track_ls.append(filter_ls([-punc_key, -self._offset(baseoffset, punc_n2), -self._offset(baseoffset, punc_n3)]))
+                    elif p_type_neg == base_idx_neg+1: # type 1
+                        train_track_ls.append(filter_ls([-punc_key, -self._offset(baseoffset, punc_n2), -self._offset(baseoffset, punc_key), -self._offset(baseoffset, punc_n3), -self._offset(baseoffset, punc_key)]))
+                    elif (p_type_neg- base_idx_neg)%3 == 2:  # type 2
+                        train_track_ls.append(filter_ls([-punc_key, -self._offset(baseoffset, punc_n3)]))
+                    else: # type 3
+                        train_track_ls.append(filter_ls([-punc_key, -self._offset(baseoffset, punc_n2)]))
+
+                elif orientation == 'R':
+                    p_ls_idx = self._adjacent_pants[punc_key][0]
+                    p_ls_idx_neg = self._adjacent_pants[punc_key][1]
+                    p_ls = self._gluing_list[p_ls_idx]
+                    p_ls_neg = self._gluing_list[p_ls_idx_neg]
+                    base_idx = p_ls.index(punc_key)
+                    base_idx_neg = p_ls_neg.index(-punc_key)
+                    p_type = pants_pieces[p_ls_idx]
+                    p_type_neg = pants_pieces[p_ls_idx_neg]
+                    punc_p2 = p_ls[(base_idx+1)%3]
+                    punc_p3 = p_ls[(base_idx+2)%3]
+                    punc_n2 = p_ls_neg[(base_idx_neg+1)%3]
+                    punc_n3 = p_ls_neg[(base_idx_neg+2)%3]
+                    # '+' branch
+                    if p_type == 0: # type 0                      
+                        train_track_ls.append(filter_ls([-self._offset(baseoffset, punc_p2), self._offset(baseoffset, punc_p3), punc_key]))
+                    elif p_type == base_idx+1: # type 1 
+                        train_track_ls.append(filter_ls([-self._offset(baseoffset, punc_p2), self._offset(baseoffset, -punc_key), self._offset(baseoffset, punc_p3),-self._offset(baseoffset, -punc_key), punc_key]))
+                    elif (p_type - base_idx)%3 == 2: # type 2
+                        train_track_ls.append(filter_ls([self._offset(baseoffset, punc_p3), punc_key]))
+                    else: # type 3
+                        train_track_ls.append(filter_ls([-self._offset(baseoffset, punc_p2), punc_key]))
+                    # '-' branch
+                    if p_type_neg == 0: # type 0    
+                        train_track_ls.append(filter_ls([self._offset(baseoffset, punc_n2), -self._offset(baseoffset, punc_n3), -punc_key]))
+                    elif p_type_neg == base_idx_neg+1: # type 1
+                        train_track_ls.append(filter_ls([self._offset(baseoffset, punc_n2), -self._offset(baseoffset, -punc_key), -self._offset(baseoffset, punc_n3), self._offset(baseoffset, -punc_key), -punc_key]))
+                    elif (p_type_neg-base_idx_neg)%3 == 2: # type 2
+                        train_track_ls.append(filter_ls([-self._offset(baseoffset, punc_n3), -punc_key]))
+                    else: # type 3
+                        train_track_ls.append(filter_ls([self._offset(baseoffset, punc_n2), -punc_key]))
+                else:
+                    raise ValueError('Specify connector type by \'L\' and \'R\'')            
+            
+            #traintrack = TrainTrack(train_track_ls)            
+            # print train_track_ls
+            traintrack = TrainTrack(train_track_ls)       
+            #print repr(traintrack)
+            return traintrack
+        pass
+        
+    def _offset(self, baseoffset, x):
+        if abs(x) in self._pants_curves:
+            if x>0:
+                return x + baseoffset
+            else:
+                return abs(x)+2*baseoffset
+        else:
+            return 0
+
     
     def construct_train_track(self):
         """
         Return the Dehn-Thurston train track for the current measure.
         """
-        pass
+        p = self._pants_decomposition
+        ipc = p.inner_pants_curves()
+        gluing_list = []
+        for i in range(len(ipc)):
+            labels = [None, None]
+            for side in [LEFT, RIGHT]:
+                c = (-1)**side * ipc[i]
+                print "c: ", c
+                tuples = p._l_ij_left_of(c)
+                tuples = filter(lambda tup: self.l(tup[0],tup[1],tup[2]) >
+                                0, tuples)
+                labels[side] = [PantsDecomposition._create_label(tup)
+                          for tup in tuples]
+            c = ipc[i]
+            if self.t(c) < 0:
+                # def sg(x):
+                #     return '' if x>0 else '-'
+                up = labels[LEFT] + ['t_' + str(c)]
+                down = labels[RIGHT] + ['-t_' + str(c)]
+
+            elif self.t(c) > 0:
+                down = ['-t_' + str(c)] + labels[LEFT]
+                up = ['t_' + str(c)] + labels[RIGHT] 
+            else:
+                up = labels[LEFT]
+                down = labels[RIGHT]
+            gluing_list.extend([up,down])                
+            
+        gluing_list = filter(lambda x: len(x) > 0, gluing_list)
+        return gluing_list
 
     # def __mul__(self,pants_twist):
     #     pass
