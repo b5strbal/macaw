@@ -165,6 +165,7 @@ class TrainTrack(SageObject):
             self._gluing_list = gluing_list
         else:
             self._labels = []
+            self._labelled_gluing_list = gluing_list
             new_list = []
             count = 0
             for item in gluing_list:
