@@ -125,9 +125,25 @@ class TrainTrack(SageObject):
         ``twisted_branches`` argument.
 
     """
-    def __init__(self,gluing_list,measure=None,twisted_branches=None,labels=None): 
+    def __init__(self,gluing_list,measure=None,twisted_branches=None): 
         """
         TODO: add measures to the code and documentation.
+        
+        TESTS::
+
+        sage: tt = TrainTrack([ ['a', '-a'], ['b'], ['-b', 'c'], ['e'], ['d', '-d'], ['-c'], ['-e'], ['f', '-f'] ])
+        sage: tt._gluing_list
+        [[1, -1], [2], [-2, 3], [4], [5, -5], [-3], [-4], [6, -6]]
+        sage: tt
+        Train track on the sphere with 4 punctures
+
+        sage: tt = TrainTrack([ ['a', 'b'], ['-a', '-b'] ])
+        sage: tt._gluing_list
+        [[1, 2], [-1, -2]]
+        sage: tt
+        Train track on the torus with 1 puncture
+        
+
         """
         
         branches = [] #start a list of branches
@@ -140,17 +156,40 @@ class TrainTrack(SageObject):
 
         g = sorted(flatten(gluing_list))
         self._num_branches = len(g)//2
-        if g != range(-self._num_branches,0) + range(1,self._num_branches+1):
-            raise ValueError("Every number in -n,...-1,1,...,n must"
-                             " appear exactly once in the gluing list for some n.")
-
-        self._gluing_list = gluing_list
-        self._measure = measure
-        self._labels = labels
+        self._labels = None
         self._branch_to_label = {}
-        if labels != None:
-            for i in range(len(labels)):
-                self._branch_to_label[labels[i]] = i+1
+        if not isinstance(g[0], str):
+            if g != range(-self._num_branches,0) + range(1,self._num_branches+1):
+                raise ValueError("Every number in -n,...-1,1,...,n must"
+                                 " appear exactly once in the gluing list for some n.")
+            self._gluing_list = gluing_list
+        else:
+            self._labels = []
+            new_list = []
+            count = 0
+            for item in gluing_list:
+                new_list.append([])
+                for label in item:
+                    if label[0] == '-':
+                        sg = -1
+                        label = label[1:]
+                    else:
+                        sg = 1
+                    if label not in self._branch_to_label.keys():
+                        count += 1
+                        self._branch_to_label[label] = count
+                        self._labels.append(label)
+                    # print sg, count
+                    new_list[-1].append(sg * self._branch_to_label[label])
+                    # print new_list
+            self._gluing_list = new_list
+            
+
+        self._measure = measure
+        
+        # if labels != None:
+        #     for i in range(len(labels)):
+        #         self._branch_to_label[labels[i]] = i+1
 
 
     def _repr_(self):
@@ -331,7 +370,7 @@ class TrainTrack(SageObject):
         
         EXAMPLES:
 
-            sage: tt = TrainTrack([[1, 2], [-1, -2]],labels=['a','b'])
+            sage: tt = TrainTrack([['a', 'b'], ['-a', '-b']])
             sage: tt.branch_with_label('a')
             1
             sage: tt.branch_with_label('b')
@@ -357,7 +396,7 @@ class TrainTrack(SageObject):
 
         EXAMPLES:
 
-            sage: tt = TrainTrack([[1, 2], [-1, -2]],labels=['a','b'])
+            sage: tt = TrainTrack([['a', 'b'], ['-a', '-b']])
             sage: tt.label_of_branch(1)
             'a'
             sage: tt.label_of_branch(2)
