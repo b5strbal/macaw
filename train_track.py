@@ -125,7 +125,7 @@ class TrainTrack(SageObject):
         ``twisted_branches`` argument.
 
     """
-    def __init__(self,gluing_list,measure=None,twisted_branches=None): 
+    def __init__(self,gluing_list,measure=None,twisted_branches=None,labels=None): 
         """
         TODO: add measures to the code and documentation.
         """
@@ -146,6 +146,11 @@ class TrainTrack(SageObject):
 
         self._gluing_list = gluing_list
         self._measure = measure
+        self._labels = labels
+        self._branch_to_label = {}
+        if labels != None:
+            for i in range(len(labels)):
+                self._branch_to_label[labels[i]] = i+1
 
 
     def _repr_(self):
@@ -339,7 +344,13 @@ class TrainTrack(SageObject):
             0
 
         """
-        pass
+        sign = 1
+        if label[0] == '-':
+            sign = -1
+            label = label[1:]
+        if label not in self._branch_to_label.keys():
+            return 0
+        return sign*self._branch_to_label[label]
 
     def label_of_branch(self,branch):
         """Return the label of a branch.
@@ -357,7 +368,9 @@ class TrainTrack(SageObject):
             '-b'
 
         """
-        pass
+        if branch < 0:
+            return '-' + self._labels[-branch-1]
+        return self._labels[branch-1]
     
 
     
@@ -856,7 +869,7 @@ class CarryingData(SageObject):
             sage: branch_matrix = matrix([[1,1],[0,1]])
             sage: half_branch_map = {1:1,2:1,-1:-1,-2:-2}
             sage: hb_between_branches = {1:[0,0],2:[0,1],-1:[0,1],-2:[0,0]}
-            sage: CarryingData(branch_matrix, half_branch_map, hb_between_branches)
+            sage: c = CarryingData(branch_matrix, half_branch_map, hb_between_branches)
 
         
         
@@ -881,7 +894,7 @@ class CarryingData(SageObject):
             sage: hb_between_branches = {1:[0,0],2:[0,1],-1:[0,1],-2:[0,0]}
             sage: c = CarryingData(branch_matrix, half_branch_map, hb_between_branches)
             sage: [c.image_of_half_branch(i) for i in [-2,-1,1,2]]
-            [-2, -1, 2, 1]
+            [-2, -1, 1, 1]
         
 
         """
@@ -966,8 +979,9 @@ class CarryingData(SageObject):
 
             sage: branch_matrix = matrix([[1,1],[0,1]])
             sage: half_branch_map = {1:1,2:1,-1:-1,-2:-2}
-            sage: hb_between_branches = {1:[0,0],2:[0,1],-1:[0,1],-2:[0,0]}
+            sage: hb_between_branches = {1:[0,0],2:[1,0],-1:[0,1],-2:[0,0]}
             sage: c = CarryingData(branch_matrix, half_branch_map, hb_between_branches)
+            sage: LEFT = 0
             sage: c.strands_on_side(1, LEFT)
             [0, 0]
             sage: c.strands_on_side(-1, LEFT)

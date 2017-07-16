@@ -1387,63 +1387,6 @@ class PantsLamination(MeasuredLamination):
                 
         return PantsLamination(p.apply_elementary_move(pants_curve),coord_list)
             
-            
-        # if p.elementary_move_type(pants_curve) == 1:
-            # pant, bdy_idx = p.adjacent_pants(pants_curve)[LEFT][0]
-
-            # numbers of boundary curves inside torus
-            # cs = [p.adjacent_pants(pants_curve)[i][1] for i in range(2)]
-
-            # finding the index of curve bounding the torus
-            # this is how much all indices will be shifted
-            # for k in range(3):
-            #     if abs(p.adjacent_curves(pant)[k]) != pants_curve:
-            #         torus_boundary_curve = abs(p.adjacent_curves(pant)[k])
-            #         break
-
-            # old coordinates
-            # a = [k, (k+1)%3, (k+2)%3]
-            # t = [self.t(pants_curve), self.t(p.adjacent_curves(pant)[k])]
-            # l = matrix(QQ,3)
-            # for i in range(3):
-            #     for j in range(3):
-            #         l[i,j] = self.l(a[i],a[j],pant)
-            # r = l[0,1]
-            
-            
-            # new coordinates
-            # ll = matrix(QQ,3)
-            # ll[0,0] = max(r-abs(t[0]),0)
-            # L = r - ll[0,0]
-            # ll[0,1] = ll[1,0] = ll[0,2] = ll[2,0] = L + l[0,0]
-            # ll[1,2] = ll[2,1] = abs(t[0]) - L
-            # tt = [0,0]
-            # tt[0] = t[1] + l[0,0] + max(0, min(L, t[0]))
-            # tt[1] = -sg(t[0]) * (l[1,2] + L)
-            # # do first elementary move
-
-            # if debug:
-            #     print "a: ", a
-            #     print "t: ", t
-            #     print "l: ", l
-            #     print "r: ", r
-            #     print "L: ", L
-            #     print "New l: ", ll
-            #     print "New t: ", tt
-                
-            
-            # mm = [2*ll[0,0]+ll[0,1]+ll[0,2], ll[1,2]+ll[1,0]]
-            # d = dict(self._coordinates)
-            # d[pants_curve] = [mm[1],tt[1]]
-            # d[torus_boundary_curve] = [mm[0],tt[0]]
-            # return PantsLamination(p,d)
-        
-        # do second elementery move
-        # left_pant = p.adjacent_pants(pants_curve)[LEFT][0]
-        # right_pant = p.adjacent_pants(pants_curve)[RIGHT][0]
-
-        
-        # p.apply_elementary_move(pants_curve)
     
 
     def apply_elementary_move_inverse(self,pants_curve,debug=False):
@@ -1495,14 +1438,6 @@ class PantsLamination(MeasuredLamination):
             lam = lam.apply_elementary_move(pants_curve,debug)
         return lam
             
-
-    
-# p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
-# c1 = PantsCoordinates(0,0,0,2,3,1) # type 0
-# c2 = PantsCoordinates(0,0,4,0,1,2) # type 3
-# l = PantsLamination(p, {1:-2, 2:4, 3:0}, [c1, c2])
-# l = PantsLamination(p, {1:(1,2), 2:(4,1), 3:(0,0)})
-
 
     
 
