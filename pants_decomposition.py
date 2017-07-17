@@ -506,6 +506,26 @@ class PantsDecomposition(Surface):
         y = x if bdy_index1 == 0 or bdy_index2 == 0 else x + 1
         return sign * y
 
+    def l_ij_encoding_inv(self,branch_number):
+        # print branch_number
+        pant = (abs(branch_number) - 1)//6
+        rem = (abs(branch_number) - 1) % 6
+        s = sign(branch_number)
+        if rem == 0:
+            return (pant,0,0,s)
+        elif rem == 1:
+            return (pant,0,1,s)
+        elif rem == 2:
+            return (pant,2,0,s)
+        elif rem == 3:
+            return (pant,1,1,s)
+        elif rem == 4:
+            return (pant,1,2,s)
+        elif rem == 5:
+            return (pant,2,2,s)
+
+            
+    
     def t_encoding(self,pants_curve):
         """
         EXAMPLES:
@@ -522,6 +542,9 @@ class PantsDecomposition(Surface):
         """
         return sign(pants_curve)*(6*self.num_pants() + abs(pants_curve))
 
+    def t_encoding_inv(self,branch_number):
+        return sign(branch_number)*(abs(branch_number) - 6*self.num_pants())
+    
     @staticmethod
     def branches_next_to_curve(pant,bdy_index):
         """
@@ -548,10 +571,10 @@ class PantsDecomposition(Surface):
                 (pant,bdy_index,(bdy_index+1)%3,1),
                 (pant,bdy_index,bdy_index,1)]
     
-    @staticmethod
-    def _create_label(tup):
-        sg = '-' if tup[3] == IN else ''
-        return sg + 'l_' + str(tup[0]+1) + str(tup[1]+1) + '_' + str(tup[2])
+    # @staticmethod
+    # def _create_label(tup):
+    #     sg = '-' if tup[3] == IN else ''
+    #     return sg + 'l_' + str(tup[0]+1) + str(tup[1]+1) + '_' + str(tup[2])
         
     
     @classmethod
@@ -1034,45 +1057,49 @@ class PantsLamination(MeasuredLamination):
     def __ne__(self,other):
         return not self.__eq__(other)
 
-    
+
+    def measure(self,branch):
+        p = self._pants_decomposition
+        if abs(branch) > 6*p.num_pants():
+            # t_i
+            ti = p.t_encoding_inv(branch)
+            return self.t(ti)
+        else:
+            # l_ij
+            pant, i, j, sg = p.l_ij_encoding_inv(branch)
+            return self.l(i,j,pant)
+            
     def construct_train_track(self):
         """
         Return the Dehn-Thurston train track for the current measure.
         """
         p = self._pants_decomposition
-        ipc = p.inner_pants_curves()
-        gluing_list = []
-        for i in range(len(ipc)):
-            labels = [None, None]
-            for side in [LEFT, RIGHT]:
-                c = (-1)**side * ipc[i]
-                # print "c: ", c
-                tuples = p._l_ij_left_of(c)
-                # print "Tuples: ", tuples
-                tuples = filter(lambda tup: self.l(tup[0],tup[1],tup[2]) >
-                                0, tuples)
-                labels[side] = [PantsDecomposition._create_label(tup)
-                          for tup in tuples]
-            c = ipc[i]
-            if self.t(c) > 0:
-                # def sg(x):
-                #     return '' if x>0 else '-'
-                up = labels[LEFT] + ['t_' + str(c)]
-                down = labels[RIGHT] + ['-t_' + str(c)]
+        # p.index_of_inner_pants_curve
 
-            elif self.t(c) < 0:
-                down = ['-t_' + str(c)] + labels[LEFT]
-                up = ['t_' + str(c)] + labels[RIGHT] 
-            else:
-                up = labels[LEFT]
-                down = labels[RIGHT]
-            gluing_list.extend([up,down])                
-            
-        gluing_list = filter(lambda x: len(x) > 0, gluing_list)
-        return TrainTrack(gluing_list)
+        tt_list = [None] * (2*p.num_pants_curves())
+        for pant in range(len(p._gluing_list)):
+            for bdy_index in range(3):
+                c = p._gluing_list[pant][bdy_index]
+                branch_list = p.branches_next_to_curve(pant,bdy_index)
+                branch_list = filter(lambda x: self.measure(x) > 0,
+                                      branch_list)
+                ti = self.measure(p.t_encoding(c))
+                if ti > 0:
+                    branch_list.append(p.t_encoding(c))
+                elif ti < 0:
+                    branch_list.insert(0,p.t_encoding(c))
 
-    # def __mul__(self,pants_twist):
-    #     pass
+                pos = 2*c-2 if c>0 else 2*(-c)-1
+                tt_list[pos] = branch_list
+
+        # filtering out boundary pants curves
+        filtered_list = []
+        for i in range(len(tt_list)/2):
+            if len(tt_list[2*i]) != 0 and len(tt_list[2*i+1]) != 0:
+                filtered_list.extend([tt_list[2*i], tt_list[2*i+1]])
+
+        return TrainTrack(filtered_list)
+
     
     def apply_twist(self,pants_curve,power=1):
         # TODO
