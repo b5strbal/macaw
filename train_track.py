@@ -125,25 +125,10 @@ class TrainTrack(SageObject):
         ``twisted_branches`` argument.
 
     """
-    def __init__(self,gluing_list,measure=None,twisted_branches=None): 
+    def __init__(self,gluing_list,measure=None,twisted_branches=None,max_branch=None): 
         """
         TODO: add measures to the code and documentation.
         
-        TESTS::
-
-        sage: tt = TrainTrack([ ['a', '-a'], ['b'], ['-b', 'c'], ['e'], ['d', '-d'], ['-c'], ['-e'], ['f', '-f'] ])
-        sage: tt._gluing_list
-        [[1, -1], [2], [-2, 3], [4], [5, -5], [-3], [-4], [6, -6]]
-        sage: tt
-        Train track on the sphere with 4 punctures
-
-        sage: tt = TrainTrack([ ['a', 'b'], ['-a', '-b'] ])
-        sage: tt._gluing_list
-        [[1, 2], [-1, -2]]
-        sage: tt
-        Train track on the torus with 1 puncture
-        
-
         """
         
         branches = [] #start a list of branches
@@ -154,44 +139,29 @@ class TrainTrack(SageObject):
                 raise ValueError("Each list in the gluing list has to"
                                  " be non-empty.")
 
-        g = sorted(flatten(gluing_list))
+        g = flatten(gluing_list)
         self._num_branches = len(g)//2
-        self._labels = None
-        self._branch_to_label = {}
-        if not isinstance(g[0], str):
-            if g != range(-self._num_branches,0) + range(1,self._num_branches+1):
-                raise ValueError("Every number in -n,...-1,1,...,n must"
-                                 " appear exactly once in the gluing list for some n.")
-            self._gluing_list = gluing_list
-        else:
-            self._labels = []
-            self._labelled_gluing_list = gluing_list
-            new_list = []
-            count = 0
-            for item in gluing_list:
-                new_list.append([])
-                for label in item:
-                    if label[0] == '-':
-                        sg = -1
-                        label = label[1:]
-                    else:
-                        sg = 1
-                    if label not in self._branch_to_label.keys():
-                        count += 1
-                        self._branch_to_label[label] = count
-                        self._labels.append(label)
-                    # print sg, count
-                    new_list[-1].append(sg * self._branch_to_label[label])
-                    # print new_list
-            self._gluing_list = new_list
-            
+        self._max_branch = max(abs(x) for x in g) if max_branch == None\
+                           else max_branch
+        
+        self._branch_endpoint = [0] * (self._max_branch + 1)
+        self._branch_startpoint = [0] * (self._max_branch + 1)
+        for i in range(len(gluing_list)/2):
+            for branch in gluing_list[2*i]:
+                if branch > 0:
+                    self._branch_startpoint[branch] = i+1
+                else:
+                    self._branch_endpoint[branch] = i+1
+            for branch in gluing_list[2*i+1]:
+                if branch > 0:
+                    self._branch_startpoint[branch] = -i-1
+                else:
+                    self._branch_endpoint[branch] = -i-1
 
+                    
+        self._gluing_list = gluing_list
         self._measure = measure
         
-        # if labels != None:
-        #     for i in range(len(labels)):
-        #         self._branch_to_label[labels[i]] = i+1
-
 
     def _repr_(self):
         """
@@ -245,15 +215,8 @@ class TrainTrack(SageObject):
             sage: tt.branch_endpoint(-2)
             1
             """
-
-        for switch in self._gluing_list:
-            if -branch in switch:
-                switch_num = self._gluing_list.index(switch)
-                if switch_num % 2 == 0: #checks orientation of the switch
-                    return switch_num // 2 + 1
-                else:
-                    return -(switch_num // 2 + 1)
-        raise ValueError('Invalid branch index.')
+        return self._branch_startpoint[branch] if branch < 0 \
+            else self._branch_endpoint[branch]
     
     def num_branches(self):
         """
@@ -355,65 +318,6 @@ class TrainTrack(SageObject):
         return self._measure[abs(branch) - 1]
 
 
-    def branch_with_label(self,label):
-        """Return the branch number of labelled branch.
-
-        TODO: How should the labels change after unzipping?
-
-        INPUT:
-
-        - ``label`` -- 
-
-        OUTPUT:
-
-        The number of the branch corresponding to the label. The the
-        label is invalid, 0 is returned.
-        
-        EXAMPLES:
-
-            sage: tt = TrainTrack([['a', 'b'], ['-a', '-b']])
-            sage: tt.branch_with_label('a')
-            1
-            sage: tt.branch_with_label('b')
-            2
-            sage: tt.branch_with_label('-a')
-            -1
-            sage: tt.branch_with_label('-b')
-            -2
-            sage: tt.branch_with_label('c')
-            0
-
-        """
-        sign = 1
-        if label[0] == '-':
-            sign = -1
-            label = label[1:]
-        if label not in self._branch_to_label.keys():
-            return 0
-        return sign*self._branch_to_label[label]
-
-    def label_of_branch(self,branch):
-        """Return the label of a branch.
-
-        EXAMPLES:
-
-            sage: tt = TrainTrack([['a', 'b'], ['-a', '-b']])
-            sage: tt.label_of_branch(1)
-            'a'
-            sage: tt.label_of_branch(2)
-            'b'
-            sage: tt.label_of_branch(-1)
-            '-a'
-            sage: tt.label_of_branch(-2)
-            '-b'
-
-        """
-        if branch < 0:
-            return '-' + self._labels[-branch-1]
-        return self._labels[branch-1]
-    
-
-    
 
     # ----------------------------------------------------------------
     # BASIC PROPERTIES OF TRAIN TRACKS
@@ -792,20 +696,20 @@ class TrainTrack(SageObject):
         """
         Unzips the train_track along the left side of the given branch.
 
-        EXAMPLES:
+        # EXAMPLES:
 
-        sage: tt1 = TrainTrack([ [2, 3], [-4, -1], [5, -6, -7, 8], [4, -3, -2, 1], [-5, -8], [7, 6] ], [2, 5, 2, 5, 5, 3, 4, 2])
-        sage: tt1.unzip(-5)
-        sage: tt1.gluing_list()
-        [[2, 9, 3], [-4, -1], [5], [-2, 1], [-5, -8], [7, 6], [-6, -7, 8], [4, -3, -9]]
-        sage: tt1.measure()
-        [2, 3, 2, 5, 5, 3, 4, 2, 2]
-        sage: tt2 = TrainTrack([ [2, 3], [-4, -1], [5, -6, -7, 8], [4, -3, -2, 1], [-5, -8], [7, 6] ], [2, 5, 2, 5, 5, 3, 4, 2])
-        sage: tt2.unzip(6)
-        sage: tt2.gluing_list()
-        [[2, 3, 9], [-4, -1], [5, -6], [-3, -2, 1], [-5, -8], [7, 6], [-7, 8], [4, -9]]
-        sage: tt2.measure()
-        [2, 5, 1, 5, 5, 3, 4, 2, 1]
+        # sage: tt1 = TrainTrack([ [2, 3], [-4, -1], [5, -6, -7, 8], [4, -3, -2, 1], [-5, -8], [7, 6] ], [2, 5, 2, 5, 5, 3, 4, 2])
+        # sage: tt1.unzip(-5)
+        # sage: tt1.gluing_list()
+        # [[2, 9, 3], [-4, -1], [5], [-2, 1], [-5, -8], [7, 6], [-6, -7, 8], [4, -3, -9]]
+        # sage: tt1.measure()
+        # [2, 3, 2, 5, 5, 3, 4, 2, 2]
+        # sage: tt2 = TrainTrack([ [2, 3], [-4, -1], [5, -6, -7, 8], [4, -3, -2, 1], [-5, -8], [7, 6] ], [2, 5, 2, 5, 5, 3, 4, 2])
+        # sage: tt2.unzip(6)
+        # sage: tt2.gluing_list()
+        # [[2, 3, 9], [-4, -1], [5, -6], [-3, -2, 1], [-5, -8], [7, 6], [-7, 8], [4, -9]]
+        # sage: tt2.measure()
+        # [2, 5, 1, 5, 5, 3, 4, 2, 1]
 
 
         """
