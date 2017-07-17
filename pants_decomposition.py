@@ -356,6 +356,7 @@ class PantsDecomposition(Surface):
         """
         return len(self.boundary_pants_curves())
 
+    
 
     def elementary_move_type(self,pants_curve):
         if pants_curve in self.boundary_pants_curves():
@@ -467,6 +468,86 @@ class PantsDecomposition(Surface):
                 (bdy_index,(bdy_index+1)%3,pant,OUT),
                 (bdy_index,bdy_index,pant,OUT)]
 
+    @staticmethod
+    def l_ij_encoding(pant,bdy_index1,bdy_index2,sign):
+        """
+        EXAMPLES::
+
+        sage: p = PantsDecomposition
+        sage: p.l_ij_encoding(0,0,0,1)
+        1
+        sage: p.l_ij_encoding(0,0,1,1)
+        2
+        sage: p.l_ij_encoding(0,1,0,1)
+        2
+        sage: p.l_ij_encoding(0,0,2,1)
+        3
+        sage: p.l_ij_encoding(0,2,0,1)
+        3
+        sage: p.l_ij_encoding(0,1,1,1)
+        4
+        sage: p.l_ij_encoding(0,1,2,1)
+        5
+        sage: p.l_ij_encoding(0,2,1,1)
+        5
+        sage: p.l_ij_encoding(0,2,2,1)
+        6
+        sage: p.l_ij_encoding(1,0,0,1)
+        7
+        sage: p.l_ij_encoding(1,2,2,1)
+        12
+        
+        sage: p.l_ij_encoding(0,0,0,-1)
+        -1
+        sage: p.l_ij_encoding(1,2,2,-1)
+        -12
+        """
+        x = 1 + 6*pant + bdy_index1 + bdy_index2
+        y = x if bdy_index1 == 0 or bdy_index2 == 0 else x + 1
+        return sign * y
+
+    def t_encoding(self,pants_curve):
+        """
+        EXAMPLES:
+
+            sage: p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
+            sage: p.t_encoding(1)
+            13
+            sage: p.t_encoding(2)
+            14
+            sage: p.t_encoding(-1)
+            -13
+            sage: p.t_encoding(-2)
+            -14
+        """
+        return sign(pants_curve)*(6*self.num_pants() + abs(pants_curve))
+
+    @staticmethod
+    def branches_next_to_curve(pant,bdy_index):
+        """
+        EXAMPLES:
+
+            sage: p = PantsDecomposition
+            sage: p.branches_next_to_curve(0,0)
+            [-3, -1, 2, 1]
+            sage: p.branches_next_to_curve(0,1)
+            [-2, -4, 5, 4]
+            sage: p.branches_next_to_curve(0,2)
+            [-5, -6, 3, 6]
+            sage: p.branches_next_to_curve(1,0)
+            [-9, -7, 8, 7]
+            sage: p.branches_next_to_curve(1,1)
+            [-8, -10, 11, 10]
+            sage: p.branches_next_to_curve(1,2)
+            [-11, -12, 9, 12]
+
+        """
+        return [PantsDecomposition.l_ij_encoding(*x) for x in 
+                (pant,(bdy_index+2)%3,bdy_index,-1),
+                (pant,bdy_index,bdy_index,-1),
+                (pant,bdy_index,(bdy_index+1)%3,1),
+                (pant,bdy_index,bdy_index,1)]
+    
     @staticmethod
     def _create_label(tup):
         sg = '-' if tup[3] == IN else ''
@@ -599,17 +680,14 @@ def unzip_sequence_mapping_class(tt_map,pants_decomposition,mapping_class):
 
 
 
-def unzip_sequence_pants_twist(tt_map,pants_decomposition,pants_curve,power=1):
+def unzip_sequence_pants_twist(dehn_thurston_tt, pants_lamination, measured_tt,
+                               carrying_data, pants_curve, power=1):
     r"""Perform unzips determined by twisting about a pants curve.
 
     Same as ``unzip_sequence_mapping_class``, but instead of a general
     mapping class, `f` is now a Dehn twist about a pants curve.
 
     INPUT:
-
-    - ``tt_map`` -- 
-
-    - ``pants_decomposition`` -- 
 
     - ``pants_curve`` -- the index of the pants curve about which we twist
 
@@ -625,35 +703,23 @@ def unzip_sequence_pants_twist(tt_map,pants_decomposition,pants_curve,power=1):
 
     """
 
-    # Part 1: Trace the decision tree and perform
-    # tt_map.unzip_codomain for all decisions.
-    # 
-    # Part 2: Create `\tau_0`. This is easy, Penner's formulas tell
-    # which branches have to be drawn. More specifically, compute
-    # pants_coordinates and twist_coordinates and call DTTrainTrack(pants_coordinates,twist_coordinates)
-    # 
-    # Part 3: Compute the CarryingData for `f(\tau)` being carried on
-    # `\tau_0`. The branch-to-branch map is probably the easiest: this
-    # can be read from the formulas. The half-branch-to-half-branch
-    # map and the position between strands may involve
-    # combinatorial/isotopy considerations. Ideally, though, the
-    # branch-to-branch map uniquely determines the train track map.
-    # 
-    #
-    # 
-    #
-    # 
-    # ----------------------------------------
-    dom = tt_map.domain
-    cod = tt_map.codomain
-    p = pants_decomposition
+    # dom = tt_map.domain
+    # cod = tt_map.codomain
+    lam = pants_lamination
+    p = lam.pants_decomposition()
     
-    tt_map.compute_measure_on_codomain()
+    # tt_map.compute_measure_on_codomain()
 
-    pants_branch = cod.label_to_branch('t_%d' % (pants_curve))
-    pants_switch = cod.branch_endpoint(-pants_branch)
+    pants_branch = 't_%d' % (pants_curve)
+    # pants_switch = cod.branch_endpoint(-pants_branch)
 
-    twisting = 'left' if cod.outgoing_branches(0) == pants_branch else 'right'
+    # twisting = 'left' if cod.outgoing_branches(0) == pants_branch else 'right'
+
+    if lam.t(pants_curve) < 0:
+        if power < 0:
+            new_lam = lam.apply_twist(pants_curve,power)
+            new_dehn_thurston_tt = new_lam.construct_train_track()
+            cd = CarryingData()
     
     if power > 0:
         if twisting == 'left':
