@@ -47,6 +47,9 @@ SHIFT = 5
 LEFT = 0
 RIGHT = 1
 
+
+START = 0
+END = 1
 class TrainTrack(SageObject):
     r"""A train track on a surface.
 
@@ -125,7 +128,7 @@ class TrainTrack(SageObject):
         ``twisted_branches`` argument.
 
     """
-    def __init__(self,gluing_list,measure=None,twisted_branches=None,max_branch=None): 
+    def __init__(self,gluing_list,measure=None,twisted_branches=None,branch_buffer_size=None): 
         """
         TODO: add measures to the code and documentation.
         
@@ -141,24 +144,25 @@ class TrainTrack(SageObject):
 
         g = flatten(gluing_list)
         self._num_branches = len(g)//2
-        self._max_branch = max(abs(x) for x in g) if max_branch == None\
-                           else max_branch
-        
-        self._branch_endpoint = [0] * (self._max_branch + 1)
-        self._branch_startpoint = [0] * (self._max_branch + 1)
+        self._current_max_branch = max(abs(x) for x in g) 
+        self._branch_buffer_size = self._current_max_branch if branch_buffer_size == None\
+                           else branch_buffer_size
+        # potentially reserving a larger array then necessary to avoid
+        # allocating memory when entending the array
+        self._branch_endpoint = [[0] * (self._branch_buffer_size + 2),
+                                 [0] * (self._branch_buffer_size + 2)]
+
         for i in range(len(gluing_list)/2):
             for branch in gluing_list[2*i]:
-                if branch > 0:
-                    self._branch_startpoint[branch] = i+1
-                else:
-                    self._branch_endpoint[branch] = i+1
+                # print branch
+                self._set_endpoint(-branch,i+1)
+                # print self._branch_endpoint
             for branch in gluing_list[2*i+1]:
-                if branch > 0:
-                    self._branch_startpoint[branch] = -i-1
-                else:
-                    self._branch_endpoint[branch] = -i-1
-
+                # print branch
+                self._set_endpoint(-branch,-i-1)
+                # print self._branch_endpoint
                     
+        # print self._branch_endpoint
         self._gluing_list = gluing_list
         self._measure = measure
         
@@ -215,8 +219,8 @@ class TrainTrack(SageObject):
             sage: tt.branch_endpoint(-2)
             1
             """
-        return self._branch_startpoint[branch] if branch < 0 \
-            else self._branch_endpoint[branch]
+        return self._branch_endpoint[START][-branch] if branch < 0 \
+            else self._branch_endpoint[END][branch]
     
     def num_branches(self):
         """
@@ -307,7 +311,7 @@ class TrainTrack(SageObject):
         
     def is_measured(self):
         """Return if the train track has a measure on it."""
-        return self.measure() != None
+        return self._measure != None
 
     def measure(self):
         """Return the measure on the train track."""
@@ -460,7 +464,8 @@ class TrainTrack(SageObject):
 
             sage: tt = TrainTrack([ [1,-1],[2],[-2,3],[5],[4,-4],[-3],[-5],[6,-6] ]) 
             sage: tt.complementary_regions()
-            [[-5, -3, -2, 1, 2, 3, 4, 5, 6], [-1], [-6], [-4]]
+            [[-5, -3, -2, 1, 2, 3, 4, 5, 6], [-6], [-4], [-1]]
+
 
         """
         g = self._get_puncturefinder_graph()
@@ -526,7 +531,7 @@ class TrainTrack(SageObject):
         of the first oriented branch is the starting point of the
         second branch.
 
-        EXAMPLE:
+        EXAMPLES:
 
             sage: tt = TrainTrack([ [1,-1], [2,-2] ])
             sage: G = tt._get_recurrence_graph()
@@ -691,61 +696,198 @@ class TrainTrack(SageObject):
 
         """
         pass
+        
 
-    def unzip(self, branch):
+
+    # def unzip(self, branch):
+    #     """
+    #     Unzips the train_track along the left side of the given branch.
+
+    #     # EXAMPLES:
+
+    #     # sage: tt1 = TrainTrack([ [2, 3], [-4, -1], [5, -6, -7, 8], [4, -3, -2, 1], [-5, -8], [7, 6] ], [2, 5, 2, 5, 5, 3, 4, 2])
+    #     # sage: tt1.unzip(-5)
+    #     # sage: tt1.gluing_list()
+    #     # [[2, 9, 3], [-4, -1], [5], [-2, 1], [-5, -8], [7, 6], [-6, -7, 8], [4, -3, -9]]
+    #     # sage: tt1.measure()
+    #     # [2, 3, 2, 5, 5, 3, 4, 2, 2]
+    #     # sage: tt2 = TrainTrack([ [2, 3], [-4, -1], [5, -6, -7, 8], [4, -3, -2, 1], [-5, -8], [7, 6] ], [2, 5, 2, 5, 5, 3, 4, 2])
+    #     # sage: tt2.unzip(6)
+    #     # sage: tt2.gluing_list()
+    #     # [[2, 3, 9], [-4, -1], [5, -6], [-3, -2, 1], [-5, -8], [7, 6], [-7, 8], [4, -9]]
+    #     # sage: tt2.measure()
+    #     # [2, 5, 1, 5, 5, 3, 4, 2, 1]
+
+    @staticmethod
+    def _a(switch):
         """
-        Unzips the train_track along the left side of the given branch.
+        INPUT:
 
-        # EXAMPLES:
+        - ``switch`` -- 
 
-        # sage: tt1 = TrainTrack([ [2, 3], [-4, -1], [5, -6, -7, 8], [4, -3, -2, 1], [-5, -8], [7, 6] ], [2, 5, 2, 5, 5, 3, 4, 2])
-        # sage: tt1.unzip(-5)
-        # sage: tt1.gluing_list()
-        # [[2, 9, 3], [-4, -1], [5], [-2, 1], [-5, -8], [7, 6], [-6, -7, 8], [4, -3, -9]]
-        # sage: tt1.measure()
-        # [2, 3, 2, 5, 5, 3, 4, 2, 2]
-        # sage: tt2 = TrainTrack([ [2, 3], [-4, -1], [5, -6, -7, 8], [4, -3, -2, 1], [-5, -8], [7, 6] ], [2, 5, 2, 5, 5, 3, 4, 2])
-        # sage: tt2.unzip(6)
-        # sage: tt2.gluing_list()
-        # [[2, 3, 9], [-4, -1], [5, -6], [-3, -2, 1], [-5, -8], [7, 6], [-7, 8], [4, -9]]
-        # sage: tt2.measure()
-        # [2, 5, 1, 5, 5, 3, 4, 2, 1]
+        """
+        return 2*switch-2 if switch>0 else -2*switch-1
+
+    def _set_endpoint(self,branch,switch):
+        """
+        
+        """
+        if branch > 0:
+            self._branch_endpoint[END][branch] = switch
+        else:
+            self._branch_endpoint[START][-branch] = switch
+
+
+    def unzip_pos(self,switch,pos):
+        """
+        INPUT:
+
+        - ``switch`` -- 
+
+        - ``pos`` -- 
+
+        OUTPUT:
+
+        a tuple (``unzip_pos``,``remaining_measure``) where ``unzip_pos``
+        is the position of the unzip on the opposite side of
+        ``switch`` and ``remaining_measure`` is the measure left on
+        the left side of the unzipped train track.
+        
+        EXAMPLES:
+
+            sage: tt = TrainTrack([[1,2], [-1,-2]], [5,8])
+            sage: tt.unzip_pos(1,0)
+            (1, 3)
+            sage: tt.unzip_pos(-1,0)
+            (1, 3)
+
+            sage: tt = TrainTrack([[1,2], [-1,-2]], [8,5])
+            sage: tt.unzip_pos(1,0)
+            (0, 5)
+            sage: tt.unzip_pos(-1,0)
+            (0, 5)
+
+            sage: tt = TrainTrack([[1,2], [-1,-2]], [8,8])
+            sage: tt.unzip_pos(1,0)
+            (0, 0)
+            sage: tt.unzip_pos(-1,0)
+            (0, 0)
 
 
         """
-        #start_switch and end_switch refer to the endpoints of the zip branch, with
-        #start_switch being the one that is incident to the input branch.
-        #new_branch refers to the new branch that must be created when unzipping.
-        #new_switch refers to the new switch that must be created when unzipping.
-        start_switch = self.branch_endpoint(branch)
-        start_pos_side = self.outgoing_branches(start_switch)
-        start_neg_side = self.outgoing_branches(-start_switch)
-        zip_weight = 0
-        for b in start_pos_side[:start_pos_side.index(-branch):-1]: #finds where to zip on the other side of the switch
-            zip_weight += self.branch_measure(b)
-        weight = 0
-        for b in start_neg_side: #identifies the branch that needs to be zipped
-            weight += self.branch_measure(b)
-            if weight >= zip_weight: # TODO: edgecase when weight = split_weight?
-                zip_branch = b
-                previous_weight = weight - self.branch_measure(b)
-                break
-        zip_branch_sign = zip_branch // abs(zip_branch) #determines orientation for the new branch
-        end_switch = self.branch_endpoint(zip_branch)
-        end_pos_side = self.outgoing_branches(end_switch)
-        new_branch = self.num_branches() + 1
-        new_start_pos_side = start_pos_side[:start_pos_side.index(-branch) + 1]
-        new_start_neg_side = start_neg_side[start_neg_side.index(zip_branch):]
-        new_end_pos_side = end_pos_side[:end_pos_side.index(-zip_branch) + 1] + [-zip_branch_sign * new_branch] + end_pos_side[end_pos_side.index(-zip_branch) + 1:]
-        new_switch_pos_side = start_pos_side[start_pos_side.index(-branch) + 1:]
-        new_switch_neg_side = start_neg_side[:start_neg_side.index(zip_branch)] + [zip_branch_sign * new_branch]
-        self._gluing_list[self._gluing_list.index(start_pos_side)] = new_start_pos_side
-        self._gluing_list[self._gluing_list.index(start_neg_side)] = new_start_neg_side
-        self._gluing_list[self._gluing_list.index(end_pos_side)] = new_end_pos_side
-        self._gluing_list.extend([new_switch_pos_side, new_switch_neg_side])
-        self._num_branches += 1
-        self._measure[abs(zip_branch) - 1] = weight - zip_weight
-        self._measure.append(zip_weight - previous_weight)
+        
+        s = sum(map(self.branch_measure,self.outgoing_branches(switch)[:pos+1]))
+        neg_side = self.outgoing_branches(-switch)
+        for i in range(len(neg_side)-1,-1,-1):
+            b = neg_side[i]
+            s -= self.branch_measure(b)
+            if s == 0:
+                return (i-1,0)
+            elif s < 0:
+                return (i,-s)
+        # if the sum of the measures of the branches to the right of
+        # pos is zero, we do the unzip into the left-most branch on
+        # the negative side
+        return (0,-s)
+
+            
+    def unzip(self,switch,pos,unzip_pos,central_split=False):
+        """
+        INPUT:
+
+        - ``branch`` -- 
+
+        - ``side`` -- 
+
+        - ``unzip_into`` -- 
+
+        EXAMPLES:
+
+        There are three possible unzippings from the positive side of
+        switch 1::
+
+            sage: tt = TrainTrack([ [1,2], [-1,-2] ])
+            sage: tt.unzip(1,0,0)
+            sage: tt._gluing_list
+            [[1, 3], [-1, -2], [2], [-3]]
+
+            sage: tt = TrainTrack([ [1,2], [-1,-2] ])
+            sage: tt.unzip(1,0,1)
+            sage: tt._gluing_list
+            [[1], [-2], [2, 3], [-1, -3]]
+
+            sage: tt = TrainTrack([ [1,2], [-1,-2] ])
+            sage: tt.unzip(1,0,0,True)
+            sage: tt._gluing_list
+            [[1], [-2], [2], [-1]]
+        
+
+
+        """
+
+        if not central_split:
+            # Split the unzipped brach into two. Create a new branch and
+            # update the gluing_list.
+            unzip_branch = self.outgoing_branches(-switch)[unzip_pos]
+            #determines orientation for the new branch
+            unzip_branch_sign = unzip_branch // abs(unzip_branch)
+            new_branch = unzip_branch_sign*(self._current_max_branch + 1)
+            end_switch = self.branch_endpoint(unzip_branch)
+            s = self._a(end_switch)
+            # print end_switch
+            end_index = self._gluing_list[s].index(-unzip_branch)
+            self._gluing_list[s].insert(end_index+1,-new_branch)
+            if switch == end_switch and pos >= end_index:
+                pos += 1
+            elif -switch == end_switch and unzip_pos > end_switch:
+                # equality is not possible in the second expression
+                # because those are the ends of the same branch
+                unzip_pos += 1
+
+
+        new_switch = self.num_switches() + 1
+        pos_index = self._a(switch)
+        neg_index = self._a(-switch)
+        pos_index_new = self._a(new_switch)
+        neg_index_new = self._a(-new_switch)
+        # print pos_index, neg_index, pos_index_new, neg_index_new
+                
+
+        
+        self._gluing_list.extend([[],[]]) # add new switch
+        # print self._gluing_list
+        # print "Branch endpoint", self._branch_endpoint
+        # print "Branch startpoiny", self._branch_startpoint
+        # dividing the branches on the top to two set
+        pos_left = self._gluing_list[pos_index][:pos+1]
+        pos_right = self._gluing_list[pos_index][pos+1:]
+        self._gluing_list[pos_index] = pos_left
+        self._gluing_list[pos_index_new] = pos_right
+        for branch in pos_right:
+            self._set_endpoint(-branch,new_switch)
+        # print self._gluing_list
+
+        # divide the branches on the bottom into two sets
+        if not central_split:
+            neg_right = self._gluing_list[neg_index][unzip_pos:]
+            neg_left = self._gluing_list[neg_index][:unzip_pos] + [new_branch]
+        else:
+            neg_right = self._gluing_list[neg_index][unzip_pos+1:]
+            neg_left = self._gluing_list[neg_index][:unzip_pos+1]            
+        self._gluing_list[neg_index] = neg_right
+        self._gluing_list[neg_index_new] = neg_left
+        for branch in neg_left:
+            self._set_endpoint(-branch,-new_switch)
+
+        # print "Pos right:", pos_right
+        # print "Neg left:", neg_left
+        if not central_split:
+            self._current_max_branch += 1
+            self._num_branches += 1
+
+        # # Update measure
+        # self._measure[abs(unzip_branch) - 1] = weight - zip_weight
+        # self._measure.append(zip_weight - previous_weight)
 
         #TODO: return carrying data
 
@@ -753,7 +895,7 @@ class TrainTrack(SageObject):
         """
         Returns a copy of the Train Track, unzipped along the left side of the given branch.
         """
-        tt_copy = TrainTrack(list(self.gluing_list()), list(self.measure()))
+        tt_copy = TrainTrack(list(self.gluing_list()), list(self._measure))
         tt_copy.unzip(branch)
         return tt_copy
     
@@ -1022,6 +1164,8 @@ class CarryingData(SageObject):
         return CarryingData(branch_matrix,half_branch_map,hb_between_branches)
          
          
+# class SparseCarryingData(SageObject):
+    
          
          
          

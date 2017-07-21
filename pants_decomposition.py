@@ -698,8 +698,24 @@ def unzip_sequence_mapping_class(tt_map,pants_decomposition,mapping_class):
 
 
 
+def unzip_generalized_twist(dehn_thurston_tt, pants_lamination,
+                            measured_tt, carrying_data, pants_curve):
+    """
+    
+    INPUT:
 
+    - ``dehn_thurston_tt`` -- 
 
+    - ``pants_lamination`` -- 
+    
+    - ``measured_tt`` -- 
+    
+    - ``carrying_data`` -- 
+    
+    - ``pants_curve`` -- 
+    """
+ 
+     
 
 
 
