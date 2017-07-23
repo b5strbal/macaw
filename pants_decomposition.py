@@ -1554,9 +1554,12 @@ class PantsMappingClass(MappingClass):
             True
         """
         if not isinstance(other,PantsMappingClass):
+            # print "A"
             return False
-        if other._pants_decomposition != self._pants_decomposition:
-            return False
+        # if other._pants_decomposition != self._pants_decomposition:
+        #     print "B"
+        #     return False
+        # print "C"
         return (self * other.inverse()).is_identity()
 
     def __ne__(self,other):
@@ -1590,6 +1593,16 @@ class PantsMappingClass(MappingClass):
         # print cc
         return n(norm((self*cc).to_vector())/norm(cc.to_vector()))
 
+    def order(self):
+        p = self._pants_decomposition
+        g = p.genus()
+        if g <= 2 or p.num_punctures() > 0:
+            raise NotImplementedError("The order computation currently "
+                                      "only works for surfaces of genus 3 and higher.")
+        for n in range(1,4*g+3):
+            if (self**n).is_identity():
+                return n
+        return 0
 
 
 def humphries_generators(g):
@@ -1603,6 +1616,23 @@ def humphries_generators(g):
     b.append(PantsMappingClass(p,[PantsTwist([3*g-3],3*g-3)]))
     c = PantsMappingClass(p,[PantsTwist([],3)])
     return (a, b, c)
+
+def hyperelliptic_involution(g):
+    p = PantsDecomposition.humphries(g)
+    A,B,c = humphries_generators(g)
+    A.append(PantsMappingClass(p,[PantsTwist([],3*g-3)]))
+    f = A[0]
+    # print c
+    # print A[-1]
+    # print c == A[-1]
+    for i in range(g):
+        f = f * B[i]
+        f = f * A[i+1]
+    for i in range(g):
+        f = f * A[g-i]
+        f = f * B[g-i-1]
+    f *= A[0]
+    return f
 
 A, B, c = humphries_generators(2)
 f = A[0]*A[1]*B[0]*B[1]
