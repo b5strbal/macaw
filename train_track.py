@@ -257,7 +257,37 @@ class TrainTrack(SageObject):
         """
         return len(self.gluing_list()) // 2
 
+    def change_switch_orientation(self,switch):
+        for br in self.outgoing_branches(switch):
+            self._set_endpoint(-br,-switch)
+        for bt in self.outgoing_branches(-switch):
+            self._set_endpoint(-br,switch)
+        a, b = self.outgoing_branches(switch), self.outgoing_branches(-switch)
+        self._gluing_list[self._a(switch)] = b
+        self._gluing_list[self._a(-switch)] = a
+
     
+    def outgoing_branch(self,switch,index,start_side=LEFT):
+        idx = index if start_side == LEFT else -1-index
+        return self.outgoing_branches(switch)[idx]
+
+    def outgoing_branch_index(self,switch,branch,start_side=LEFT):
+        branches = self.outgoing_branches(switch)
+        idx = branches.index(branch)
+        return idx if start_side==LEFT else len(branches)-idx-1
+    
+
+    @staticmethod
+    def _a(switch):
+        """
+        INPUT:
+
+        - ``switch`` -- 
+
+        """
+        return 2*switch-2 if switch>0 else -2*switch-1
+
+
     def outgoing_branches(self,switch):
         """Return the outgoing branches from a switch.
 
@@ -286,12 +316,7 @@ class TrainTrack(SageObject):
             [-2, -3]
 
         """
-        if switch > 0:
-            return self._gluing_list[2 * switch - 2]
-        elif switch < 0:
-            return self._gluing_list[-2 * switch - 1]
-        else:
-            raise ValueError("Invalid switch index.")
+        return self._gluing_list[self._a(switch)]
 
     def degree(self,switch):
         """
@@ -707,16 +732,6 @@ class TrainTrack(SageObject):
         
 
 
-    @staticmethod
-    def _a(switch):
-        """
-        INPUT:
-
-        - ``switch`` -- 
-
-        """
-        return 2*switch-2 if switch>0 else -2*switch-1
-
     def _set_endpoint(self,branch,switch):
         """
         
@@ -829,6 +844,30 @@ class TrainTrack(SageObject):
             sage: tt._branch_endpoint
             [[1, -1, -2, -2, 2, 0], [-2, 1, -2, -1, -2, 0]]
 
+        The next train track is a has a left-twisting annulus. We perform an
+        unzip not next to the core curve of the annulus but in the next cusp
+        that goes into the core curve.
+
+            sage: tt = TrainTrack([[1, 2, 3, 4], [-1, -5, -6, -7], [5], [-2], [6],
+            [-3], [7], [-4]])
+            sage: LEFT_DOWN = 2
+            sage: tt.unzip(1,1,0,LEFT_DOWN)
+            sage: tt._gluing_list
+            [[1, 3, 4, 2], [-1, -5, -6, -7], [5], [-2], [6], [-3], [7], [-4]]
+            sage: tt._branch_endpoint
+            [[1, 1, 1, 1, 2, 3, 4, 0], [-1, -2, -3, -4, -1, -1, -1, 0]]
+      
+        Now we unzip at the same cusp, going into the third branch on the other
+        side:: 
+
+            sage: tt = TrainTrack([[1, 2, 3, 4], [-1, -5, -6, -7], [5], [-2], [6],
+            [-3], [7], [-4]])
+            sage: LEFT_TWO_SIDED = 4
+            sage: tt.unzip(1,1,2,LEFT_TWO_SIDED)
+            sage: tt._gluing_list
+            [[3, 4, 2], [-6, -7, -5, -1], [5], [-2], [6, 1], [-3], [7], [-4]]
+            sage: tt._branch_endpoint
+            [[3, 1, 1, 1, 2, 3, 4, 0], [-1, -2, -3, -4, -1, -1, -1, 0]]
 
 
 
