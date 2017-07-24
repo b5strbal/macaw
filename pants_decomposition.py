@@ -700,7 +700,7 @@ def unzip_sequence_mapping_class(tt_map,pants_decomposition,mapping_class):
 
  
      
-def unzip_pants_twist(dehn_thurston_tt, pants_lamination, pants_curve,
+def unzip_fold_pants_twist(dehn_thurston_tt, pants_lamination, pants_curve,
                       power=1):
     lam = pants_lamination
     p = lam.pants_decomposition()
@@ -751,70 +751,6 @@ def unzip_pants_twist(dehn_thurston_tt, pants_lamination, pants_curve,
             # by 180 degrees
             tt.change_switch_orientation(switch)
 
-
-def unzip_sequence_pants_twist(dehn_thurston_tt, pants_lamination, measured_tt,
-                               carrying_data, pants_curve, power=1):
-    r"""Perform unzips determined by twisting about a pants curve.
-
-    Same as ``unzip_sequence_mapping_class``, but instead of a general
-    mapping class, `f` is now a Dehn twist about a pants curve.
-
-    INPUT:
-
-    - ``pants_curve`` -- the index of the pants curve about which we twist
-
-    - ``power`` -- (default:1) the power of the Dehn twist
-      performed. Power `n` means right twisting `n` times. Power
-      `-n` means twisting left `n` times.
-
-    OUTPUT:
-
-    a Dehn-Thurston train track (`\tau_0`) which is a
-    TrainTrackInPants object and the
-    ``CarryingData`` for `f(\tau)` being carried on `\tau_0`.
-
-    """
-
-    # dom = tt_map.domain
-    # cod = tt_map.codomain
-    lam = pants_lamination
-    p = lam.pants_decomposition()
-    
-    # tt_map.compute_measure_on_codomain()
-
-    pants_branch = 't_%d' % (pants_curve)
-    # pants_switch = cod.branch_endpoint(-pants_branch)
-
-    # twisting = 'left' if cod.outgoing_branches(0) == pants_branch else 'right'
-
-    if lam.t(pants_curve) < 0:
-        if power < 0:
-            new_lam = lam.apply_twist(pants_curve,power)
-            new_dehn_thurston_tt = new_lam.construct_train_track()
-            cd = CarryingData()
-    
-    if power > 0:
-        if twisting == 'left':
-            # Unzipping the codomain train track
-            tt_map.unzip_codomain_right_of(pants_branch)
-
-            # Computing new coordinates
-            
-            # Constructing the new DT train track
-            new_tt = p.dehn_thurston_tt()
-
-            # Constructing branch map
-            
-        # if twisting is to the right, no splitting is needed
-            
-    if power < 0:
-        if twisting == 'right':
-            tt_map.unzip_codomain_left_of(pants_branch)
-        # if twisting is to the left, no splitting is needed
-
-        # WARNING: Currently we ignore powers.
-        
-    pass
 
 
 
