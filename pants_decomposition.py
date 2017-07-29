@@ -830,8 +830,8 @@ def unzip_fold_first_move(dehn_thurston_tt, pants_curve, pants_decomposition):
     lamb23 = len(self.outgoing_branches(switch)) == 3
     if turning == LEFT:
         # unzip_pos, remaining_measure = tt.unzip_pos(switch,0)
-        unzip_pos = tt.unzip_with_collapse(switch,0,[UP],start_side=RIGHT,
-                                           collapse_side=RIGHT)
+        unzip_pos = tt.unzip_pos(switch,0,start_side=RIGHT)
+        tt.unzip_with_collapse(switch,0,unzip_pos,UP,start_side=RIGHT)
         if unzip_pos == 0:
             # r < |t_1|
             if lamb23:
@@ -852,9 +852,9 @@ def unzip_fold_first_move(dehn_thurston_tt, pants_curve, pants_decomposition):
                 tt.fold_left_of_pants_curve(bdy_curve,3,2)
 
     else:
-        unzip_pos = tt.unzip_with_collapse(switch,0,[UP],start_side=LEFT,
-                                           collapse_side=LEFT)
-        if unzip_pos == 2:
+        unzip_pos = tt.unzip_pos(switch,0,start_side=LEFT)
+        tt.unzip_with_collapse(switch,0,unzip_pos,UP,start_side=LEFT)
+        if unzip_pos == 0:
             # r < |t_1|
             if lamb23:
                 tt.fold(switch,1,0)

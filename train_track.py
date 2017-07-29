@@ -742,7 +742,66 @@ class TrainTrack(SageObject):
             self._branch_endpoint[START][-branch-1] = switch
         
 
-    def unzip_pos(self,switch,pos):
+    def unzip_pos(self,switch,pos,start_side=LEFT):
+        """INPUT:
+
+        - ``switch`` -- 
+
+        - ``pos`` -- 
+
+        - ``start_side`` --
+
+        OUTPUT:
+
+        the position of the unzip on the opposite side of ``switch``, starting
+        from the side opposite of ``start_side``. If multiple unzips are
+        possible, the first one is chosen.
+        
+        EXAMPLES:
+
+            sage: tt = TrainTrack([[1,2], [-1,-2]], [5,8])
+            sage: tt.unzip_pos(1,0)
+            0
+            sage: tt.unzip_pos(-1,0)
+            0
+            sage: RIGHT = 1
+            sage: tt.unzip_pos(1,0,start_side=RIGHT)
+            1
+            sage: tt.unzip_pos(-1,0,start_side=RIGHT)
+            1
+
+            sage: tt = TrainTrack([[1,2], [-1,-2]], [8,5])
+            sage: tt.unzip_pos(1,0)
+            1
+            sage: tt.unzip_pos(-1,0)
+            1
+
+            sage: tt = TrainTrack([[1,2], [-1,-2]], [8,8])
+            sage: tt.unzip_pos(1,0)
+            0
+            sage: tt.unzip_pos(-1,0)
+            0
+            sage: tt.unzip_pos(1,0,start_side=RIGHT)
+            0
+            sage: tt.unzip_pos(-1,0,start_side=RIGHT)
+            0
+
+        """
+
+        if start_side == LEFT:
+            s = sum(map(self.branch_measure,self.outgoing_branches(switch)[:pos+1]))
+        else:
+            s = sum(map(self.branch_measure,self.outgoing_branches(switch)[-pos-1:]))            
+        neg_side = self.outgoing_branches(-switch)
+        if start_side == RIGHT:
+            neg_side = list(reversed(neg_side))
+        for i in range(len(neg_side)-1,-1,-1):
+            b = neg_side[i]
+            s -= self.branch_measure(b)
+            if s <= 0:
+                return len(neg_side) - 1 - i
+
+    def unzip_pos_old(self,switch,pos):
         """
         INPUT:
 
@@ -752,7 +811,7 @@ class TrainTrack(SageObject):
 
         OUTPUT:
 
-        a tuple (``unzip_pos``,``remaining_measure``) where ``unzip_pos``
+        a tuple (``unzip_pos_old``,``remaining_measure``) where ``unzip_pos_old``
         is the position of the unzip on the opposite side of
         ``switch`` and ``remaining_measure`` is the measure left on
         the left side of the unzipped train track.
@@ -760,21 +819,21 @@ class TrainTrack(SageObject):
         EXAMPLES:
 
             sage: tt = TrainTrack([[1,2], [-1,-2]], [5,8])
-            sage: tt.unzip_pos(1,0)
+            sage: tt.unzip_pos_old(1,0)
             (1, 3)
-            sage: tt.unzip_pos(-1,0)
+            sage: tt.unzip_pos_old(-1,0)
             (1, 3)
 
             sage: tt = TrainTrack([[1,2], [-1,-2]], [8,5])
-            sage: tt.unzip_pos(1,0)
+            sage: tt.unzip_pos_old(1,0)
             (0, 5)
-            sage: tt.unzip_pos(-1,0)
+            sage: tt.unzip_pos_old(-1,0)
             (0, 5)
 
             sage: tt = TrainTrack([[1,2], [-1,-2]], [8,8])
-            sage: tt.unzip_pos(1,0)
+            sage: tt.unzip_pos_old(1,0)
             (0, 0)
-            sage: tt.unzip_pos(-1,0)
+            sage: tt.unzip_pos_old(-1,0)
             (0, 0)
 
 
@@ -878,8 +937,8 @@ class TrainTrack(SageObject):
 
 
         
-    def unzip_with_collapse(self, switch, pos, collapse_options,
-                            start_side=LEFT, collapse_side=LEFT):
+    def unzip_with_collapse(self, switch, pos, collapse_type,
+                            start_side=LEFT, debug=False):
 
 
         pass
