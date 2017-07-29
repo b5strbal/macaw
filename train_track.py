@@ -156,8 +156,8 @@ class TrainTrack(SageObject):
                            else branch_buffer_size
         # potentially reserving a larger array then necessary to avoid
         # allocating memory when entending the array
-        self._branch_endpoint = [[0] * (self._branch_buffer_size + 1),
-                                 [0] * (self._branch_buffer_size + 1)]
+        self._branch_endpoint = [[0] * (self._branch_buffer_size),
+                                 [0] * (self._branch_buffer_size)]
 
         for i in range(len(gluing_list)/2):
             for branch in gluing_list[2*i]:
@@ -794,10 +794,90 @@ class TrainTrack(SageObject):
         # the negative side
         return (0,-s)
 
-    def fold(self, switch, folded_branch, fold_onto, start_side = LEFT):
-        pass
+    def fold(self, switch, folded_branch_index, fold_onto_index, start_side = LEFT):
+        r"""
+
+        EXAMPLES::
+
+        In the following examples, we get the same train track back after folding::
+
+            sage: tt = TrainTrack([[1, 2], [-1, -2]])
+            sage: tt.fold(1, 1, 0)
+            sage: tt._gluing_list
+            [[1, 2], [-1, -2]]
+            sage: tt._branch_endpoint
+            [[1, 1], [-1, -1]]
+
+            sage: tt = TrainTrack([[1, 2], [-1, -2]])
+            sage: tt.fold(-1, 1, 0)
+            sage: tt._gluing_list
+            [[1, 2], [-1, -2]]
+            sage: tt._branch_endpoint
+            [[1, 1], [-1, -1]]
+
+            sage: tt = TrainTrack([[1, 2], [-1, -2]])
+            sage: tt.fold(1, 0, 1)
+            sage: tt._gluing_list
+            [[1, 2], [-1, -2]]
+            sage: tt._branch_endpoint
+            [[1, 1], [-1, -1]]
+
+            sage: tt = TrainTrack([[1, 2], [-1, -2]])
+            sage: tt.fold(-1, 0, 1)
+            sage: tt._gluing_list
+            [[1, 2], [-1, -2]]
+            sage: tt._branch_endpoint
+            [[1, 1], [-1, -1]]
+
+        This is a similar train track with two switches. Now the train track
+        does change::
+        
+            sage: tt = TrainTrack([ [1], [-2, -3], [2, 3], [-1] ])
+            sage: tt.fold(2, 1, 0)
+            sage: tt._gluing_list
+            [[1, 3], [-2, -3], [2], [-1]]
+            sage: tt._branch_endpoint
+            [[1, 2, 1], [-2, -1, -1]]
+
+        An example when a fold is not possible::
+
+            sage: tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3], [-5], [6, -6] ]) 
+            sage: tt.fold(1, 1, 0)
+            Traceback (most recent call last):
+            ...
+            ValueError: The fold is not possible!
+
+        """
 
 
+        n = len(self.outgoing_branches(switch))
+        if start_side == RIGHT:
+            self.fold(switch, n-1-folded_branch_index, n-1-fold_onto_index)
+
+        fold_onto_br = self.outgoing_branch(switch, fold_onto_index, start_side)
+        next_sw = self.branch_endpoint(fold_onto_br)
+
+
+
+        if folded_branch_index == fold_onto_index - 1:
+            if self.outgoing_branches(next_sw)[-1] != -fold_onto_br:
+                raise ValueError("The fold is not possible!")
+        elif folded_branch_index == fold_onto_index + 1:
+            if self.outgoing_branches(next_sw)[0] != -fold_onto_br:
+                raise ValueError("The fold is not possible!")
+        else:
+            raise ValueError("Only two adjacent branches can be folded")
+
+        folded_br = self.outgoing_branches(switch).pop(folded_branch_index)
+
+        if folded_branch_index == fold_onto_index - 1:
+            self.outgoing_branches(-next_sw).insert(0, folded_br)
+        else:
+            self.outgoing_branches(-next_sw).append(folded_br)   
+        self._set_endpoint(-folded_br, -next_sw)
+
+
+        
     def unzip_with_collapse(self, switch, pos, collapse_options,
                             start_side=LEFT, collapse_side=LEFT):
 
@@ -813,70 +893,68 @@ class TrainTrack(SageObject):
         `\lambda_{23}` is present.
         Performing the unzipping according to `r<t_1`.
 
-            sage: tt = TrainTrack([[-1,2,3], [-2,4,-3], [5], [-5,-4,1] ])
-            sage: LEFT_UP = 0
-            sage: tt.unzip(1,0,2,LEFT_UP)
-            sage: tt._gluing_list
-            [[2, -1, 3], [-2, 4, -3], [5], [-5, -4, 1]]
-            sage: tt._branch_endpoint
-            [[-2, 1, 1, -1, 2, 0], [1, -1, -1, -2, -2, 0]]
+        #     sage: tt = TrainTrack([[-1,2,3], [-2,4,-3], [5], [-5,-4,1] ])
+        #     sage: LEFT_UP = 0
+        #     sage: tt.unzip(1,0,2,LEFT_UP)
+        #     sage: tt._gluing_list
+        #     [[2, -1, 3], [-2, 4, -3], [5], [-5, -4, 1]]
+        #     sage: tt._branch_endpoint
+        #     [[-2, 1, 1, -1, 2], [1, -1, -1, -2, -2]]
 
-        Now performing the unzipping according to `r>t_1`.
+        # Now performing the unzipping according to `r>t_1`.
 
-            sage: tt = TrainTrack([[-1,2,3], [-2,4,-3], [5], [-5,-4,1] ])
-            sage: LEFT_UP = 0
-            sage: tt.unzip(1,0,1,LEFT_UP)
-            sage: tt._gluing_list
-            [[2, 3], [-2, 4], [5], [-5, -1, -4, 1, -3]]
-            sage: tt._branch_endpoint
-            [[-2, 1, 1, -1, 2, 0], [-2, -1, -2, -2, -2, 0]]
+        #     sage: tt = TrainTrack([[-1,2,3], [-2,4,-3], [5], [-5,-4,1] ])
+        #     sage: LEFT_UP = 0
+        #     sage: tt.unzip(1,0,1,LEFT_UP)
+        #     sage: tt._gluing_list
+        #     [[2, 3], [-2, 4], [5], [-5, -1, -4, 1, -3]]
+        #     sage: tt._branch_endpoint
+        #     [[-2, 1, 1, -1, 2], [-2, -1, -2, -2, -2]]
         
-        The train track for the first elementary move, when ``t_1<0`` and
-        ``\lambda_{23}`` is present.
-        Performing the unzipping according to `r<t_1`.
+        # The train track for the first elementary move, when ``t_1<0`` and
+        # ``\lambda_{23}`` is present.
+        # Performing the unzipping according to `r<t_1`.
 
-            sage: tt = TrainTrack([[1,-2,3], [-1,-4,2], [5], [-5,-3,4] ])
-            sage: RIGHT_UP = 1
-            sage: tt.unzip(1,-1,0,RIGHT_UP)
-            sage: tt._gluing_list
-            [[1, 3, -2], [-1, -4, 2], [5], [-5, -3, 4]]
-            sage: tt._branch_endpoint
-            [[1, -1, 1, -2, 2, 0], [-1, 1, -2, -1, -2, 0]]
+        #     sage: tt = TrainTrack([[1,-2,3], [-1,-4,2], [5], [-5,-3,4] ])
+        #     sage: RIGHT_UP = 1
+        #     sage: tt.unzip(1,-1,0,RIGHT_UP)
+        #     sage: tt._gluing_list
+        #     [[1, 3, -2], [-1, -4, 2], [5], [-5, -3, 4]]
+        #     sage: tt._branch_endpoint
+        #     [[1, -1, 1, -2, 2], [-1, 1, -2, -1, -2]]
 
-        Now performing the unzipping according to `r>t_1`.
+        # Now performing the unzipping according to `r>t_1`.
 
-            sage: tt = TrainTrack([[1,-2,3], [-1,-4,2], [5], [-5,-3,4] ])
-            sage: RIGHT_UP = 1
-            sage: tt.unzip(1,-1,1,RIGHT_UP)
-            sage: tt._gluing_list
-            [[1, -2], [-4, 2], [5], [-5, -1, -3, 4, 3]]
-            sage: tt._branch_endpoint
-            [[1, -1, -2, -2, 2, 0], [-2, 1, -2, -1, -2, 0]]
+        #     sage: tt = TrainTrack([[1,-2,3], [-1,-4,2], [5], [-5,-3,4] ])
+        #     sage: RIGHT_UP = 1
+        #     sage: tt.unzip(1,-1,1,RIGHT_UP)
+        #     sage: tt._gluing_list
+        #     [[1, -2], [-4, 2], [5], [-5, -1, -3, 4, 3]]
+        #     sage: tt._branch_endpoint
+        #     [[1, -1, -2, -2, 2], [-2, 1, -2, -1, -2]]
 
-        The next train track is a has a left-twisting annulus. We perform an
-        unzip not next to the core curve of the annulus but in the next cusp
-        that goes into the core curve.
+        # The next train track is a has a left-twisting annulus. We perform an
+        # unzip not next to the core curve of the annulus but in the next cusp
+        # that goes into the core curve.
 
-            sage: tt = TrainTrack([[1, 2, 3, 4], [-1, -5, -6, -7], [5], [-2], [6],
-            [-3], [7], [-4]])
-            sage: LEFT_DOWN = 2
-            sage: tt.unzip(1,1,0,LEFT_DOWN)
-            sage: tt._gluing_list
-            [[1, 3, 4, 2], [-1, -5, -6, -7], [5], [-2], [6], [-3], [7], [-4]]
-            sage: tt._branch_endpoint
-            [[1, 1, 1, 1, 2, 3, 4, 0], [-1, -2, -3, -4, -1, -1, -1, 0]]
+        #     sage: tt = TrainTrack([[1, 2, 3, 4], [-1, -5, -6, -7], [5], [-2], [6], [-3], [7], [-4]])
+        #     sage: LEFT_DOWN = 2
+        #     sage: tt.unzip(1,1,0,LEFT_DOWN)
+        #     sage: tt._gluing_list
+        #     [[1, 3, 4, 2], [-1, -5, -6, -7], [5], [-2], [6], [-3], [7], [-4]]
+        #     sage: tt._branch_endpoint
+        #     [[1, 1, 1, 1, 2, 3, 4], [-1, -2, -3, -4, -1, -1, -1]]
       
-        Now we unzip at the same cusp, going into the third branch on the other
-        side:: 
+        # Now we unzip at the same cusp, going into the third branch on the other
+        # side:: 
 
-            sage: tt = TrainTrack([[1, 2, 3, 4], [-1, -5, -6, -7], [5], [-2], [6],
-            [-3], [7], [-4]])
-            sage: LEFT_TWO_SIDED = 4
-            sage: tt.unzip(1,1,2,LEFT_TWO_SIDED)
-            sage: tt._gluing_list
-            [[3, 4, 2], [-6, -7, -5, -1], [5], [-2], [6, 1], [-3], [7], [-4]]
-            sage: tt._branch_endpoint
-            [[3, 1, 1, 1, 2, 3, 4, 0], [-1, -2, -3, -4, -1, -1, -1, 0]]
+        #     sage: tt = TrainTrack([[1, 2, 3, 4], [-1, -5, -6, -7], [5], [-2], [6], [-3], [7], [-4]])
+        #     sage: LEFT_TWO_SIDED = 4
+        #     sage: tt.unzip(1,1,2,LEFT_TWO_SIDED)
+        #     sage: tt._gluing_list
+        #     [[3, 4, 2], [-6, -7, -5, -1], [5], [-2], [6, 1], [-3], [7], [-4]]
+        #     sage: tt._branch_endpoint
+        #     [[3, 1, 1, 1, 2, 3, 4], [-1, -2, -3, -4, -1, -1, -1]]
 
 
 
@@ -1039,20 +1117,20 @@ class TrainTrack(SageObject):
         There are three possible unzippings from the positive side of
         switch 1::
 
-            sage: tt = TrainTrack([ [1,2], [-1,-2] ])
-            sage: tt.unzip_create_new_switch(1,0,0)
-            sage: tt._gluing_list
-            [[1, 3], [-1, -2], [2], [-3]]
+            # sage: tt = TrainTrack([ [1,2], [-1,-2] ])
+            # sage: tt.unzip_create_new_switch(1,0,0)
+            # sage: tt._gluing_list
+            # [[1, 3], [-1, -2], [2], [-3]]
 
-            sage: tt = TrainTrack([ [1,2], [-1,-2] ])
-            sage: tt.unzip_create_new_switch(1,0,1)
-            sage: tt._gluing_list
-            [[1], [-2], [2, 3], [-1, -3]]
+            # sage: tt = TrainTrack([ [1,2], [-1,-2] ])
+            # sage: tt.unzip_create_new_switch(1,0,1)
+            # sage: tt._gluing_list
+            # [[1], [-2], [2, 3], [-1, -3]]
 
-            sage: tt = TrainTrack([ [1,2], [-1,-2] ])
-            sage: tt.unzip_create_new_switch(1,0,0,True)
-            sage: tt._gluing_list
-            [[1], [-2], [2], [-1]]
+            # sage: tt = TrainTrack([ [1,2], [-1,-2] ])
+            # sage: tt.unzip_create_new_switch(1,0,0,True)
+            # sage: tt._gluing_list
+            # [[1], [-2], [2], [-1]]
         
 
 
@@ -1091,7 +1169,6 @@ class TrainTrack(SageObject):
         self._gluing_list.extend([[],[]]) # add new switch
         # print self._gluing_list
         # print "Branch endpoint", self._branch_endpoint
-        # print "Branch startpoiny", self._branch_startpoint
         # dividing the branches on the top to two set
         pos_left = self._gluing_list[pos_index][:pos+1]
         pos_right = self._gluing_list[pos_index][pos+1:]
