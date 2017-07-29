@@ -173,7 +173,7 @@ class TrainTrack(SageObject):
         self._gluing_list = gluing_list
         self._measure = measure
         
-
+        
     def _repr_(self):
         """
         Return a string representation of self. 
@@ -740,7 +740,7 @@ class TrainTrack(SageObject):
             self._branch_endpoint[END][branch-1] = switch
         else:
             self._branch_endpoint[START][-branch-1] = switch
-
+        
 
     def unzip_pos(self,switch,pos):
         """
@@ -794,7 +794,16 @@ class TrainTrack(SageObject):
         # the negative side
         return (0,-s)
 
+    def fold(self, switch, folded_branch, fold_onto, start_side = LEFT):
+        pass
 
+
+    def unzip_with_collapse(self, switch, pos, collapse_options,
+                            start_side=LEFT, collapse_side=LEFT):
+
+
+        pass
+    
     def unzip(self,switch,pos,unzip_pos,collapse,central_split=False,debug=False):
         r"""
 
@@ -890,7 +899,6 @@ class TrainTrack(SageObject):
 
         unzip_branch = self.outgoing_branches(-switch)[unzip_pos]
         bottom_switch = self.branch_endpoint(unzip_branch)
-
         if -switch == bottom_switch and unzip_pos > end_index:
             unzip_pos += 1
 

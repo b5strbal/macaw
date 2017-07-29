@@ -697,63 +697,184 @@ def unzip_sequence_mapping_class(tt_map,pants_decomposition,mapping_class):
         
 
 
+class DehnThurstonTT(TrainTrack):
+    def __init__(self):
+        pass
 
- 
-     
-def unzip_fold_pants_twist(dehn_thurston_tt, pants_lamination, pants_curve,
-                      power=1):
-    lam = pants_lamination
-    p = lam.pants_decomposition()
-    tt = dehn_thurston_tt
-    
-    switch = pants_curve
-    top_branches = tt.outgoing_branches(switch)
-    bottom_branches = tt.outgoing_branches(-switch)
-    # if lam.t(pants_curve) < 0:
-
-    # the switch is left turning
-    if abs(top_branches[0]) == pants_curve:
-        turning = LEFT
-    else:
-        turning = RIGHT
+    def get_turning(self, pants_curve):
+        if abs(self.outgoing_branches(pants_curve)[0]) == \
+           abs(pants_curve):
+            return LEFT
+        return RIGHT
         
-    # number of branches on the side
-    ntop = len(top_branches)
-    nbottom = len(bottom_branches)
-    if power == -1 and turning == LEFT or power == 1 and turning == RIGHT:
-        # folding branches 1 to m-1 onto branch 0 (the pants curve)
-        tt.fold(switch,0,1,ntop-1,start_side = turning)
+    def num_curves_on_sides(self, pants_curve):
+        switch = pants_curve
+        top_branches = tt.outgoing_branches(switch)
+        bottom_branches = tt.outgoing_branches(-switch)
+        ntop = len(top_branches)
+        nbottom = len(bottom_branches)
+
+        turning = get_turning(tt, pants_curve)
+        return (nbottom,ntop) if turning == LEFT else (top,nbottom)
+
+
+def unzip_fold_general_twist(dehn_thurston_tt, pants_curve, twists_on_left,
+                             twists_on_right):
+    
+    tt = dehn_thurston_tt
+
+    turning = tt.get_turning(pants_curve)
+    nleft, nright = tt.num_curves_on_sides(pants_curve)
+    # by rotating the pants curve, we can assume that the twists on the left
+    # are between 0 and nleft-1 if right-turning and between -(nleft-1) and 0
+    # if left-turning.
+    if turning == RIGHT:
+        # we fix the twists so that there is 0 to nright-1 twists on the right
+
+        num_rotations = twists_on_right // nright
+        # if positive, we rotate "up", towards the positive direction of the
+        # switch, otherwise we rotate down
+        
+        twists_on_fixed_side = twists_on_right % nright
+        twists_on_other_side = twists_on_left - num_rotations * left
+        nfixed_side = nright
+        nother_side = nleft
     else:
-        # unzip to next to the pants curve, either by unzipping into
-        # the pants curve (LEFT_DOWN) or into a branch on the other side
-        # (LEFT_TWO_SIDED) 
-        typ, unzip_pos = tt.unzip(switch,0,[DOWN,TWO_SIDED],start_side=turning,
-                                  collapse_side=turning)
-        if typ == DOWN:
-            # we unzipped into the pants curve
-            pass # nothing to do
-        elif typ == TWO_SIDED:
-            # we unzip into a branch on the other side
+        # we fix the twists so that there is (-nleft-1) to 0 twists on the left
+        num_rotations = (-twists_on_left) // nleft
 
-            # find the endpoint of the unzipped branch
-            b = tt.outgoing_branch(-switch,0,start_side=turning)
-            sw = tt.branch_endpoint(b)
-            idx = tt.outgoing_branch_index(sw,-b,start_side=turning)
+        twists_on_fixed_side = (-twists_on_left) % nleft
+        # this is nonnegative, between 0 and nleft-1. This is how many branches we
+        # will fold on the left.
 
-            # fold back one of the split branches on the other
-            # As a result, we get the pants curve back.
-            tt.fold(sw,idx,idx+1,start_side=turning)
-
-            # Fold up the branches there were pulled around the pants curve.
-            tt.fold(-switch,-1,-unzip_pos,-2,start_side=turning)
-
-            # switch the orientation of the switch, because it was rotated
-            # by 180 degrees
-            tt.change_switch_orientation(switch)
+        twists_on_other_side = -twists_on_right - num_rotations * nright
+        # this is positive if the twists on the right are good twists (only
+        # folding is needed, and negative if the twists are bad (unzipping is
+        # needed)
+        nfixed_side = nleft
+        nother_side = nright
 
 
+    if twists_on_other_side > 0:
+        # if there are only good twists, we fold
+        for i in range(twists_on_other_side):
+            tt.fold(switch,1,0,start_side = turning)
+    else:
+        # otherwise we unzip
+
+        while True:
+            # the positition of the first unzip
+            pos = max(0, nother_side + twists_on_other_side)
+
+            typ, unzip_pos = tt.unzip_with_collapse(switch,pos,[TWO_SIDED],
+                                                    start_side=turning,
+                                                    collapse_side=turning)
+            if typ == DOWN:
+                # we unzipped into the pants curve
+                twists_on_other_side += (nother_side - pos)
+                if twists_on_other_side == 0:
+                    break
+            elif typ == TWO_SIDED:
+                # we unzip into a branch on the other side
+
+                # find the endpoint of the unzipped branch
+                b = tt.outgoing_branch(-switch,0,start_side=turning)
+                sw = tt.branch_endpoint(b)
+                idx = tt.outgoing_branch_index(sw,-b,start_side=turning)
+
+                # fold back one of the split branches on the other
+                # As a result, we get the pants curve back.
+                tt.fold(sw,idx,idx+1,start_side=turning)
+
+                # Fold up the branches there were pulled around the pants curve.
+                tt.fold(-switch,range(-unzip_pos,-1),-1,start_side=turning)
+
+                # switch the orientation of the switch, because it was rotated
+                # by 180 degrees
+                tt.change_switch_orientation(switch)
+                break
+
+    # TODO: fold branches up on fixed side
+
+    
+def unzip_fold_pants_twist(dehn_thurston_tt, pants_curve, power=1):
+    nright = dehn_thurston_tt.num_curves_on_sides(pants_curve)[RIGHT]
+    unzip_fold_general_twist(dehn_thurston_tt, pants_curve, 0,
+                             power * nright)
 
 
+
+
+
+    
+
+
+def unzip_fold_first_move(dehn_thurston_tt, pants_curve, pants_decomposition):
+    tt = dehn_thurston_tt
+    p = pants_decomposition
+
+    # choosing the appropriate orientation of the switch (right side should
+    # have index 1 greater than the left side in the pants decomposition)
+    left = p.adjacent_pants(pants_curve)[LEFT][0][BDY_IDX]
+    right = p.adjacent_pants(pants_curve)[RIGHT][0][BDY_IDX]
+    if right == (left+1)%3:
+        switch = pants_curve
+    else:
+        switch = -pants_curve
+
+    turning = tt.get_turning(pants_curve)
+    bdy_curve = p._torus_boundary_curve(pants_curve)[0]
+    # TODO: should be oriented so that the left side is the torus
+    
+    # bdy_turning = tt.get_turning(bdy_curve)
+    lamb23 = len(self.outgoing_branches(switch)) == 3
+    if turning == LEFT:
+        # unzip_pos, remaining_measure = tt.unzip_pos(switch,0)
+        unzip_pos = tt.unzip_with_collapse(switch,0,[UP],start_side=RIGHT,
+                                           collapse_side=RIGHT)
+        if unzip_pos == 0:
+            # r < |t_1|
+            if lamb23:
+                # we have lambda_23
+                tt.fold(-switch,1,2)
+            else:
+                # we have lambda_11
+                unzip_fold_general_twist(tt,bdy_curve,-1,0)
+                tt.fold_left_of_pants_curve(bdy_curve,0,1)
+                tt.fold_left_of_pants_curve(bdy_curve,2,1)
+        elif unzip_pos == 1:
+            # r > |t_1|
+            if lamb23:
+                tt.fold(-switch,0,1)
+            else:
+                unzip_fold_general_twist(tt,bdy_curve,-1,0)
+                tt.fold_left_of_pants_curve(bdy_curve,0,1)
+                tt.fold_left_of_pants_curve(bdy_curve,3,2)
+
+    else:
+        unzip_pos = tt.unzip_with_collapse(switch,0,[UP],start_side=LEFT,
+                                           collapse_side=LEFT)
+        if unzip_pos == 2:
+            # r < |t_1|
+            if lamb23:
+                tt.fold(switch,1,0)
+                unzip_fold_general_twist(tt,bdy_curve,-1,0)
+            else:
+                unzip_fold_general_twist(tt,bdy_curve,-2,0)
+                tt.fold_left_of_pants_curve(bdy_curve,3,2)
+                tt.fold_left_of_pants_curve(bdy_curve,0,1)
+
+        elif unzip_pos == 1:
+            # |t_1| < r
+            if lamb23:
+                tt.fold(switch,1,0)
+                unzip_fold_general_twist(tt,bdy_curve,-1,0)
+            else:
+                unzip_fold_general_twist(tt,bdy_curve,-2,0)
+                tt.fold_left_of_pants_curve(bdy_curve,5,4)
+                tt.fold_left_of_pants_curve(bdy_curve,0,1)
+
+    
 
 
     
@@ -1563,6 +1684,8 @@ class PantsMappingClass(MappingClass):
         return n(norm((self*cc).to_vector())/norm(cc.to_vector()))
 
     def order(self):
+        # TODO: test using this:
+        # https://projecteuclid.org/euclid.ojm/1277298910
         p = self._pants_decomposition
         g = p.genus()
         if g <= 2 or p.num_punctures() > 0:
