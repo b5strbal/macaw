@@ -863,45 +863,56 @@ class TrainTrack(SageObject):
 
         EXAMPLES::
 
-        In the following examples, we get the same train track back after folding::
+        In the following examples, we get the same train track back after
+        folding, only the measure changes::
 
-            sage: tt = TrainTrack([[1, 2], [-1, -2]])
+            sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
             sage: tt.fold(1, 1, 0)
             sage: tt._gluing_list
             [[1, 2], [-1, -2]]
             sage: tt._branch_endpoint
             [[1, 1], [-1, -1]]
+            sage: tt._measure
+            [8, 5]
 
-            sage: tt = TrainTrack([[1, 2], [-1, -2]])
+            sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
             sage: tt.fold(-1, 1, 0)
             sage: tt._gluing_list
             [[1, 2], [-1, -2]]
             sage: tt._branch_endpoint
             [[1, 1], [-1, -1]]
+            sage: tt._measure
+            [8, 5]
 
-            sage: tt = TrainTrack([[1, 2], [-1, -2]])
+            sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
             sage: tt.fold(1, 0, 1)
             sage: tt._gluing_list
             [[1, 2], [-1, -2]]
             sage: tt._branch_endpoint
             [[1, 1], [-1, -1]]
+            sage: tt._measure
+            [3, 8]
 
-            sage: tt = TrainTrack([[1, 2], [-1, -2]])
+            sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
             sage: tt.fold(-1, 0, 1)
             sage: tt._gluing_list
             [[1, 2], [-1, -2]]
             sage: tt._branch_endpoint
             [[1, 1], [-1, -1]]
+            sage: tt._measure
+            [3, 8]
 
         This is a similar train track with two switches. Now the train track
         does change::
         
-            sage: tt = TrainTrack([ [1], [-2, -3], [2, 3], [-1] ])
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [8, 3, 5])
             sage: tt.fold(2, 1, 0)
             sage: tt._gluing_list
             [[1, 3], [-2, -3], [2], [-1]]
             sage: tt._branch_endpoint
             [[1, 2, 1], [-2, -1, -1]]
+            sage: tt._measure
+            [8, 8, 5]
 
         An example when a fold is not possible::
 
@@ -924,22 +935,27 @@ class TrainTrack(SageObject):
 
 
         if folded_branch_index == fold_onto_index - 1:
-            if self.outgoing_branches(next_sw)[-1] != -fold_onto_br:
-                raise ValueError("The fold is not possible!")
+            fold_start_side = RIGHT
         elif folded_branch_index == fold_onto_index + 1:
-            if self.outgoing_branches(next_sw)[0] != -fold_onto_br:
-                raise ValueError("The fold is not possible!")
+            fold_start_side = LEFT
         else:
             raise ValueError("Only two adjacent branches can be folded")
 
+        if self.outgoing_branch(next_sw, 0, fold_start_side) != -fold_onto_br:
+            raise ValueError("The fold is not possible!")
+
         folded_br = self.outgoing_branches(switch).pop(folded_branch_index)
 
-        if folded_branch_index == fold_onto_index - 1:
+        if fold_start_side == RIGHT:
             self.outgoing_branches(-next_sw).insert(0, folded_br)
         else:
             self.outgoing_branches(-next_sw).append(folded_br)   
         self._set_endpoint(-folded_br, -next_sw)
 
+        # update measure
+
+        self._set_measure(fold_onto_br,self.branch_measure(fold_onto_br) +
+                          self.branch_measure(folded_br))
         
     def unzip_with_collapse(self, switch, pos, collapse_type,
                             start_side=LEFT, debug=False):
@@ -992,8 +1008,7 @@ class TrainTrack(SageObject):
         Now we unzip at the same cusp, going into the third branch on the other
         side:: 
 
-            sage: tt = TrainTrack([[1, 2, 3, 4], [-1, -5, -6, -7], [5], [-2],
-            [6], [-3], [7], [-4]], [10, 6, 15, 3, 3, 15, 6])
+            sage: tt = TrainTrack([[1, 2, 3, 4], [-1, -5, -6, -7], [5], [-2], [6], [-3], [7], [-4]], [10, 6, 15, 3, 3, 15, 6])
             sage: tt.unzip_with_collapse(1,1,TWO_SIDED,start_side=RIGHT)
             sage: tt._measure
             [5, 6, 15, 3, 3, 10, 6]
@@ -1010,8 +1025,7 @@ class TrainTrack(SageObject):
         Now we unzip at the same cusp, going into the third branch on the other
         side:: 
 
-            sage: tt = TrainTrack([[2, 3, 4, 1], [-5, -6, -7, -1], [5], [-2],
-            [6], [-3], [7], [-4]], [10, 8, 15, 6, 6, 15, 8])
+            sage: tt = TrainTrack([[2, 3, 4, 1], [-5, -6, -7, -1], [5], [-2], [6], [-3], [7], [-4]], [10, 8, 15, 6, 6, 15, 8])
             sage: tt.unzip_with_collapse(1,1,TWO_SIDED,start_side=LEFT)
             sage: tt._measure
             [5, 8, 15, 6, 6, 10, 8]
