@@ -742,7 +742,10 @@ class TrainTrack(SageObject):
             self._branch_endpoint[END][branch-1] = switch
         else:
             self._branch_endpoint[START][-branch-1] = switch
-        
+
+
+    def _set_measure(self,branch,new_measure):
+        self._measure[abs(branch)-1] = new_measure
 
     def unzip_pos(self,switch,pos,start_side=LEFT):
         """INPUT:
@@ -763,30 +766,30 @@ class TrainTrack(SageObject):
 
             sage: tt = TrainTrack([[1,2], [-1,-2]], [5,8])
             sage: tt.unzip_pos(1,0)
-            0
+            (0, 5, 3)
             sage: tt.unzip_pos(-1,0)
-            0
+            (0, 5, 3)
             sage: RIGHT = 1
             sage: tt.unzip_pos(1,0,start_side=RIGHT)
-            1
+            (1, 3, 5)
             sage: tt.unzip_pos(-1,0,start_side=RIGHT)
-            1
+            (1, 3, 5)
 
             sage: tt = TrainTrack([[1,2], [-1,-2]], [8,5])
             sage: tt.unzip_pos(1,0)
-            1
+            (1, 3, 5)
             sage: tt.unzip_pos(-1,0)
-            1
+            (1, 3, 5)
 
             sage: tt = TrainTrack([[1,2], [-1,-2]], [8,8])
             sage: tt.unzip_pos(1,0)
-            0
+            (0, 8, 0)
             sage: tt.unzip_pos(-1,0)
-            0
+            (0, 8, 0)
             sage: tt.unzip_pos(1,0,start_side=RIGHT)
-            0
+            (0, 8, 0)
             sage: tt.unzip_pos(-1,0,start_side=RIGHT)
-            0
+            (0, 8, 0)
 
         """
 
@@ -801,7 +804,7 @@ class TrainTrack(SageObject):
             b = neg_side[i]
             s -= self.branch_measure(b)
             if s <= 0:
-                return len(neg_side) - 1 - i
+                return (len(neg_side) - 1 - i, s+self.branch_measure(b), -s)
 
     # def unzip_pos_old(self,switch,pos):
     #     """
@@ -940,7 +943,111 @@ class TrainTrack(SageObject):
         
     def unzip_with_collapse(self, switch, pos, collapse_type,
                             start_side=LEFT, debug=False):
-        pass
+        r"""
+        The train track for the first elementary move, when `t_1>0` and
+        `\lambda_{23}` is present.
+        Performing the unzipping according to `r<t_1`.
+
+            sage: LEFT = 0
+            sage: RIGHT = 1
+            sage: UP = 0
+            sage: TWO_SIDED = 1
+            sage: tt = TrainTrack([[-1,2,3], [-2,4,-3], [5], [-5,-4,1]], [11, 3, 100, 11, 2])
+            sage: tt.unzip_with_collapse(1,0,UP,start_side = LEFT)
+            sage: tt._measure
+            [11, 3, 89, 11, 2]
+        
+        Now performing the unzipping according to `r>t_1`.
+
+            sage: tt = TrainTrack([[-1,2,3], [-2,4,-3], [5], [-5,-4,1]], [100, 3, 11, 100, 2])
+            sage: tt.unzip_with_collapse(1,0,UP,start_side=LEFT)
+            sage: tt._measure
+            [89, 3, 11, 11, 2]
+
+        The train track for the first elementary move, when ``t_1<0`` and
+        ``\lambda_{23}`` is present.
+        Performing the unzipping according to `r<t_1`.
+
+            sage: tt = TrainTrack([[1,-2,3], [-1,-4,2], [5], [-5,-3,4]], [100, 5, 11, 11, 2])
+            sage: tt.unzip_with_collapse(1,0,UP,start_side=RIGHT)
+            sage: tt._measure
+            [89, 5, 11, 11, 2]
+        
+        Now performing the unzipping according to `r>t_1`.
+
+            sage: tt = TrainTrack([[1,-2,3], [-1,-4,2], [5], [-5,-3,4]], [11, 5, 100, 100, 2])
+            sage: tt.unzip_with_collapse(1,0,UP,start_side=RIGHT)
+            sage: tt._measure
+            [11, 5, 89, 11, 2]
+
+        The next train track is a has a left-twisting annulus. We perform an
+        unzip not next to the core curve of the annulus but in the next cusp
+        that goes into the core curve.
+
+            sage: tt = TrainTrack([[1, 2, 3, 4], [-1, -5, -6, -7], [5], [-2], [6], [-3], [7], [-4]], [100, 1, 5, 6, 6, 5, 1])
+            sage: tt.unzip_with_collapse(1,1,TWO_SIDED,start_side=RIGHT)
+            sage: tt._measure
+            [89, 1, 5, 6, 6, 5, 1]
+      
+        Now we unzip at the same cusp, going into the third branch on the other
+        side:: 
+
+            sage: tt = TrainTrack([[1, 2, 3, 4], [-1, -5, -6, -7], [5], [-2],
+            [6], [-3], [7], [-4]], [10, 6, 15, 3, 3, 15, 6])
+            sage: tt.unzip_with_collapse(1,1,TWO_SIDED,start_side=RIGHT)
+            sage: tt._measure
+            [5, 6, 15, 3, 3, 10, 6]
+
+        The next train track is a has a right-twisting annulus. We perform an
+        unzip not next to the core curve of the annulus but in the next cusp
+        that goes into the core curve.
+
+            sage: tt = TrainTrack([[2, 3, 4, 1], [-5, -6, -7, -1], [5], [-2], [6], [-3], [7], [-4]], [100, 1, 5, 6, 6, 5, 1])
+            sage: tt.unzip_with_collapse(1,1,TWO_SIDED,start_side=LEFT)
+            sage: tt._measure
+            [94, 1, 5, 6, 6, 5, 1]
+
+        Now we unzip at the same cusp, going into the third branch on the other
+        side:: 
+
+            sage: tt = TrainTrack([[2, 3, 4, 1], [-5, -6, -7, -1], [5], [-2],
+            [6], [-3], [7], [-4]], [10, 8, 15, 6, 6, 15, 8])
+            sage: tt.unzip_with_collapse(1,1,TWO_SIDED,start_side=LEFT)
+            sage: tt._measure
+            [5, 8, 15, 6, 6, 10, 8]
+
+
+        """
+        unzip_pos, meas1, meas2 = self.unzip_pos(switch, pos, start_side)
+        if debug:
+            print "Unzipped measures:", meas1, meas2
+            print "Unzip pos:",  unzip_pos
+        unzip_br = self.outgoing_branch(-switch, unzip_pos,
+                                        (start_side+1)%2)
+        if collapse_type == UP:
+            collapsed_branch = self.outgoing_branch(switch, 0, start_side)
+        elif collapse_type == TWO_SIDED:
+            pants_branch = self.outgoing_branch(switch, 0, (start_side+1)%2)
+            
+        if debug:
+            print "Unzip branch:", unzip_br
+
+        # performing the unzip
+        self.unzip_with_collapse_no_measure(switch, pos, unzip_pos,
+                                            collapse_type, start_side, debug)
+
+        # updating the measure
+        if collapse_type == UP:
+            if debug:
+                print "Collapsed branch: ", collapsed_branch
+            self._set_measure(unzip_br, meas2)
+            self._set_measure(collapsed_branch, meas1)
+        elif collapse_type == TWO_SIDED:
+            if unzip_pos == 0:
+                self._set_measure(pants_branch, meas2)
+            else:
+                self._set_measure(unzip_br, meas2)
+                self._set_measure(pants_branch, meas1)
         
         
     def unzip_with_collapse_no_measure(self, switch, pos, unzip_pos,
@@ -1155,317 +1262,317 @@ class TrainTrack(SageObject):
                 self._set_endpoint(collapsed_branch,bottom_switch)
     
     
-    def unzip(self,switch,pos,unzip_pos,collapse,central_split=False,debug=False):
-        r"""
+    # def unzip(self,switch,pos,unzip_pos,collapse,central_split=False,debug=False):
+    #     r"""
 
-        EXAMPLES:
+    #     EXAMPLES:
 
-        The train track for the first elementary move, when `t_1>0` and
-        `\lambda_{23}` is present.
-        Performing the unzipping according to `r<t_1`.
+    #     The train track for the first elementary move, when `t_1>0` and
+    #     `\lambda_{23}` is present.
+    #     Performing the unzipping according to `r<t_1`.
 
-        #     sage: tt = TrainTrack([[-1,2,3], [-2,4,-3], [5], [-5,-4,1] ])
-        #     sage: LEFT_UP = 0
-        #     sage: tt.unzip(1,0,2,LEFT_UP)
-        #     sage: tt._gluing_list
-        #     [[2, -1, 3], [-2, 4, -3], [5], [-5, -4, 1]]
-        #     sage: tt._branch_endpoint
-        #     [[-2, 1, 1, -1, 2], [1, -1, -1, -2, -2]]
+    #     #     sage: tt = TrainTrack([[-1,2,3], [-2,4,-3], [5], [-5,-4,1] ])
+    #     #     sage: LEFT_UP = 0
+    #     #     sage: tt.unzip(1,0,2,LEFT_UP)
+    #     #     sage: tt._gluing_list
+    #     #     [[2, -1, 3], [-2, 4, -3], [5], [-5, -4, 1]]
+    #     #     sage: tt._branch_endpoint
+    #     #     [[-2, 1, 1, -1, 2], [1, -1, -1, -2, -2]]
 
-        # Now performing the unzipping according to `r>t_1`.
+    #     # Now performing the unzipping according to `r>t_1`.
 
-        #     sage: tt = TrainTrack([[-1,2,3], [-2,4,-3], [5], [-5,-4,1] ])
-        #     sage: LEFT_UP = 0
-        #     sage: tt.unzip(1,0,1,LEFT_UP)
-        #     sage: tt._gluing_list
-        #     [[2, 3], [-2, 4], [5], [-5, -1, -4, 1, -3]]
-        #     sage: tt._branch_endpoint
-        #     [[-2, 1, 1, -1, 2], [-2, -1, -2, -2, -2]]
+    #     #     sage: tt = TrainTrack([[-1,2,3], [-2,4,-3], [5], [-5,-4,1] ])
+    #     #     sage: LEFT_UP = 0
+    #     #     sage: tt.unzip(1,0,1,LEFT_UP)
+    #     #     sage: tt._gluing_list
+    #     #     [[2, 3], [-2, 4], [5], [-5, -1, -4, 1, -3]]
+    #     #     sage: tt._branch_endpoint
+    #     #     [[-2, 1, 1, -1, 2], [-2, -1, -2, -2, -2]]
         
-        # The train track for the first elementary move, when ``t_1<0`` and
-        # ``\lambda_{23}`` is present.
-        # Performing the unzipping according to `r<t_1`.
+    #     # The train track for the first elementary move, when ``t_1<0`` and
+    #     # ``\lambda_{23}`` is present.
+    #     # Performing the unzipping according to `r<t_1`.
 
-        #     sage: tt = TrainTrack([[1,-2,3], [-1,-4,2], [5], [-5,-3,4] ])
-        #     sage: RIGHT_UP = 1
-        #     sage: tt.unzip(1,-1,0,RIGHT_UP)
-        #     sage: tt._gluing_list
-        #     [[1, 3, -2], [-1, -4, 2], [5], [-5, -3, 4]]
-        #     sage: tt._branch_endpoint
-        #     [[1, -1, 1, -2, 2], [-1, 1, -2, -1, -2]]
+    #     #     sage: tt = TrainTrack([[1,-2,3], [-1,-4,2], [5], [-5,-3,4] ])
+    #     #     sage: RIGHT_UP = 1
+    #     #     sage: tt.unzip(1,-1,0,RIGHT_UP)
+    #     #     sage: tt._gluing_list
+    #     #     [[1, 3, -2], [-1, -4, 2], [5], [-5, -3, 4]]
+    #     #     sage: tt._branch_endpoint
+    #     #     [[1, -1, 1, -2, 2], [-1, 1, -2, -1, -2]]
 
-        # Now performing the unzipping according to `r>t_1`.
+    #     # Now performing the unzipping according to `r>t_1`.
 
-        #     sage: tt = TrainTrack([[1,-2,3], [-1,-4,2], [5], [-5,-3,4] ])
-        #     sage: RIGHT_UP = 1
-        #     sage: tt.unzip(1,-1,1,RIGHT_UP)
-        #     sage: tt._gluing_list
-        #     [[1, -2], [-4, 2], [5], [-5, -1, -3, 4, 3]]
-        #     sage: tt._branch_endpoint
-        #     [[1, -1, -2, -2, 2], [-2, 1, -2, -1, -2]]
+    #     #     sage: tt = TrainTrack([[1,-2,3], [-1,-4,2], [5], [-5,-3,4] ])
+    #     #     sage: RIGHT_UP = 1
+    #     #     sage: tt.unzip(1,-1,1,RIGHT_UP)
+    #     #     sage: tt._gluing_list
+    #     #     [[1, -2], [-4, 2], [5], [-5, -1, -3, 4, 3]]
+    #     #     sage: tt._branch_endpoint
+    #     #     [[1, -1, -2, -2, 2], [-2, 1, -2, -1, -2]]
 
-        # The next train track is a has a left-twisting annulus. We perform an
-        # unzip not next to the core curve of the annulus but in the next cusp
-        # that goes into the core curve.
+    #     # The next train track is a has a left-twisting annulus. We perform an
+    #     # unzip not next to the core curve of the annulus but in the next cusp
+    #     # that goes into the core curve.
 
-        #     sage: tt = TrainTrack([[1, 2, 3, 4], [-1, -5, -6, -7], [5], [-2], [6], [-3], [7], [-4]])
-        #     sage: LEFT_DOWN = 2
-        #     sage: tt.unzip(1,1,0,LEFT_DOWN)
-        #     sage: tt._gluing_list
-        #     [[1, 3, 4, 2], [-1, -5, -6, -7], [5], [-2], [6], [-3], [7], [-4]]
-        #     sage: tt._branch_endpoint
-        #     [[1, 1, 1, 1, 2, 3, 4], [-1, -2, -3, -4, -1, -1, -1]]
+    #     #     sage: tt = TrainTrack([[1, 2, 3, 4], [-1, -5, -6, -7], [5], [-2], [6], [-3], [7], [-4]])
+    #     #     sage: LEFT_DOWN = 2
+    #     #     sage: tt.unzip(1,1,0,LEFT_DOWN)
+    #     #     sage: tt._gluing_list
+    #     #     [[1, 3, 4, 2], [-1, -5, -6, -7], [5], [-2], [6], [-3], [7], [-4]]
+    #     #     sage: tt._branch_endpoint
+    #     #     [[1, 1, 1, 1, 2, 3, 4], [-1, -2, -3, -4, -1, -1, -1]]
       
-        # Now we unzip at the same cusp, going into the third branch on the other
-        # side:: 
+    #     # Now we unzip at the same cusp, going into the third branch on the other
+    #     # side:: 
 
-        #     sage: tt = TrainTrack([[1, 2, 3, 4], [-1, -5, -6, -7], [5], [-2], [6], [-3], [7], [-4]])
-        #     sage: LEFT_TWO_SIDED = 4
-        #     sage: tt.unzip(1,1,2,LEFT_TWO_SIDED)
-        #     sage: tt._gluing_list
-        #     [[3, 4, 2], [-6, -7, -5, -1], [5], [-2], [6, 1], [-3], [7], [-4]]
-        #     sage: tt._branch_endpoint
-        #     [[3, 1, 1, 1, 2, 3, 4], [-1, -2, -3, -4, -1, -1, -1]]
-
-
-
-        """
+    #     #     sage: tt = TrainTrack([[1, 2, 3, 4], [-1, -5, -6, -7], [5], [-2], [6], [-3], [7], [-4]])
+    #     #     sage: LEFT_TWO_SIDED = 4
+    #     #     sage: tt.unzip(1,1,2,LEFT_TWO_SIDED)
+    #     #     sage: tt._gluing_list
+    #     #     [[3, 4, 2], [-6, -7, -5, -1], [5], [-2], [6, 1], [-3], [7], [-4]]
+    #     #     sage: tt._branch_endpoint
+    #     #     [[3, 1, 1, 1, 2, 3, 4], [-1, -2, -3, -4, -1, -1, -1]]
 
 
 
-        if collapse == LEFT_UP:
-            assert(pos==0)
-        elif collapse == RIGHT_UP:
-            assert(pos==-1)
-        elif collapse == LEFT_DOWN:
-            assert(unzip_pos == 0)
-        elif collapse == RIGHT_DOWN:
-            assert(unzip_pos == -1)
-        elif collapse == LEFT_TWO_SIDED:
-            assert(unzip_pos > 0 or central_split)
-        elif collapse == RIGHT_TWO_SIDED:
-            assert(unzip_pos < -1 or central_split)
-
-        unzip_branch = self.outgoing_branches(-switch)[unzip_pos]
-        bottom_switch = self.branch_endpoint(unzip_branch)
-        if -switch == bottom_switch and unzip_pos > end_index:
-            unzip_pos += 1
-
-        if debug:
-            print "Unzip branch: ", unzip_branch
-            print "Bottom switch: ", bottom_switch
-            print "Corrected unzip_pos:", unzip_pos
-
-        # dealing with collapsed branches
-        if collapse in [LEFT_UP,RIGHT_UP]:
-            # cut the collapsed branch off the starting switch and gluing it to
-            # the bottom switch
-            collapsed_branch = self.outgoing_branches(switch).pop(pos)
-
-            # we do this after the pop in case bottom_switch == switch
-            end_index = self.outgoing_branches(bottom_switch).index(-unzip_branch)            
-            if debug:
-                print "End index:", end_index
-                print "Collapsed branch:", collapsed_branch
-            assert(collapsed_branch != -unzip_branch)
-            if not central_split:
-                insert_pos = end_index if collapse == LEFT_UP else \
-                             end_index + 1
-                if debug:
-                    print "Insert pos:", insert_pos
-                self.outgoing_branches(bottom_switch).insert(insert_pos,
-                                                           collapsed_branch)
-        elif collapse in [LEFT_DOWN,RIGHT_DOWN]:
-            end_index = self.outgoing_branches(bottom_switch).index(-unzip_branch)          
-            assert(not central_split)
-            # make sure unzipping does cycle back to the isotoped part
-            if collapse == LEFT_DOWN:
-                assert(end_switch != switch or end_index <= pos)
-            else:
-                assert(end_switch != switch or end_index > pos)
-            # nothing to do
-            pass
-        elif collapse in [LEFT_TWO_SIDED,RIGHT_TWO_SIDED]:
-            end_index = self.outgoing_branches(bottom_switch).index(-unzip_branch)            
-            if collapse == LEFT_TWO_SIDED:
-                collapsed_branch = self.outgoing_branches(switch).pop(0)
-                assert(self.outgoing_branches(switch)[0] ==
-                       -self.outgoing_branches(-switch)[0])
-                self.outgoing_branches(-switch).pop(0)
-                pos -= 1
-                unzip_pos -= 1 # TODO: doesn't work for central splits
-            else:
-                collapsed_branch = self.outgoing_branches(switch).pop(-1)
-                assert(self.outgoing_branches(switch)[-1] ==
-                       -self.outgoing_branches(-switch)[-1])
-                self.outgoing_branches(-switch).pop(-1)
+    #     """
 
 
-                
-        # move branches
-        if collapse in [LEFT_UP,RIGHT_UP]:
-            bottom_branches = self.outgoing_branches(-switch)
-            if collapse == LEFT_UP:
-                branches_to_move = bottom_branches[unzip_pos+1:]
-                del bottom_branches[unzip_pos+1:]
-            elif collapse == RIGHT_UP:
-                branches_to_move = bottom_branches[:unzip_pos]
-                del bottom_branches[:unzip_pos]
-            top_switch = self.branch_endpoint(collapsed_branch)
-            k = self.outgoing_branches(top_switch).index(-collapsed_branch)
-            if collapse == LEFT_UP:
-                insert_pos = k+1
-            else:
-                insert_pos = k
-            if central_split:
-                # remove collapsed_branch from the train track
-                self.outgoing_branches(top_switch).pop(k)
-                if collapse == LEFT_UP:
-                    insert_pos = k
-            self.outgoing_branches(top_switch)[insert_pos:insert_pos] = \
-                                                        branches_to_move
-            # set endpoints
-            if central_split:
-                self._set_endpoint(collapsed_branch,0)
-                self._set_endpoint(-collapsed_branch,0)
-            else:
-                self._set_endpoint(-collapsed_branch,bottom_switch)
-            for branch in branches_to_move:
-                self._set_endpoint(-branch,top_switch)
+
+    #     if collapse == LEFT_UP:
+    #         assert(pos==0)
+    #     elif collapse == RIGHT_UP:
+    #         assert(pos==-1)
+    #     elif collapse == LEFT_DOWN:
+    #         assert(unzip_pos == 0)
+    #     elif collapse == RIGHT_DOWN:
+    #         assert(unzip_pos == -1)
+    #     elif collapse == LEFT_TWO_SIDED:
+    #         assert(unzip_pos > 0 or central_split)
+    #     elif collapse == RIGHT_TWO_SIDED:
+    #         assert(unzip_pos < -1 or central_split)
+
+    #     unzip_branch = self.outgoing_branches(-switch)[unzip_pos]
+    #     bottom_switch = self.branch_endpoint(unzip_branch)
+    #     if -switch == bottom_switch and unzip_pos > end_index:
+    #         unzip_pos += 1
+
+    #     if debug:
+    #         print "Unzip branch: ", unzip_branch
+    #         print "Bottom switch: ", bottom_switch
+    #         print "Corrected unzip_pos:", unzip_pos
+
+    #     # dealing with collapsed branches
+    #     if collapse in [LEFT_UP,RIGHT_UP]:
+    #         # cut the collapsed branch off the starting switch and gluing it to
+    #         # the bottom switch
+    #         collapsed_branch = self.outgoing_branches(switch).pop(pos)
+
+    #         # we do this after the pop in case bottom_switch == switch
+    #         end_index = self.outgoing_branches(bottom_switch).index(-unzip_branch)            
+    #         if debug:
+    #             print "End index:", end_index
+    #             print "Collapsed branch:", collapsed_branch
+    #         assert(collapsed_branch != -unzip_branch)
+    #         if not central_split:
+    #             insert_pos = end_index if collapse == LEFT_UP else \
+    #                          end_index + 1
+    #             if debug:
+    #                 print "Insert pos:", insert_pos
+    #             self.outgoing_branches(bottom_switch).insert(insert_pos,
+    #                                                        collapsed_branch)
+    #     elif collapse in [LEFT_DOWN,RIGHT_DOWN]:
+    #         end_index = self.outgoing_branches(bottom_switch).index(-unzip_branch)          
+    #         assert(not central_split)
+    #         # make sure unzipping does cycle back to the isotoped part
+    #         if collapse == LEFT_DOWN:
+    #             assert(end_switch != switch or end_index <= pos)
+    #         else:
+    #             assert(end_switch != switch or end_index > pos)
+    #         # nothing to do
+    #         pass
+    #     elif collapse in [LEFT_TWO_SIDED,RIGHT_TWO_SIDED]:
+    #         end_index = self.outgoing_branches(bottom_switch).index(-unzip_branch)            
+    #         if collapse == LEFT_TWO_SIDED:
+    #             collapsed_branch = self.outgoing_branches(switch).pop(0)
+    #             assert(self.outgoing_branches(switch)[0] ==
+    #                    -self.outgoing_branches(-switch)[0])
+    #             self.outgoing_branches(-switch).pop(0)
+    #             pos -= 1
+    #             unzip_pos -= 1 # TODO: doesn't work for central splits
+    #         else:
+    #             collapsed_branch = self.outgoing_branches(switch).pop(-1)
+    #             assert(self.outgoing_branches(switch)[-1] ==
+    #                    -self.outgoing_branches(-switch)[-1])
+    #             self.outgoing_branches(-switch).pop(-1)
+
 
                 
-        elif collapse in [LEFT_DOWN,RIGHT_DOWN]:
-            top = self.outgoing_branches(switch)
-            end = self.outgoing_branches(switch)[pos+1:]
-            begin = self.outgoing_branches(switch)[:pos+1]
-            k = self.outgoing_branches(bottom_switch).index(-unzip_branch)
-            if collapse == LEFT_DOWN:
-                branches_to_move = end
-                del top[pos+1:]
-                insert_pos = k+1
-            else:
-                branches_to_move = begin
-                del top[:pos+1]
-                insert_pos = k
+    #     # move branches
+    #     if collapse in [LEFT_UP,RIGHT_UP]:
+    #         bottom_branches = self.outgoing_branches(-switch)
+    #         if collapse == LEFT_UP:
+    #             branches_to_move = bottom_branches[unzip_pos+1:]
+    #             del bottom_branches[unzip_pos+1:]
+    #         elif collapse == RIGHT_UP:
+    #             branches_to_move = bottom_branches[:unzip_pos]
+    #             del bottom_branches[:unzip_pos]
+    #         top_switch = self.branch_endpoint(collapsed_branch)
+    #         k = self.outgoing_branches(top_switch).index(-collapsed_branch)
+    #         if collapse == LEFT_UP:
+    #             insert_pos = k+1
+    #         else:
+    #             insert_pos = k
+    #         if central_split:
+    #             # remove collapsed_branch from the train track
+    #             self.outgoing_branches(top_switch).pop(k)
+    #             if collapse == LEFT_UP:
+    #                 insert_pos = k
+    #         self.outgoing_branches(top_switch)[insert_pos:insert_pos] = \
+    #                                                     branches_to_move
+    #         # set endpoints
+    #         if central_split:
+    #             self._set_endpoint(collapsed_branch,0)
+    #             self._set_endpoint(-collapsed_branch,0)
+    #         else:
+    #             self._set_endpoint(-collapsed_branch,bottom_switch)
+    #         for branch in branches_to_move:
+    #             self._set_endpoint(-branch,top_switch)
 
-            top_list = self.outgoing_branches(top_switch)
-            top_list[insert_pos:insert_pos] = branches_to_move
+                
+    #     elif collapse in [LEFT_DOWN,RIGHT_DOWN]:
+    #         top = self.outgoing_branches(switch)
+    #         end = self.outgoing_branches(switch)[pos+1:]
+    #         begin = self.outgoing_branches(switch)[:pos+1]
+    #         k = self.outgoing_branches(bottom_switch).index(-unzip_branch)
+    #         if collapse == LEFT_DOWN:
+    #             branches_to_move = end
+    #             del top[pos+1:]
+    #             insert_pos = k+1
+    #         else:
+    #             branches_to_move = begin
+    #             del top[:pos+1]
+    #             insert_pos = k
+
+    #         top_list = self.outgoing_branches(top_switch)
+    #         top_list[insert_pos:insert_pos] = branches_to_move
             
-            for branch in branches_to_move:
-                self._set_endpoint(-branch,bottom_switch)
+    #         for branch in branches_to_move:
+    #             self._set_endpoint(-branch,bottom_switch)
  
 
-        elif collapse in [LEFT_TWO_SIDED,RIGHT_TWO_SIDED]:
-            top = self.outgoing_branches(switch)
-            n = len(top)
-            top.insert(0,top[pos:])
-            del top[n:]
-            bottom = self.outgoing_branches(-switch)
-            n = len(bottom)
-            bottom.insert(0, bottom[unzip_pos:])
-            del bottom[n:]
-            bottom.append(collapsed_branch)
+    #     elif collapse in [LEFT_TWO_SIDED,RIGHT_TWO_SIDED]:
+    #         top = self.outgoing_branches(switch)
+    #         n = len(top)
+    #         top.insert(0,top[pos:])
+    #         del top[n:]
+    #         bottom = self.outgoing_branches(-switch)
+    #         n = len(bottom)
+    #         bottom.insert(0, bottom[unzip_pos:])
+    #         del bottom[n:]
+    #         bottom.append(collapsed_branch)
             
-            k = self.outgoing_branches(bottom_switch).index(-unzip_branch)
-            self.outgoing_branches(bottom_switch).insert(k+1,
-                                            -collapsed_branch)
+    #         k = self.outgoing_branches(bottom_switch).index(-unzip_branch)
+    #         self.outgoing_branches(bottom_switch).insert(k+1,
+    #                                         -collapsed_branch)
 
-            self._set_endpoint(collapsed_branch,-switch)
-            self._set_endpoint(-collapsed_branch,bottom_switch)
+    #         self._set_endpoint(collapsed_branch,-switch)
+    #         self._set_endpoint(-collapsed_branch,bottom_switch)
 
-    def unzip_create_new_switch(self,switch,pos,unzip_pos,central_split=False):
-        """
-        INPUT:
+    # def unzip_create_new_switch(self,switch,pos,unzip_pos,central_split=False):
+    #     """
+    #     INPUT:
 
-        - ``branch`` -- 
+    #     - ``branch`` -- 
 
-        - ``side`` -- 
+    #     - ``side`` -- 
 
-        - ``unzip_into`` -- 
+    #     - ``unzip_into`` -- 
 
-        EXAMPLES:
+    #     EXAMPLES:
 
-        There are three possible unzippings from the positive side of
-        switch 1::
+    #     There are three possible unzippings from the positive side of
+    #     switch 1::
 
-            # sage: tt = TrainTrack([ [1,2], [-1,-2] ])
-            # sage: tt.unzip_create_new_switch(1,0,0)
-            # sage: tt._gluing_list
-            # [[1, 3], [-1, -2], [2], [-3]]
+    #         # sage: tt = TrainTrack([ [1,2], [-1,-2] ])
+    #         # sage: tt.unzip_create_new_switch(1,0,0)
+    #         # sage: tt._gluing_list
+    #         # [[1, 3], [-1, -2], [2], [-3]]
 
-            # sage: tt = TrainTrack([ [1,2], [-1,-2] ])
-            # sage: tt.unzip_create_new_switch(1,0,1)
-            # sage: tt._gluing_list
-            # [[1], [-2], [2, 3], [-1, -3]]
+    #         # sage: tt = TrainTrack([ [1,2], [-1,-2] ])
+    #         # sage: tt.unzip_create_new_switch(1,0,1)
+    #         # sage: tt._gluing_list
+    #         # [[1], [-2], [2, 3], [-1, -3]]
 
-            # sage: tt = TrainTrack([ [1,2], [-1,-2] ])
-            # sage: tt.unzip_create_new_switch(1,0,0,True)
-            # sage: tt._gluing_list
-            # [[1], [-2], [2], [-1]]
+    #         # sage: tt = TrainTrack([ [1,2], [-1,-2] ])
+    #         # sage: tt.unzip_create_new_switch(1,0,0,True)
+    #         # sage: tt._gluing_list
+    #         # [[1], [-2], [2], [-1]]
         
 
 
-        """
+    #     """
 
 
-        if not central_split:
-            # Split the unzipped brach into two. Create a new branch and
-            # update the gluing_list.
-            unzip_branch = self.outgoing_branches(-switch)[unzip_pos]
-            #determines orientation for the new branch
-            unzip_branch_sign = unzip_branch // abs(unzip_branch)
-            new_branch = unzip_branch_sign*(self._current_max_branch + 1)
-            end_switch = self.branch_endpoint(unzip_branch)
-            s = self._a(end_switch)
-            # print end_switch
-            end_index = self._gluing_list[s].index(-unzip_branch)
-            self._gluing_list[s].insert(end_index+1,-new_branch)
-            if switch == end_switch and pos >= end_index:
-                pos += 1
-            elif -switch == end_switch and unzip_pos > end_index:
-                # equality is not possible in the second expression
-                # because those are the ends of the same branch
-                unzip_pos += 1
+    #     if not central_split:
+    #         # Split the unzipped brach into two. Create a new branch and
+    #         # update the gluing_list.
+    #         unzip_branch = self.outgoing_branches(-switch)[unzip_pos]
+    #         #determines orientation for the new branch
+    #         unzip_branch_sign = unzip_branch // abs(unzip_branch)
+    #         new_branch = unzip_branch_sign*(self._current_max_branch + 1)
+    #         end_switch = self.branch_endpoint(unzip_branch)
+    #         s = self._a(end_switch)
+    #         # print end_switch
+    #         end_index = self._gluing_list[s].index(-unzip_branch)
+    #         self._gluing_list[s].insert(end_index+1,-new_branch)
+    #         if switch == end_switch and pos >= end_index:
+    #             pos += 1
+    #         elif -switch == end_switch and unzip_pos > end_index:
+    #             # equality is not possible in the second expression
+    #             # because those are the ends of the same branch
+    #             unzip_pos += 1
 
 
-        new_switch = self.num_switches() + 1
-        pos_index = self._a(switch)
-        neg_index = self._a(-switch)
-        pos_index_new = self._a(new_switch)
-        neg_index_new = self._a(-new_switch)
-        # print pos_index, neg_index, pos_index_new, neg_index_new
+    #     new_switch = self.num_switches() + 1
+    #     pos_index = self._a(switch)
+    #     neg_index = self._a(-switch)
+    #     pos_index_new = self._a(new_switch)
+    #     neg_index_new = self._a(-new_switch)
+    #     # print pos_index, neg_index, pos_index_new, neg_index_new
                 
 
         
-        self._gluing_list.extend([[],[]]) # add new switch
-        # print self._gluing_list
-        # print "Branch endpoint", self._branch_endpoint
-        # dividing the branches on the top to two set
-        pos_left = self._gluing_list[pos_index][:pos+1]
-        pos_right = self._gluing_list[pos_index][pos+1:]
-        self._gluing_list[pos_index] = pos_left
-        self._gluing_list[pos_index_new] = pos_right
-        for branch in pos_right:
-            self._set_endpoint(-branch,new_switch)
-        # print self._gluing_list
+    #     self._gluing_list.extend([[],[]]) # add new switch
+    #     # print self._gluing_list
+    #     # print "Branch endpoint", self._branch_endpoint
+    #     # dividing the branches on the top to two set
+    #     pos_left = self._gluing_list[pos_index][:pos+1]
+    #     pos_right = self._gluing_list[pos_index][pos+1:]
+    #     self._gluing_list[pos_index] = pos_left
+    #     self._gluing_list[pos_index_new] = pos_right
+    #     for branch in pos_right:
+    #         self._set_endpoint(-branch,new_switch)
+    #     # print self._gluing_list
 
-        # divide the branches on the bottom into two sets
-        if not central_split:
-            neg_right = self._gluing_list[neg_index][unzip_pos:]
-            neg_left = self._gluing_list[neg_index][:unzip_pos] + [new_branch]
-        else:
-            neg_right = self._gluing_list[neg_index][unzip_pos+1:]
-            neg_left = self._gluing_list[neg_index][:unzip_pos+1]            
-        self._gluing_list[neg_index] = neg_right
-        self._gluing_list[neg_index_new] = neg_left
-        for branch in neg_left:
-            self._set_endpoint(-branch,-new_switch)
+    #     # divide the branches on the bottom into two sets
+    #     if not central_split:
+    #         neg_right = self._gluing_list[neg_index][unzip_pos:]
+    #         neg_left = self._gluing_list[neg_index][:unzip_pos] + [new_branch]
+    #     else:
+    #         neg_right = self._gluing_list[neg_index][unzip_pos+1:]
+    #         neg_left = self._gluing_list[neg_index][:unzip_pos+1]            
+    #     self._gluing_list[neg_index] = neg_right
+    #     self._gluing_list[neg_index_new] = neg_left
+    #     for branch in neg_left:
+    #         self._set_endpoint(-branch,-new_switch)
 
-        # print "Pos right:", pos_right
-        # print "Neg left:", neg_left
-        if not central_split:
-            self._current_max_branch += 1
-            self._num_branches += 1
+    #     # print "Pos right:", pos_right
+    #     # print "Neg left:", neg_left
+    #     if not central_split:
+    #         self._current_max_branch += 1
+    #         self._num_branches += 1
 
         # # Update measure
         # self._measure[abs(unzip_branch) - 1] = weight - zip_weight
