@@ -766,15 +766,14 @@ def unzip_fold_general_twist(dehn_thurston_tt, pants_curve, twists_on_left,
             # the positition of the first unzip
             pos = max(0, nother_side + twists_on_other_side)
 
-            typ, unzip_pos = tt.unzip_with_collapse(switch,pos,[TWO_SIDED],
-                                                    start_side=turning,
-                                                    collapse_side=turning)
-            if typ == DOWN:
+            unzip_pos = tt.unzip_with_collapse(switch,pos,TWO_SIDED,
+                                                    start_side=turning)
+            if unzip_pos == 0:
                 # we unzipped into the pants curve
                 twists_on_other_side += (nother_side - pos)
                 if twists_on_other_side == 0:
                     break
-            elif typ == TWO_SIDED:
+            else:
                 # we unzip into a branch on the other side
 
                 # find the endpoint of the unzipped branch
@@ -830,8 +829,7 @@ def unzip_fold_first_move(dehn_thurston_tt, pants_curve, pants_decomposition):
     lamb23 = len(self.outgoing_branches(switch)) == 3
     if turning == LEFT:
         # unzip_pos, remaining_measure = tt.unzip_pos(switch,0)
-        unzip_pos = tt.unzip_pos(switch,0,start_side=RIGHT)
-        tt.unzip_with_collapse(switch,0,unzip_pos,UP,start_side=RIGHT)
+        unzip_pos = tt.unzip_with_collapse(switch,0,UP,start_side=RIGHT)
         if unzip_pos == 0:
             # r < |t_1|
             if lamb23:
@@ -852,8 +850,7 @@ def unzip_fold_first_move(dehn_thurston_tt, pants_curve, pants_decomposition):
                 tt.fold_left_of_pants_curve(bdy_curve,3,2)
 
     else:
-        unzip_pos = tt.unzip_pos(switch,0,start_side=LEFT)
-        tt.unzip_with_collapse(switch,0,unzip_pos,UP,start_side=LEFT)
+        unzip_pos = tt.unzip_with_collapse(switch,0,UP,start_side=LEFT)
         if unzip_pos == 0:
             # r < |t_1|
             if lamb23:
