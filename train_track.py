@@ -926,9 +926,20 @@ class TrainTrack(SageObject):
 
 
         n = len(self.outgoing_branches(switch))
+        # print "--------------------------------"
+        # print "TrainTrack.fold()"
+        # print "--------------------------------"
+        # print "Start side:", start_side
+        # print "Switch:", switch
+        # print "Folded branch index:", folded_branch_index
+        # print "Fold onto branch index:", fold_onto_index
+        
         if start_side == RIGHT:
             self.fold(switch, n-1-folded_branch_index, n-1-fold_onto_index)
+            return
 
+        # from now on, start_side is assumed to be LEFT
+            
         fold_onto_br = self.outgoing_branch(switch, fold_onto_index, start_side)
         next_sw = self.branch_endpoint(fold_onto_br)
 
@@ -941,6 +952,14 @@ class TrainTrack(SageObject):
         else:
             raise ValueError("Only two adjacent branches can be folded")
 
+        # print "Next switch: ", next_sw
+        # print "Fold start side: ", fold_start_side
+        # # print self.outgoing_branch(next_sw, 0, fold_start_side)
+        # print "Fold onto branch:", fold_onto_br
+        # print "--------------------------------"
+        # print "TrainTrack.fold() end"
+        # print "--------------------------------"
+        
         if self.outgoing_branch(next_sw, 0, fold_start_side) != -fold_onto_br:
             raise ValueError("The fold is not possible!")
 
