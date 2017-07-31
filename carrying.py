@@ -20,7 +20,6 @@ AUTHORS:
 #*****************************************************************************
 
 
-from surface import Surface 
 from train_track import TrainTrack
 from sage.structure.sage_object import SageObject
 
