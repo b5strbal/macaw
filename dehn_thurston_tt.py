@@ -576,6 +576,58 @@ class DehnThurstonTT(TrainTrack):
 
 
     def unzip_fold_pants_twist(self, pants_curve, power=1):
+        r"""
+        
+        TESTS:
+
+        Twisting in the good direction:
+
+            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
+            sage: tt = DehnThurstonTT([[1, 2, 3, 4], [-1, -5, -6, -7], [5], [-2], [6], [-3], [7], [-4]], [1, 2, 3, 13, 5, 6, 7])
+            sage: tt.unzip_fold_pants_twist(1, -1)
+            sage: tt._gluing_list
+            [[1, 2, 3, 4], [-1, -5, -6, -7], [5], [-2], [6], [-3], [7], [-4]]
+            sage: tt._measure
+            [19, 2, 3, 13, 5, 6, 7]
+
+        Twisting in the bad direction, train track remains left-turning:
+
+            sage: tt = DehnThurstonTT([[1, 2, 3, 4], [-1, -5, -6, -7], [5], [-2], [6], [-3], [7], [-4]], [100, 2, 3, 13, 5, 6, 7])
+            sage: tt.unzip_fold_pants_twist(1, 1)
+            sage: tt._gluing_list
+            [[1, 2, 3, 4], [-1, -5, -6, -7], [5], [-2], [6], [-3], [7], [-4]]
+            sage: tt._measure
+            [82, 2, 3, 13, 5, 6, 7]
+
+        Twisting in the bad direction, train track becomes right-turning:
+
+            sage: tt = DehnThurstonTT([[1, 2, 3, 4], [-1, -5, -6, -7], [5], [-2], [6], [-3], [7], [-4]], [1, 2, 3, 13, 5, 6, 7])
+            sage: tt.unzip_fold_pants_twist(1, 1)
+            sage: tt._gluing_list
+            [[-5, -6, -7, 1], [2, 3, 4, -1], [5], [-2], [6], [-3], [7], [-4]]
+            sage: tt._measure
+            [17, 2, 3, 13, 5, 6, 7]
+
+        A right-turning example:
+
+            sage: tt = DehnThurstonTT([[2, 3, 4, 1], [-5, -6, -7, -1], [5], [-2], [6], [-3], [7], [-4]], [1, 2, 3, 13, 5, 6, 7])
+            sage: tt.unzip_fold_pants_twist(1, -1)
+            sage: tt._gluing_list
+            [[1, -5, -6, -7], [-1, 2, 3, 4], [5], [-2], [6], [-3], [7], [-4]]
+            sage: tt._measure
+            [17, 2, 3, 13, 5, 6, 7]
+
+        Direction of input switch does not matter:
+
+            sage: tt = DehnThurstonTT([[2, 3, 4, 1], [-5, -6, -7, -1], [5], [-2], [6], [-3], [7], [-4]], [1, 2, 3, 13, 5, 6, 7])
+            sage: tt.unzip_fold_pants_twist(-1, -1)
+            sage: tt._gluing_list
+            [[1, -5, -6, -7], [-1, 2, 3, 4], [5], [-2], [6], [-3], [7], [-4]]
+            sage: tt._measure
+            [17, 2, 3, 13, 5, 6, 7]
+
+
+        """
         nright = self.num_curves_on_sides(pants_curve)[RIGHT]
         self.unzip_fold_general_twist(pants_curve, 0, power * nright)
 
