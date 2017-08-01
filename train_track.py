@@ -260,7 +260,7 @@ class TrainTrack(SageObject):
     def change_switch_orientation(self,switch):
         for br in self.outgoing_branches(switch):
             self._set_endpoint(-br,-switch)
-        for bt in self.outgoing_branches(-switch):
+        for br in self.outgoing_branches(-switch):
             self._set_endpoint(-br,switch)
         a, b = self.outgoing_branches(switch), self.outgoing_branches(-switch)
         self._gluing_list[self._a(switch)] = b
