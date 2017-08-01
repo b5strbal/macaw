@@ -167,6 +167,27 @@ class PantsDecomposition(Surface):
         return 'Pants decomposition with gluing list ' + repr(self._gluing_list)
         # return 'Pants decomposition of the ' + super(PantsDecomposition,self).__repr__().lower()
 
+    def bdy_index_left_of_pants_curve(self, pants_curve):
+        """
+        EXAMPLES:
+
+            sage: p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
+            sage: p.bdy_index_left_of_pants_curve(1)
+            0
+            sage: p.bdy_index_left_of_pants_curve(2)
+            1
+            sage: p.bdy_index_left_of_pants_curve(3)
+            2
+            sage: p.bdy_index_left_of_pants_curve(-1)
+            2
+            sage: p.bdy_index_left_of_pants_curve(-2)
+            1
+            sage: p.bdy_index_left_of_pants_curve(-3)
+            0
+
+        """
+        return self.adjacent_pants(pants_curve)[LEFT][0][BDY_IDX]
+        
     def adjacent_pants(self,pants_curve):
         """
         EXAMPLES::

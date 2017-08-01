@@ -797,12 +797,26 @@ class TrainTrack(SageObject):
             s = sum(map(self.branch_measure,self.outgoing_branches(switch)[:pos+1]))
         else:
             s = sum(map(self.branch_measure,self.outgoing_branches(switch)[-pos-1:]))            
+
+        debug = False
+        if debug:
+            print "---------------------------"
+            print "BEGIN: unzip_pos()"
+            print "---------------------------"
+            print "switch:", switch
+            print "pos:", pos
+            print "start_side:", "LEFT" if start_side == LEFT else "RIGHT"
+            print "Starting sum:", s
+
         neg_side = self.outgoing_branches(-switch)
         if start_side == RIGHT:
             neg_side = list(reversed(neg_side))
         for i in range(len(neg_side)-1,-1,-1):
             b = neg_side[i]
             s -= self.branch_measure(b)
+            if debug:
+                print "Current branch:", b
+                print "Remaining branch measure:", s
             if s <= 0:
                 return (len(neg_side) - 1 - i, s+self.branch_measure(b), -s)
 
