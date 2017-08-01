@@ -745,6 +745,62 @@ class TrainTrack(SageObject):
     def _set_measure(self,branch,new_measure):
         self._measure[abs(branch)-1] = new_measure
 
+    def swap_branch_numbers(self,branch1,branch2):
+        """
+        EXAMPLES:
+
+        sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
+        sage: tt._gluing_list
+        [[1, 2], [-1, -2]]
+        sage: tt._branch_endpoint
+        [[1, 1], [-1, -1]]
+        sage: tt._measure
+        [3, 5]
+        sage: tt.swap_branch_numbers(1, 2)
+        sage: tt._gluing_list
+        [[2, 1], [-2, -1]]
+        sage: tt._branch_endpoint
+        [[1, 1], [-1, -1]]
+        sage: tt._measure
+        [5, 3]
+
+        """
+        # updating the measure
+        if self.is_measured():
+            temp = self.branch_measure(branch1)
+            self._set_measure(branch1,self.branch_measure(branch2))
+            self._set_measure(branch2,temp)
+
+        # updating endpoints
+        start1 = self.branch_endpoint(-branch1)
+        end1 = self.branch_endpoint(branch1)
+        start2 = self.branch_endpoint(-branch2)
+        end2 = self.branch_endpoint(branch2)
+
+        # updating gluing_list
+        indices = []
+        for (sw,old_br) in [(start1, branch1),
+                            (start2, branch2),
+                            (end2, -branch2),
+                            (end1, -branch1)]:
+            # print sw, old_br
+            
+            # print self._branch_endpoint
+
+            # print self._gluing_list
+            indices.insert(0,self.outgoing_branches(sw).index(old_br))
+
+        for (sw,new_br) in [(start1, branch2),
+                            (start2, branch1),
+                            (end2, -branch1),
+                            (end1, -branch2)]:
+            self._set_endpoint(-new_br, sw)
+            index = indices.pop()
+            self.outgoing_branches(sw)[index] = new_br
+
+
+
+            
     def unzip_pos(self,switch,pos,start_side=LEFT):
         """INPUT:
 

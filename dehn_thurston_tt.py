@@ -704,7 +704,7 @@ class DehnThurstonTT(TrainTrack):
 
 
 
-    def unzip_fold_first_move(self, switch):
+    def unzip_fold_first_move(self, switch, inverse=False):
         r"""
         TESTS::
 
@@ -787,6 +787,7 @@ class DehnThurstonTT(TrainTrack):
         #     switch = -pants_curve
         switch = self.orientation_of_switch_first_move(switch)        
         turning = self.get_turning(switch)
+        twist_sign = -1 if inverse else 1
         bdy_switch = self.torus_boundary_switch(switch)
         # bdy_curve = p._torus_boundary_curve(switch)[0]
         # TODO: all this so far can be done intrinsically, without
@@ -795,7 +796,7 @@ class DehnThurstonTT(TrainTrack):
         # bdy_turning = self.get_turning(bdy_curve)
         lamb23 = len(self.outgoing_branches(switch)) == 3
 
-        debug = False
+        debug = True
         if debug:
             print "--------------------------------"
             print "BEGIN: unzip_fold_first_move()"
@@ -804,73 +805,67 @@ class DehnThurstonTT(TrainTrack):
             print "Turning:", "LEFT" if turning == LEFT else "RIGHT"
             print "Lambda_23" if lamb23 else "Lambda_11"
             print "bdy_switch", bdy_switch
-        if turning == LEFT:
-            # unzip_pos, remaining_measure = self.unzip_pos(switch,0)
-            unzip_pos = self.unzip_with_collapse(switch,0,UP,start_side=RIGHT)
-            if debug:
-                print "Unzip pos:", unzip_pos
-                print "Gluing list:", self._gluing_list
-                print "Measure:", self._measure
-                print "Outgoing branches in positive direction:", \
-                    self.outgoing_branches(switch)
-                print "Outgoing branches in negative direction:", \
-                    self.outgoing_branches(-switch)
-            if unzip_pos == 0:
-                # r < |t_1|
-                if lamb23:
-                    # we have lambda_23
-                    self.fold(-switch,1,2)
+            print "Inverse:", inverse
+        unzip_pos = self.unzip_with_collapse(switch,0,UP,start_side=(turning+1)%2)
+
+        if debug:
+            print "Unzip pos:", unzip_pos
+            print "Gluing list:", self._gluing_list
+            print "Measure:", self._measure
+            print "Outgoing branches in positive direction:", \
+                self.outgoing_branches(switch)
+            print "Outgoing branches in negative direction:", \
+                self.outgoing_branches(-switch)
+        
+        if unzip_pos == 0:
+            if lamb23:
+                if (turning == LEFT) == (not inverse):
+                    self.fold(-switch,1,2,start_side=turning)
                 else:
-                    # we have lambda_11
+                    self.fold(switch,1,0,(turning+1)%2)
+                    self.unzip_fold_general_twist(bdy_switch,twist_sign,0)
+            else:
+                if (turning == LEFT) == (not inverse):
                     if debug:
                         print "Gluing list:", self._gluing_list
                         print "Measure:", self._measure
-                    self.unzip_fold_general_twist(bdy_switch,1,0)
+                    self.unzip_fold_general_twist(bdy_switch,twist_sign,0)
                     if debug:
                         print "Gluing list:", self._gluing_list
                         print "Measure:", self._measure
-                    self.fold_left_of_pants_curve(bdy_switch,0,1)
-                    self.fold_left_of_pants_curve(bdy_switch,2,1)
-            elif unzip_pos == 1:
-                # r > |t_1|
-                if lamb23:
-                    self.fold(-switch,0,1)
+                    self.fold_left_of_pants_curve(bdy_switch,0,1,inverse)
+                    self.fold_left_of_pants_curve(bdy_switch,2,1,inverse)
                 else:
-                    self.unzip_fold_general_twist(bdy_switch,1,0)
-                    self.fold_left_of_pants_curve(bdy_switch,0,1)
-                    self.fold_left_of_pants_curve(bdy_switch,3,2)
+                    self.unzip_fold_general_twist(bdy_switch,2*twist_sign,0)
+                    self.fold_left_of_pants_curve(bdy_switch,3,2,inverse)
+                    self.fold_left_of_pants_curve(bdy_switch,0,1,inverse)
 
-        else:
-            unzip_pos = self.unzip_with_collapse(switch,0,UP,start_side=LEFT)
-            if unzip_pos == 0:
-                # r < |t_1|
-                if lamb23:
-                    # if debug:
-                    #     print "Gluing list:", self._gluing_list
-                    #     print "Measure:", self._measure
-                    self.fold(switch,1,0)
-                    # if debug:
-                    #     print "Gluing list:", self._gluing_list
-                    #     print "Measure:", self._measure
-                    self.unzip_fold_general_twist(bdy_switch,1,0)
+        elif unzip_pos == 1:
+            if lamb23:
+                if (turning == LEFT) == (not inverse):
+                    self.fold(-switch,0,1,turning)
                 else:
-                    self.unzip_fold_general_twist(bdy_switch,2,0)
-                    self.fold_left_of_pants_curve(bdy_switch,3,2)
-                    self.fold_left_of_pants_curve(bdy_switch,0,1)
-
-            elif unzip_pos == 1:
-                # |t_1| < r
-                if lamb23:
-                    self.fold(switch,1,0)
-                    self.unzip_fold_general_twist(bdy_switch,1,0)
+                    self.fold(switch,1,0,(turning+1)%2)
+                    self.unzip_fold_general_twist(bdy_switch,twist_sign,0)
+            else:
+                if (turning == LEFT) == (not inverse):
+                    self.unzip_fold_general_twist(bdy_switch,twist_sign,0)
+                    self.fold_left_of_pants_curve(bdy_switch,0,1,inverse)
+                    self.fold_left_of_pants_curve(bdy_switch,3,2,inverse)
                 else:
-                    self.unzip_fold_general_twist(bdy_switch,2,0)
-                    self.fold_left_of_pants_curve(bdy_switch,4,3)
-                    self.fold_left_of_pants_curve(bdy_switch,0,1)
+                    self.unzip_fold_general_twist(bdy_switch,2*twist_sign,0)
+                    self.fold_left_of_pants_curve(bdy_switch,4,3,inverse)
+                    self.fold_left_of_pants_curve(bdy_switch,0,1,inverse)
 
+        # new_turning = self.get_turning(switch)
+        # new_pants_branch = self.outgoing_branch(switch,0,start_side=new_turning)
+        # print new_pants_branch
+                    
+        # self.swap_branch_numbers(switch,new_pants_branch)
+                    
     
     def fold_left_of_pants_curve(self, bdy_switch, folded_branch_index,
-                                 fold_onto_index):
+                                 fold_onto_index, inverse=False):
         """
         Fold on the left of a pants curve.
 
@@ -878,13 +873,14 @@ class DehnThurstonTT(TrainTrack):
         the left. In other words, the pants curve itself is not indexed. The
         indexing goes from bottom to top.
         """
+        start_side = RIGHT if inverse else LEFT
         if self.get_turning(bdy_switch) == RIGHT:
-            self.fold(bdy_switch, folded_branch_index, fold_onto_index)
+            self.fold(bdy_switch, folded_branch_index, fold_onto_index, start_side)
         else:
             # print self.outgoing_branches(-bdy_switch)
             # print self.outgoing_branch(-bdy_switch, folded_branch_index+1)
             # print self.outgoing_branch(-bdy_switch, fold_onto_index+1)
-            self.fold(-bdy_switch, folded_branch_index+1, fold_onto_index+1)
+            self.fold(-bdy_switch, folded_branch_index+1, fold_onto_index+1, start_side)
 
 
 
