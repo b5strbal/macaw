@@ -33,6 +33,70 @@ UP = 0
 TWO_SIDED = 1
 
 
+
+
+class BranchMap(SageObject):
+    def __init__(self,branches):
+        """
+        EXAMPLES:
+
+        sage: from sage.topology.dehn_thurston_tt import BranchMap
+        sage: bm = BranchMap([2,-4,5,-6,1])
+        sage: bm._branch_map[4]
+        [4]
+        sage: bm._branch_map[2]
+        [2]
+        """
+        self._branch_map = {abs(b):[abs(b)] for b in branches}
+
+    def branch_list(self,branch):
+        """
+        EXAMPLES:
+
+        sage: from sage.topology.dehn_thurston_tt import BranchMap
+        sage: bm = BranchMap([2,-4,5,-6,1])
+        sage: bm.branch_list(4)
+        [4]
+        sage: bm.branch_list(-4)
+        [-4]
+        sage: bm.branch_list(2)
+        [2]
+        sage: bm.branch_list(-2)
+        [-2]
+        """
+        if branch > 0:
+            return self._branch_map[branch]
+        else:
+            return list(reversed([-b for b in self._branch_map[-branch]]))
+
+    def append(self,append_to, appended_branch):
+        """
+        EXAMPLES:
+
+        sage: from sage.topology.dehn_thurston_tt import BranchMap
+        sage: bm = BranchMap([2,-4,5,-6,1])
+        sage: bm.append(2, -4)
+        sage: bm.branch_list(2)
+        [2, -4]
+        sage: bm.append(-2, 5)
+        sage: bm.branch_list(2)
+        [-5, 2, -4]
+        sage: bm.branch_list(-2)
+        [4, -2, 5]
+        sage: bm.append(-1, -2)
+        sage: bm.branch_list(1)
+        [-5, 2, -4, 1]
+        sage: bm.branch_list(-1)
+        [-1, 4, -2, 5]
+        """
+        if append_to > 0:
+            self._branch_map[append_to].extend(self.branch_list(appended_branch))
+        else:
+            self._branch_map[-append_to][0:0] = self.branch_list(-appended_branch)
+
+
+
+
 class DehnThurstonTT(TrainTrack):
     # def __init__(self):
     #     pass
@@ -125,7 +189,7 @@ class DehnThurstonTT(TrainTrack):
         return (nbottom-1,ntop-1) if turning == LEFT else (ntop-1,nbottom-1)
 
 
-    def unzip_with_collapse(self, switch, pos, collapse_type,
+    def unzip_with_collapse(self, switch, pos, collapse_type, branch_map=None,
                             start_side=LEFT, debug=False):
         r"""
         The train track for the first elementary move, when `t_1>0` and
@@ -235,7 +299,8 @@ class DehnThurstonTT(TrainTrack):
 
         # performing the unzip
         self.unzip_with_collapse_no_measure(switch, pos, unzip_pos,
-                                            collapse_type, start_side, debug)
+                                            collapse_type, branch_map,
+                                            start_side, debug)
 
 
         if not self.is_measured():
@@ -256,8 +321,20 @@ class DehnThurstonTT(TrainTrack):
 
         return unzip_pos
 
+
+    # def _update_branch_map_UP(self,switch,pos,unzip_pos,branch_map,
+    #                           start_side=LEFT):
+    #     if start_side == LEFT:
+    #     branches_to_update = self.outgoing_branches(-switch)[
+
+    
+    # @staticmethod
+    # def _append_branch_map(branch_map,branch,appended_branch):
+    #     if branch > 0:
+    #     pass
+    
     def unzip_with_collapse_no_measure(self, switch, pos, unzip_pos,
-                                       collapse_type,
+                                       collapse_type, branch_map=None,
                                        start_side=LEFT, debug=False):
 
         r"""
@@ -405,6 +482,7 @@ class DehnThurstonTT(TrainTrack):
             self.outgoing_branches(bottom_switch).insert(insert_pos,
                                                        collapsed_branch)
 
+
             # move branches            
             bottom_branches = self.outgoing_branches(-switch)
             n = len(bottom_branches)
@@ -425,8 +503,16 @@ class DehnThurstonTT(TrainTrack):
             self._set_endpoint(-collapsed_branch,bottom_switch)
             for branch in branches_to_move:
                 self._set_endpoint(-branch,top_switch)
-            
 
+
+            if branch_map != None:
+                # update branch map for the other branches
+                for branch in branches_to_move:
+                    branch_map.append(-branch,collapsed_branch)
+
+                # update branch map of collapsed_branch
+                branch_map.append(-collapsed_branch,unzip_branch)
+            
 
 
         elif collapse_type == TWO_SIDED:
@@ -731,7 +817,7 @@ class DehnThurstonTT(TrainTrack):
 
 
 
-    def unzip_fold_first_move_inverse(self, switch):
+    def unzip_fold_first_move_inverse(self, switch, branch_map=None):
         """
         TESTS:
 
@@ -793,7 +879,7 @@ class DehnThurstonTT(TrainTrack):
         assert(False)
 
 
-    def unzip_fold_first_move(self, switch, inverse=False):
+    def unzip_fold_first_move(self, switch, branch_map=None, inverse=False):
         r"""
         TESTS::
 
@@ -907,7 +993,8 @@ class DehnThurstonTT(TrainTrack):
             print "Lambda_23" if lamb23 else "Lambda_11"
             print "bdy_switch", bdy_switch
             print "Inverse:", inverse
-        unzip_pos = self.unzip_with_collapse(switch,0,UP,start_side=(turning+1)%2)
+        unzip_pos = self.unzip_with_collapse(switch,0,UP,branch_map,
+                                             start_side=(turning+1)%2)
 
         if debug:
             print "Unzip pos:", unzip_pos
