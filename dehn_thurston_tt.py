@@ -960,6 +960,35 @@ class DehnThurstonTT(TrainTrack):
             sage: tt._measure
             [16, 4, 3, 3, 7, 16, 12, 11, 11]
 
+        Test the if branch_map is correctly updated. Here the unzipping goes
+        into the pants branch.
+
+            sage: tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]], [100, 20, 30, 1, 1, 4, 2, 2, 1])
+            sage: from sage.topology.dehn_thurston_tt import BranchMap
+            sage: bm = BranchMap(range(1,10))
+            sage: tt.unzip_fold_first_move(1, bm)
+            sage: bm.branch_list(5)
+            [1, 5]
+            sage: bm.branch_list(-1)
+            [-1]
+            sage: tt.unzip_fold_first_move(3, bm)
+            sage: bm.branch_list(7)
+            [3, 7]
+            sage: bm.branch_list(-9)
+            [-9]
+
+        Now the unzippings go across.
+        
+            sage: tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]], [3, 20, 3, 10, 10, 4, 15, 15, 1])
+            sage: bm = BranchMap(range(1,10))
+            sage: tt.unzip_fold_first_move(1, bm)
+            sage: bm.branch_list(5)
+            [-4, 5]
+            sage: bm.branch_list(4)
+            [4]
+            sage: bm.branch_list(-1)
+            [-5, -1]
+
         """
         # p = pants_decomposition
 
