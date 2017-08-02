@@ -37,11 +37,32 @@ class DehnThurstonTT(TrainTrack):
     # def __init__(self):
     #     pass
 
-    def get_turning(self, pants_curve):
-        if abs(self.outgoing_branches(pants_curve)[0]) == \
-           abs(pants_curve):
-            return LEFT
-        return RIGHT
+    def get_turning(self, switch):
+        """
+        
+        TESTS: 
+
+            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
+            sage: tt = DehnThurstonTT([[8, 6, 5], [-8, 2, -6], [-5, -2, 4], [-1, -3, -4], [3, 9, 7], [-9, 1, -7]])
+            sage: tt.get_turning(1)
+            0
+            sage: tt.get_turning(-1)
+            0
+            sage: tt.get_turning(2)
+            1
+            sage: tt.get_turning(-2)
+            1
+            sage: tt.get_turning(3)
+            1
+            sage: tt.get_turning(-2)
+            1
+
+        """
+        for side in [LEFT,RIGHT]:
+            if self.outgoing_branch(switch, 0, side) == \
+               -self.outgoing_branch(-switch, 0, side):
+                return side
+        assert(False)
 
     def elem_move_type(self, pants_curve):
 
@@ -503,7 +524,7 @@ class DehnThurstonTT(TrainTrack):
             sage: tt._gluing_list
             [[1, -6, -7, -5], [-1, 2, 3, 4], [5], [-2], [6], [-3], [7], [-4]]
             sage: tt._branch_endpoint
-            [[1, -1, -1, -1, 2, 3, 4], [-1, -2, -3, -4, 1, 1, 1]]        
+            [[1, -1, -1, -1, 2, 3, 4], [-1, -2, -3, -4, 1, 1, 1]]
             sage: tt._measure
             [4, 2, 3, 13, 5, 6, 7]
 
@@ -744,6 +765,33 @@ class DehnThurstonTT(TrainTrack):
         bdy_switch = self.torus_boundary_switch(switch)
         self.unzip_fold_pants_twist(bdy_switch,-1)
 
+    def pants_branch_on_switch(self, switch):
+        """
+        TESTS: 
+
+            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
+            sage: tt = DehnThurstonTT([[10, 6, 5], [-10, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 13], [-9, 8, -13]])
+            sage: tt.pants_branch_on_switch(1)
+            10
+            sage: tt.pants_branch_on_switch(-1)
+            10
+            sage: tt.pants_branch_on_switch(2)
+            2
+            sage: tt.pants_branch_on_switch(-2)
+            2
+            sage: tt.pants_branch_on_switch(3)
+            13
+            sage: tt.pants_branch_on_switch(-3)
+            13
+
+        """
+        for side in [LEFT,RIGHT]:
+            b1 = self.outgoing_branch(switch, 0, side)
+            b2 = self.outgoing_branch(-switch, 0, side) 
+            if b1 == -b2:
+                return abs(b1)
+        assert(False)
+
 
     def unzip_fold_first_move(self, switch, inverse=False):
         r"""
@@ -761,19 +809,19 @@ class DehnThurstonTT(TrainTrack):
             sage: tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]], [100, 20, 30, 1, 1, 4, 2, 2, 1])
             sage: tt.unzip_fold_first_move(1)
             sage: tt._gluing_list
-            [[6, 5, 1], [4, -6, -1], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]]
+            [[1, 5, 6], [4, -1, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]]
             sage: tt._measure
-            [5, 20, 30, 1, 1, 99, 2, 2, 1]
+            [99, 20, 30, 1, 1, 5, 2, 2, 1]
             sage: tt.unzip_fold_first_move(-3)
             sage: tt._gluing_list
-            [[6, 5, 1], [4, -6, -1], [-5, -4, 2], [-7, -8, -2], [3, 9, 7], [-3, 8, -9]]       
+            [[1, 5, 6], [4, -1, -6], [-5, -4, 2], [-7, -8, -2], [9, 3, 7], [-9, 8, -3]]       
             sage: tt._measure
-            [5, 22, 3, 1, 1, 99, 2, 2, 28]
+            [99, 22, 28, 1, 1, 5, 2, 2, 3]
             sage: tt.unzip_fold_first_move(-3,inverse=True)
             sage: tt._gluing_list
-            [[6, 5, 1], [4, -6, -1], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]]
+            [[1, 5, 6], [4, -1, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]]
             sage: tt._measure
-            [5, 20, 30, 1, 1, 99, 2, 2, 1]
+            [99, 20, 30, 1, 1, 5, 2, 2, 1]
             sage: tt.unzip_fold_first_move(1,inverse=True)
             sage: tt._gluing_list
             [[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]]
@@ -787,14 +835,14 @@ class DehnThurstonTT(TrainTrack):
             sage: tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]], [3, 20, 3, 10, 10, 4, 15, 15, 1])
             sage: tt.unzip_fold_first_move(1)
             sage: tt._gluing_list
-            [[6, 1], [4, -1], [-6, -5, -4, 5, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]]
+            [[1, 6], [4, -6], [-1, -5, -4, 5, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]]
             sage: tt._measure
-            [7, 20, 3, 3, 7, 3, 15, 15, 1]
+            [3, 20, 3, 3, 7, 7, 15, 15, 1]
             sage: tt.unzip_fold_first_move(-3)
             sage: tt._gluing_list
-            [[6, 1], [4, -1], [-6, -5, -4, 5, 2], [-9, 7, -8, -7, -2], [3, 9], [-3, 8]]
+            [[1, 6], [4, -6], [-1, -5, -4, 5, 2], [-3, 7, -8, -7, -2], [9, 3], [-9, 8]]
             sage: tt._measure
-            [7, 23, 4, 3, 7, 3, 12, 3, 3]
+            [3, 23, 3, 3, 7, 7, 12, 3, 4]
 
         Now we choose a train track with lamda_11s instead of lambda23s and
         first test the unzippings into the pants curve.
@@ -802,14 +850,14 @@ class DehnThurstonTT(TrainTrack):
             sage: tt = DehnThurstonTT([[1, 5], [-1, 4], [2, -8, 9, -7, -9], [-2, -5, 6, -4, -6], [7, 3], [8, -3]], [100, 20, 30, 1, 1, 4, 4, 4, 1])
             sage: tt.unzip_fold_first_move(1)
             sage: tt._gluing_list
-            [[4, 5, -1], [-6, -4, 1], [2, -8, 9, -7, -9], [-2, -5, 6], [7, 3], [8, -3]]
+            [[1, 5, -4], [-6, -1, 4], [2, -8, 9, -7, -9], [-2, -5, 6], [7, 3], [8, -3]]
             sage: tt._measure
-            [1, 16, 30, 99, 5, 5, 4, 4, 1]
+            [99, 16, 30, 1, 5, 5, 4, 4, 1]
             sage: tt.unzip_fold_first_move(-3)
             sage: tt._gluing_list
-            [[4, 5, -1], [-6, -4, 1], [2, -9, -8], [-2, -5, 6], [3, 7, 9], [-3, 8, -7]]
+            [[1, 5, -4], [-6, -1, 4], [2, -9, -8], [-2, -5, 6], [7, 3, 9], [-7, 8, -3]]
             sage: tt._measure
-            [1, 11, 4, 99, 5, 5, 26, 5, 5]
+            [99, 11, 26, 1, 5, 5, 4, 5, 5]
 
         Finally, the same train track with a different measure so that the
         unzippings do not go into the pants curves.
@@ -817,14 +865,14 @@ class DehnThurstonTT(TrainTrack):
             sage: tt = DehnThurstonTT([[1, 5], [-1, 4], [2, -8, 9, -7, -9], [-2, -5, 6, -4, -6], [7, 3], [8, -3]], [3, 20, 3, 10, 10, 13, 15, 15, 8])
             sage: tt.unzip_fold_first_move(1)
             sage: tt._gluing_list
-            [[4, -1], [-6, 1], [2, -8, 9, -7, -9], [-2, -4, -5, 6, 5], [7, 3], [8, -3]]
+            [[1, -4], [-6, 4], [2, -8, 9, -7, -9], [-2, -1, -5, 6, 5], [7, 3], [8, -3]]
             sage: tt._measure
-            [3, 7, 3, 16, 7, 16, 15, 15, 8]
+            [16, 7, 3, 3, 7, 16, 15, 15, 8]
             sage: tt.unzip_fold_first_move(-3)
             sage: tt._gluing_list
-            [[4, -1], [-6, 1], [-4, -5, 6, 5, 2], [-9, 7, -8, -7, -2], [3, 9], [-3, 8]]
+            [[1, -4], [-6, 4], [-1, -5, 6, 5, 2], [-9, 7, -8, -7, -2], [3, 9], [-3, 8]]
             sage: tt._measure
-            [3, 4, 3, 16, 7, 16, 12, 11, 11]
+            [16, 4, 3, 3, 7, 16, 12, 11, 11]
 
         """
         # p = pants_decomposition
@@ -876,16 +924,18 @@ class DehnThurstonTT(TrainTrack):
         if unzip_pos == 0:
             if lamb23:
                 if (turning == LEFT) == (not inverse):
-                    # print "A"
+                    if debug:
+                        print "A"
                     self.fold(-switch,1,2,start_side=turning)
                 else:
-                    # print "B"
+                    if debug:
+                        print "B"
                     self.fold(switch,1,0,(turning+1)%2)
                     self.unzip_fold_general_twist(bdy_switch,twist_sign,0)
             else:
                 if (turning == LEFT) == (not inverse):
-                    # print "C"
                     if debug:
+                        print "C"
                         print "Gluing list:", self._gluing_list
                         print "Measure:", self._measure
                     self.unzip_fold_general_twist(bdy_switch,twist_sign,0)
@@ -895,7 +945,8 @@ class DehnThurstonTT(TrainTrack):
                     self.fold_left_of_pants_curve(bdy_switch,0,1,inverse)
                     self.fold_left_of_pants_curve(bdy_switch,2,1,inverse)
                 else:
-                    # print "D"
+                    if debug:
+                        print "D"
                     self.unzip_fold_general_twist(bdy_switch,2*twist_sign,0)
                     self.fold_left_of_pants_curve(bdy_switch,3,2,inverse)
                     self.fold_left_of_pants_curve(bdy_switch,0,1,inverse)
@@ -903,21 +954,29 @@ class DehnThurstonTT(TrainTrack):
         elif unzip_pos == 1:
             if lamb23:
                 if (turning == LEFT) == (not inverse):
-                    # print "E"
+                    if debug:
+                        print "E"
                     self.fold(-switch,0,1,turning)
                 else:
-                    # print "F"
+                    if debug:
+                        print "F"
                     self.fold(switch,1,0,(turning+1)%2)
                     self.unzip_fold_general_twist(bdy_switch,twist_sign,0)
             else:
                 if (turning == LEFT) == (not inverse):
-                    # print "G"
+                    if debug:
+                        print "G"
                     self.unzip_fold_general_twist(bdy_switch,twist_sign,0)
                     self.fold_left_of_pants_curve(bdy_switch,0,1,inverse)
                     self.fold_left_of_pants_curve(bdy_switch,3,2,inverse)
                 else:
-                    # print "H"
+                    if debug:
+                        print "H"
                     self.unzip_fold_general_twist(bdy_switch,2*twist_sign,0)
+                    if debug:
+                        print "Gluing list:", self._gluing_list
+                        print "Measure:", self._measure
+                        
                     self.fold_left_of_pants_curve(bdy_switch,4,3,inverse)
                     self.fold_left_of_pants_curve(bdy_switch,0,1,inverse)
 
@@ -925,16 +984,16 @@ class DehnThurstonTT(TrainTrack):
         # print new_turning
         # new_pants_branch = self.outgoing_branch(switch,0,start_side=new_turning)
 
-        if abs(self.outgoing_branch(switch,0)) == \
-           abs(self.outgoing_branch(-switch,0)):
-            new_pants_branch = self.outgoing_branch(switch,0)
-        else:
-            new_pants_branch = self.outgoing_branch(switch,0,RIGHT)
+        # if abs(self.outgoing_branch(switch,0)) == \
+        #    abs(self.outgoing_branch(-switch,0)):
+        #     new_pants_branch = self.outgoing_branch(switch,0)
+        # else:
+        #     new_pants_branch = self.outgoing_branch(switch,0,RIGHT)
 
         # print switch
         # print new_pants_branch
             
-        self.swap_branch_numbers(switch,sign(switch)*abs(new_pants_branch))
+        # self.swap_branch_numbers(switch,sign(switch)*abs(new_pants_branch))
                     
     
     def fold_left_of_pants_curve(self, bdy_switch, folded_branch_index,
