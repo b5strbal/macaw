@@ -611,3 +611,54 @@ class PantsLamination(MeasuredLamination):
             lam = lam.apply_elementary_move(pants_curve,debug)
         return lam
             
+
+from sage.topology.dehn_thurston_tt import DehnThurstonTT
+from sage.all import vector
+RIGHT = 1
+
+class PantsLamination2(SageObject):
+    def __init__(self, dehn_thurston_tt):
+        self._tt = dehn_thurston_tt
+
+    def _repr_(self):
+        return repr(self.to_vector())
+        
+    def to_vector(self):
+        ls = []
+        tt = self._tt
+        for i in range(tt.num_switches()):
+            m = tt.transverse_measure(i+1)
+            ls.append(m)
+            turning = tt.get_turning(i+1)
+            b = tt.pants_branch_on_switch(i+1)
+            if m == 0 or turning == RIGHT:
+                ls.append(tt.branch_measure(b))
+            else:
+                ls.append(-tt.branch_measure(b))
+        return vector(ls)
+
+    def apply_elementary_move(self,pants_curve,inverse=False):
+        tt = self._tt
+        typ = tt.elem_move_type(pants_curve)
+        if typ == 1:
+            if not inverse:
+                tt.unzip_fold_first_move(pants_curve)
+            else:
+                tt.unzip_fold_first_move_inverse(pants_curve)
+        elif typ == 2:
+            tt.unzip_fold_second_move(pants_curve)
+
+    def apply_elementary_move_inverse(self,pants_curve):
+        self.apply_elementary_move(pants_curve,inverse=True)
+            
+    def apply_twist(self,pants_curve,power=1):
+        self._tt.unzip_fold_pants_twist(pants_curve,power)
+        
+        
+
+tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9,
+                                                                         3],
+                     [-9, 8, -3]], [100, 20, 30, 1, 1, 4, 2, 2, 1])
+lam = PantsLamination2(tt)
+f = PantsMappingClass(None, [PantsTwist([],1)])
+g = PantsMappingClass(None, [PantsTwist([1],1)])

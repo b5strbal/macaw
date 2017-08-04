@@ -84,7 +84,7 @@ class PantsMappingClass(MappingClass):
 
         if isinstance(other, PantsLamination):
             lam = other
-            p = self._pants_decomposition
+            # p = self._pants_decomposition
             # if p != lam._pants_decomposition:
             #     raise ValueError("Cannot multiply a PantsMappingClass "
             #                      "and PantsLamination "
@@ -107,6 +107,26 @@ class PantsMappingClass(MappingClass):
                     # print other
             return lam
 
+        if isinstance(other, PantsLamination2):
+            lam = other
+
+            # apply twists from right to left
+            for pants_twist in reversed(self._pants_twists):
+                # print other
+                for curve in pants_twist.elementary_moves:
+                    # print lam
+                    lam.apply_elementary_move(curve)
+                    # print other
+                # print lam
+                lam.apply_twist(pants_twist.pants_curve,pants_twist.power)
+                # print other
+                for curve in reversed(pants_twist.elementary_moves):
+                    # print lam
+                    lam.apply_elementary_move_inverse(curve)
+                    # print other
+            return lam
+            
+        
         raise ValueError
 
     # def __rmul__(self,pants_lamination):
