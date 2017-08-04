@@ -799,7 +799,8 @@ class TrainTrack(SageObject):
     #         self.outgoing_branches(sw)[index] = new_br
 
 
-
+    def measure_on_switch(self, switch):
+        return sum(map(self.branch_measure,self.outgoing_branches(switch)))
             
     def unzip_pos(self,switch,pos,start_side=LEFT):
         """INPUT:
@@ -928,6 +929,14 @@ class TrainTrack(SageObject):
     #     # the negative side
     #     return (0,-s)
 
+    def fold_by_branch_labels(self, folded_branch, fold_onto_branch):
+        sw1 = self.branch_endpoint(-folded_branch)
+        sw2 = self.branch_endpoint(-fold_onto_branch)
+        assert(sw1 == sw2)
+        idx1 = self.outgoing_branch_index(sw1, folded_branch)
+        idx2 = self.outgoing_branch_index(sw2, fold_onto_branch)
+        self.fold(sw1, idx1, idx2)
+    
     def fold(self, switch, folded_branch_index, fold_onto_index, start_side = LEFT):
         r"""
 

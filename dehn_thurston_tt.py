@@ -34,7 +34,6 @@ TWO_SIDED = 1
 
 
 
-
 class BranchMap(SageObject):
     def __init__(self,branches):
         """
@@ -48,6 +47,8 @@ class BranchMap(SageObject):
         [2]
         """
         self._branch_map = {abs(b):[abs(b)] for b in branches}
+        if 13 in self._branch_map.keys():
+            self._branch_map[13] = [13,19]
 
     def branch_list(self,branch):
         """
@@ -67,7 +68,7 @@ class BranchMap(SageObject):
         if branch > 0:
             return self._branch_map[branch]
         else:
-            return list(reversed([-b for b in self._branch_map[-branch]]))
+            return self.reversed_path(self._branch_map[-branch])
 
     def append(self,append_to, appended_branch):
         """
@@ -94,8 +95,198 @@ class BranchMap(SageObject):
         else:
             self._branch_map[-append_to][0:0] = self.branch_list(-appended_branch)
 
+    @staticmethod
+    def reversed_path(path):
+        return list(reversed([-b for b in path]))
+
+    @staticmethod
+    def opposite_branch(branch):
+        sgn = sign(branch)
+        b = abs(branch)
+        if b < 7 or b in [13,14,15]:
+            return sgn*(b+6)
+        else:
+            return sgn*(b-6)
+    
+    @staticmethod
+    def path_on_other_side(path):
+        return [BranchMap.opposite_branch(b) for b in path]
+
+    def transform(self, transform_rules):
+        for b in self._branch_map.keys():
+            ls = self._branch_map[b]
+            new_ls = []
+            for path in ls:
+                if path in transform_rules.keys():
+                    new_path = transform_rules[path]
+                    new_ls.extend(new_path)
+                    continue
+                path = tuple(self.path_on_other_side(path))
+                if path in transform_rules.keys():
+                    new_path = self.path_on_other_side(transform_rules[path])
+                    new_ls.extend(new_path)
+                    continue
+                path = tuple(self.reversed_path(path))
+                if path in transform_rules.keys():
+                    new_path = self.reversed_path(\
+                                self.path_on_other_side(transform_rules[path]))
+                    new_ls.extend(new_path)
+                    continue
+                path = tuple(self.path_on_other_side(path))
+                if path in transform_rules.keys():
+                    new_path = self.reversed_path(transform_rules[path])
+                    new_ls.extend(new_path)
+                    continue
+            self._branch_map[b] = new_ls
 
 
+    def perform_cancellations(self):
+        for b in self._branch_map.keys():
+            ls = self._branch_map[b]
+            i = 0
+            while i < len(ls)-1:
+                if ls[i] == -ls[i+1]:
+                    # remove the cancellation
+                    print "perform_cancellation(): remove", ls[i], ls[i+1] 
+                    ls.pop(i)
+                    ls.pop(i)
+                    # step back one
+                    if i > 0:
+                        i -= 1
+                else:
+                    # if no cancellation, proceed
+                    i += 1
+
+            # = list(transform_rules[tuple(self._branch_map[b])])
+
+    def standardize_values(self, branch_to_standard):
+        for b in self._branch_map.keys():
+            ls = self._branch_map[b]
+            for i in range(len(ls)-1,-1,-1):
+                ls[i] = branch_to_standard[ls[i]]
+                if ls[i] == 13:
+                    ls.insert(i+1,-19)
+                if ls[i] == -13:
+                    ls.insert(i,19)
+
+    def _branch_side(self,branch):
+        sides = [[1,4,9,13],[3,7,10,19]]
+        b = abs(branch)
+        for i in [0,1]:
+            if b in sides[i]:
+                return i
+        return -1
+
+
+                    
+    def chop_paths(self):
+        """
+        Chop all values of the branch_map to subpaths on the left and on the
+        right side of the pants curve.
+        """
+        for b in self._branch_map.keys():
+            ls = self._branch_map[b]
+            if len(ls) == 1:
+                self._branch_map[b] = [tuple(ls)]
+            
+            new_ls = []
+            path = []
+            for i in range(len(ls)):
+                if len(path) == 0:
+                    # print "A"
+                    path.append(ls[i])
+                    prev_side = self._branch_side(ls[i])
+                else:
+                    current_side = self._branch_side(ls[i])
+                    if current_side == prev_side:
+                        # print "B"
+                        path.append(ls[i])
+                        prev_side = current_side
+                    else:
+                        # print "C"
+                        new_ls.append(tuple(path))
+                        path = [ls[i]]
+            new_ls.append(tuple(path))
+            self._branch_map[b] = new_ls
+                
+        
+                    
+            
+    def is_subpath(self, branch1, branch2):
+        a1 = self.branch_list(branch1)
+        a2 = self.branch_list(branch2)
+        if len(a1) > len(a2):
+            return False
+        for i in range(len(a1)):
+            if a1[i] != a2[i]:
+                return False
+        return True
+
+    def subtract(self, subtract_from, subtracted_branch):
+        assert(self.is_subpath(subtracted_branch, subtract_from))
+        n = len(self.branch_list(subtracted_branch))
+        if subtract_from > 0:
+            del self._branch_map[subtract_from][:n]
+        else:
+            del self._branch_map[-subtract_from][-n:]
+
+    def find_boundary_folds(self):
+        fold_list = []
+        boundaries = [14, 15, 20, 21]
+        for b in self._branch_map.keys():
+            ls = self._branch_map[b]
+            if ls[0] in boundaries:
+                fold_list.append((b,1))
+                self._branch_map[b].pop(0)
+            elif -ls[0] in boundaries:
+                fold_list.append((b,-1))
+                self._branch_map[b].pop(0)
+            if ls[-1] in boundaries:
+                fold_list.append((-b,-1))
+                self._branch_map[b].pop()
+            elif -ls[-1] in boundaries:
+                fold_list.append((-b,1))
+                self._branch_map[b].pop()
+        return fold_list
+
+    def pop_fold(self):
+        branches = self._branch_map.keys()
+        for b1 in branches:
+            # we want to fold b1 or -b1
+            ls = self._branch_map[b1]
+            if len(ls) == 1:
+                # if path of length one, we can't fold the branch
+                continue
+            for b2 in branches:
+                if b1 == b2:
+                    continue
+                for sb1 in [b1, -b1]:
+                    for sb2 in [b2, -b2]:
+                        if self.is_subpath(sb2,sb1):
+                            self.subtract(sb1,sb2)
+                            return (sb1,sb2)
+        return (0,0)
+    
+
+transform_rules = {
+    (1,): (-3,),
+    (4,): (19,-13,-4),
+    (9,4,-9): (5,),
+    (4,-9): (19,-13,1,-14),
+    (9,): (-1,),
+    (9,1): (2,),
+    (4,13): (19,),
+    (13,): (4,13),
+    (5,): (3,10,-3),
+    (2,): (3,7),
+    (6,): (-7,4,13,-19,7,-17),
+    (-13,4,13): (-13,-4,-19),
+    (9,13): (14,-1,13),
+    (9,4,13): (-1,19),
+    (-1,13): (-15,3,19)
+}
+
+            
 
 class DehnThurstonTT(TrainTrack):
     # def __init__(self):
@@ -118,7 +309,7 @@ class DehnThurstonTT(TrainTrack):
             1
             sage: tt.get_turning(3)
             1
-            sage: tt.get_turning(-2)
+            sage: tt.get_turning(-3)
             1
 
         """
@@ -128,22 +319,111 @@ class DehnThurstonTT(TrainTrack):
                 return side
         assert(False)
 
-    def elem_move_type(self, pants_curve):
+    def elem_move_type(self, switch):
+        """
+        
+        TESTS: 
+
+            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
+            sage: tt = DehnThurstonTT([[8, 6, 5], [-8, 2, -6], [-5, -2, 4], [-1, -3, -4], [3, 9, 7], [-9, 1, -7]])
+            sage: tt.elem_move_type(1)
+            1
+            sage: tt.elem_move_type(-1)
+            1
+            sage: tt.elem_move_type(2)
+            2
+            sage: tt.elem_move_type(-2)
+            2
+            sage: tt.elem_move_type(3)
+            1
+            sage: tt.elem_move_type(-3)
+            1
+
+        """
 
         # it is first elementary move if and only if there are two outgoing
         # branches in opposite directions whose endpoint is the same switch
         # which is different from the starting switch
 
-        for i in self.outgoing_branches(pants_curve):
+        for i in self.outgoing_branches(switch):
             sw1 = self.branch_endpoint(i)
-            if abs(sw1) == abs(pants_curve):
+            if abs(sw1) == abs(switch):
                 continue
-            for j in self.outgoing_branches(-pants_curve):
+            for j in self.outgoing_branches(-switch):
                 sw2 = self.branch_endpoint(j)
                 if sw1 == sw2:
                     return 1
         return 2
 
+    def standardize_neighboring_branches(self, switch):
+        """
+        
+        TESTS: 
+
+            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
+            sage: tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]])
+
+        """
+        # TODO: test this
+
+        assert(self.elem_move_type(switch) == 2)
+        branch_to_standard = {}
+        turning = self.get_turning(switch)
+
+        # naming the pants curve to 13
+        branch_to_standard[self.outgoing_branch(switch,0,turning)] = 13
+        
+        # changing the orientation of the switch so the left side can be
+        # accessed in the positive direction
+        or_switch = switch if turning == RIGHT else -switch
+
+        for side in [LEFT,RIGHT]:
+            if side == LEFT:
+                side_branches = self.outgoing_branches(or_switch)
+            else:
+                side_branches = self.outgoing_branches(-or_switch)
+                
+            if len(side_branches) == 5:
+                # type 1
+                branch_to_standard[side_branches[0]] = -(3+6*side)
+                branch_to_standard[side_branches[1]] = 4+6*side
+                branch_to_standard[side_branches[2]] = 1+6*side
+            elif len(side_branches) == 3:
+                # type 0
+                branch_to_standard[side_branches[0]] = -(3+6*side)
+                branch_to_standard[side_branches[1]] = 1+6*side
+
+                #finding the third branch
+                sw = self.branch_endpoint(side_branches[1])
+                idx = self.outgoing_branches(sw).index(-side_branches[1])
+                b = self.outgoing_branch(sw, idx+1)
+                branch_to_standard[b] = 2+6*side
+            elif len(side_branches) == 2:
+                sw = self.branch_endpoint(side_branches[0])
+                branches = self.outgoing_branches(sw)
+                idx = branches.index(-side_branches[0])
+                if idx in [0,1]:
+                    # type 2
+                    branch_to_standard[branches[idx]] = -(1+6*side)
+                    branch_to_standard[branches[idx+1]] = 5+6*side
+                    branch_to_standard[branches[idx+2]] = 2+6*side
+                elif idx in [2,3]:
+                    # type 3    
+                    branch_to_standard[branches[idx-2]] = -(2+6*side)
+                    branch_to_standard[branches[idx-1]] = 6+6*side
+                    branch_to_standard[branches[idx]] = 3+6*side
+                else:
+                    assert(False)
+            else:
+                assert(False)
+
+        # extend with negatives
+        for b in branch_to_standard.keys():
+            branch_to_standard[-b] = -branch_to_standard[b]
+        return branch_to_standard
+
+
+    
     def torus_boundary_switch(self, switch):
         """
         Return the switch on the boundary of the torus containing ``switch``.
@@ -189,6 +469,10 @@ class DehnThurstonTT(TrainTrack):
         return (nbottom-1,ntop-1) if turning == LEFT else (ntop-1,nbottom-1)
 
 
+    def transverse_measure(self, switch):
+        return self.measure_on_switch(switch)-\
+            self.branch_measure(self.pants_branch_on_switch(switch))
+    
     def unzip_with_collapse(self, switch, pos, collapse_type, branch_map=None,
                             start_side=LEFT, debug=False):
         r"""
@@ -273,6 +557,11 @@ class DehnThurstonTT(TrainTrack):
 
 
         """
+        # if there are not enough branches on the positive side, there is
+        # nothing to do
+        if pos > len(self.outgoing_branches(switch))-1:
+            return
+        
         debug = False
         if debug:
             print "---------------------------"
@@ -814,9 +1103,134 @@ class DehnThurstonTT(TrainTrack):
         nright = self.num_curves_on_sides(pants_curve)[RIGHT]
         self.unzip_fold_general_twist(pants_curve, 0, power * nright)
 
+    def construct_general_twist_data(self,boundary_folds):
+        ret = {}
+        for branch, direction in boundary_folds:
+            switch = self.branch_endpoint(-branch)
+            turning = self.get_turning(switch)
+            if abs(switch) not in ret.keys():
+                ret[abs(switch)] = [0, 0]
+            if (switch > 0) == (turning == RIGHT):
+                ret[abs(switch)][LEFT] += direction
+            else:
+                ret[abs(switch)][RIGHT] += direction
+        return ret
+        
+
+    def unzip_fold_second_move(self, switch):
+        """
+        sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
+        sage: tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]], [100, 20, 30, 1, 1, 4, 2, 2, 1])
+        sage: tt.unzip_fold_second_move(2)
+        sage: tt._gluing_list
+        [[1, 6], [-1, 4], [-8, -4, -5, 9, 5], [8, -7, -2, -6, 2], [7, 3], [-9, -3]]
+        sage: tt._measure
+        [99, 19, 32, 5, 18, 5, 3, 20, 3]
+
+        """
+        debug = True
+        assert(self.elem_move_type(switch) == 2)
+        branch_to_standard = self.standardize_neighboring_branches(switch)
+        if debug:
+            print branch_to_standard
+        turning = self.get_turning(switch)
+
+        bm = BranchMap(branch_to_standard.keys())
+        bm.standardize_values(branch_to_standard)
+        if debug:
+            print bm._branch_map
+
+        # last_standard_branch_to_unzip = [-9, -3]
+        if turning == RIGHT:
+            standard_branches_to_unzip = [[-3],[-9]]
+        else:
+            standard_branches_to_unzip = [[13, -9], [19, -3]]
+
+        # print "A", bm.branch_list(self.outgoing_branch(switch, 0))
+        while bm.branch_list(self.outgoing_branch(switch, 0))[0] in \
+              standard_branches_to_unzip[LEFT]:
+            if debug:
+                print "Unzipping from the left at switch", switch
+            self.unzip_with_collapse(switch, 0, UP, branch_map=bm,
+                                     start_side=LEFT)
+            if debug:
+                print bm._branch_map
+        # print "B", bm.branch_list(self.outgoing_branch(-switch, 0))
+        while bm.branch_list(self.outgoing_branch(-switch, 0))[0] in \
+              standard_branches_to_unzip[RIGHT]:
+            if debug:
+                print "Unzipping from the left at switch", switch
+            self.unzip_with_collapse(-switch, 0, UP, branch_map=bm,
+                                     start_side=LEFT)
+            if debug:
+                print bm._branch_map
+        
+
+        #         self.unzip_with_collapse(-switch, 0, UP, branch_map=bm,
+        #                              start_side=LEFT)
+        #     if debug:
+        #         print bm._branch_map
+        # else:
+
+        #     # unzip once on one side
+        #     self.unzip_with_collapse(switch, 0, UP, branch_map=bm,
+        #                              start_side=LEFT)
+        #     if debug:
+        #         print bm._branch_map
+        #     self.unzip_with_collapse(switch, 0, UP, branch_map=bm,
+        #                              start_side=LEFT)
+        #     if debug:
+        #         print bm._branch_map
+
+        #     # then unzip on the other side as many times as necessary
+        #     while True:
+        #         if self.outgoing_branch(-switch, 0)
+        #         self.unzip_with_collapse(-switch, 0, UP, branch_map=bm,
+        #                                  start_side=LEFT)
+        #         if debug:
+        #             print bm._branch_map
 
 
 
+
+        bm.chop_paths()
+        if debug:
+            print bm._branch_map
+        bm.transform(transform_rules)
+        if debug:
+            print bm._branch_map
+        folds = bm.find_boundary_folds()
+        if debug:
+            print folds
+            print bm._branch_map
+        general_twist_data = self.construct_general_twist_data(folds)
+        if debug:
+            print general_twist_data
+            print "Gluing list before folding boundaries:", self._gluing_list
+            print "Measure before folding boundaries:", self._measure
+        for sw in general_twist_data.keys():
+            left_twists, right_twists = general_twist_data[sw]
+            self.unzip_fold_general_twist(sw,left_twists,right_twists)
+            if debug:
+                print "Gluing list after folding boundaries:", self._gluing_list
+                print "Measure after folding boundaries:", self._measure
+                print "---------------------"
+                print "Finding folds"
+                print "---------------------"
+        while True:
+            folded_branch, fold_onto_branch = bm.pop_fold()
+            if folded_branch == 0:
+                break
+            if debug:
+                print folded_branch, fold_onto_branch
+                print bm._branch_map
+            self.fold_by_branch_labels(folded_branch, fold_onto_branch)
+            if debug:
+                print "Gluing list after first fold:", self._gluing_list
+                print "Measure after first fold:", self._measure
+                print "---------------------"
+
+        
     def unzip_fold_first_move_inverse(self, switch, branch_map=None):
         """
         TESTS:
