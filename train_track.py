@@ -47,6 +47,9 @@ SHIFT = 5
 LEFT = 0
 RIGHT = 1
 
+class FoldError(Exception):
+    pass
+
 # LEFT_UP = 0
 # RIGHT_UP = 1
 # LEFT_DOWN = 2
@@ -151,13 +154,13 @@ class TrainTrack(SageObject):
 
         g = flatten(gluing_list)
         self._num_branches = len(g)//2
-        self._current_max_branch = max(abs(x) for x in g) 
-        self._branch_buffer_size = self._current_max_branch if branch_buffer_size == None\
+        current_max_branch = max(abs(x) for x in g) 
+        branch_buffer_size = current_max_branch if branch_buffer_size == None\
                            else branch_buffer_size
         # potentially reserving a larger array then necessary to avoid
         # allocating memory when entending the array
-        self._branch_endpoint = [[0] * (self._branch_buffer_size),
-                                 [0] * (self._branch_buffer_size)]
+        self._branch_endpoint = [[0] * (branch_buffer_size),
+                                 [0] * (branch_buffer_size)]
 
         for i in range(len(gluing_list)/2):
             for branch in gluing_list[2*i]:
@@ -276,7 +279,132 @@ class TrainTrack(SageObject):
         idx = branches.index(branch)
         return idx if start_side==LEFT else len(branches)-idx-1
     
+    def insert_branch(self, switch, pos, branch, start_side=LEFT):
+        ls = self.outgoing_branches(switch)
+        assert(pos>=0)
+        if start_side == LEFT:
+            ls.insert(pos, branch)
+        else:
+            ls.insert(len(ls)-pos, branch)
 
+    def insert_branches(self, switch, pos, branch_list, start_side=LEFT):
+        ls = self.outgoing_branches(switch)
+        assert(pos>=0)
+        if start_side == LEFT:
+            ls[pos:pos] = branch_list
+        else:
+            insert_pos = len(ls)-pos
+            ls[insert_pos:insert_pos] = list(reversed(branch_list))
+
+
+    def pop_outgoing_branch(self, switch, pos, start_side=LEFT):
+        if start_side == LEFT:
+            return self.outgoing_branches(switch).pop(pos)
+        else:
+            ls = self.outgoing_branches(switch)
+            return ls.pop(len(ls)-1-pos)
+
+            
+    def pop_outgoing_branches(self, switch, start_idx, end_idx, start_side=LEFT):
+        ls = self.outgoing_branches(switch)
+        n = len(ls)
+        if start_side == LEFT:
+            ret = ls[start_idx:end_idx]
+            del ls[start_idx:end_idx]
+        else:
+            ret = list(reversed(ls[n-end_idx:n-start_idx]))
+            del ls[n-end_idx:n-start_idx]
+        return ret
+
+    def new_branch_number(self):
+        """
+        Return a positive integer suitable for an additional branch.
+        """
+        return len(self._branch_endpoint[0])+1
+    
+    def add_switch_on_branch(self, branch):
+        """
+
+        We add the new branch to the front.
+        """
+        new_branch = self.new_branch_number()
+        start_sw = self.branch_endpoint(-branch)
+        end_sw = self.branch_endpoint(branch)
+        end_index = self.outgoing_branch_index(end_sw, -branch)
+        self.pop_outgoing_branch(end_sw, end_index)
+        self.insert_branch(end_sw, end_index, -new_branch)
+        self._gluing_list.append([new_branch])
+        self._gluing_list.append([-branch])
+        self._num_branches += 1
+
+        new_switch = self.num_switches()
+        self._branch_endpoint[START].append(new_switch)
+        self._branch_endpoint[END].append(end_sw)
+        self._set_endpoint(branch, -new_switch)
+
+        if self.is_measured():
+            self._measure.append(self.branch_measure(branch))
+        return (new_switch, new_branch)
+
+    def swap_switch_numbers(self, switch1, switch2):
+        out1 = self.outgoing_branches(switch1)
+        in1 = self.outgoing_branches(-switch1)
+        self._gluing_list[self._a(switch1)] = self.outgoing_branches(switch2)
+        self._gluing_list[self._a(-switch1)] = self.outgoing_branches(-switch2)
+        self._gluing_list[self._a(switch2)] = out1
+        self._gluing_list[self._a(-switch2)] = in1
+
+        def swap(x):
+            if x == switch1:
+                return switch2
+            if x == -switch1:
+                return -switch2
+            if x == switch2:
+                return switch1
+            if x == -switch2:
+                return -switch1
+            return x
+        
+        for side in [0,1]:
+            ls = self._branch_endpoint[side]
+            ls[:] = map(swap, ls)
+            # for i in range(len(self._branch_endpoint[side])):
+                
+            #     x = self._branch_endpoint[side][i]
+
+
+        
+    def delete_switch(self, switch):
+        """
+
+        Keep the branch on the positive side, delete the one on the negative side.
+        """
+        if self.degree(switch) != 2:
+            raise ValueError("Only switches of valence two can be deleted")
+        if abs(switch) != self.num_switches():
+            raise ValueError("For now, only the switch with the largest number can be deleted")
+        pos_branch = self.outgoing_branch(switch, 0)
+        neg_branch = self.outgoing_branch(-switch, 0)
+        end = self.branch_endpoint(pos_branch)
+        start = self.branch_endpoint(neg_branch)
+        self._gluing_list.pop()
+        self._gluing_list.pop()
+        
+        # self._set_endpoint(pos_branch, 0)
+        # self._set_endpoint(-pos_branch, 0)
+        # self._set_endpoint(-neg_branch, end)
+        
+        # self._set_measure(pos_branch, 0)
+
+        self._set_endpoint(neg_branch, 0)
+        self._set_endpoint(-neg_branch, 0)
+        self._set_endpoint(-pos_branch, start)
+        
+        self._set_measure(neg_branch, 0)
+
+        self._num_branches -= 1
+
+        
     @staticmethod
     def _a(switch):
         """
@@ -744,7 +872,7 @@ class TrainTrack(SageObject):
 
     def _set_measure(self,branch,new_measure):
         self._measure[abs(branch)-1] = new_measure
-
+        
     # def swap_branch_numbers(self,branch1,branch2):
     #     """
     #     EXAMPLES:
@@ -801,7 +929,9 @@ class TrainTrack(SageObject):
 
     def measure_on_switch(self, switch):
         return sum(map(self.branch_measure,self.outgoing_branches(switch)))
-            
+
+
+
     def unzip_pos(self,switch,pos,start_side=LEFT):
         """INPUT:
 
@@ -932,7 +1062,8 @@ class TrainTrack(SageObject):
     def fold_by_branch_labels(self, folded_branch, fold_onto_branch):
         sw1 = self.branch_endpoint(-folded_branch)
         sw2 = self.branch_endpoint(-fold_onto_branch)
-        assert(sw1 == sw2)
+        if sw1 != sw2:
+            raise FoldError("The starting points of the branches are not the same")
         idx1 = self.outgoing_branch_index(sw1, folded_branch)
         idx2 = self.outgoing_branch_index(sw2, fold_onto_branch)
         self.fold(sw1, idx1, idx2)
@@ -1029,7 +1160,7 @@ class TrainTrack(SageObject):
         elif folded_branch_index == fold_onto_index + 1:
             fold_start_side = LEFT
         else:
-            raise ValueError("Only two adjacent branches can be folded")
+            raise FoldError("Only two adjacent branches can be folded")
 
         # print "Next switch: ", next_sw
         # print "Fold start side: ", fold_start_side
@@ -1040,7 +1171,8 @@ class TrainTrack(SageObject):
         # print "--------------------------------"
         
         if self.outgoing_branch(next_sw, 0, fold_start_side) != -fold_onto_br:
-            raise ValueError("The fold is not possible!")
+            raise FoldError("The fold is not possible, because there is "
+                            "a blocking backward branch.")
 
         folded_br = self.outgoing_branches(switch).pop(folded_branch_index)
 
