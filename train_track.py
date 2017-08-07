@@ -316,93 +316,93 @@ class TrainTrack(SageObject):
             del ls[n-end_idx:n-start_idx]
         return ret
 
-    def new_branch_number(self):
-        """
-        Return a positive integer suitable for an additional branch.
-        """
-        return len(self._branch_endpoint[0])+1
+    # def new_branch_number(self):
+    #     """
+    #     Return a positive integer suitable for an additional branch.
+    #     """
+    #     return len(self._branch_endpoint[0])+1
     
-    def add_switch_on_branch(self, branch):
-        """
+    # def add_switch_on_branch(self, branch):
+    #     """
 
-        We add the new branch to the front.
-        """
-        new_branch = self.new_branch_number()
-        start_sw = self.branch_endpoint(-branch)
-        end_sw = self.branch_endpoint(branch)
-        end_index = self.outgoing_branch_index(end_sw, -branch)
-        self.pop_outgoing_branch(end_sw, end_index)
-        self.insert_branch(end_sw, end_index, -new_branch)
-        self._gluing_list.append([new_branch])
-        self._gluing_list.append([-branch])
-        self._num_branches += 1
+    #     We add the new branch to the front.
+    #     """
+    #     new_branch = self.new_branch_number()
+    #     start_sw = self.branch_endpoint(-branch)
+    #     end_sw = self.branch_endpoint(branch)
+    #     end_index = self.outgoing_branch_index(end_sw, -branch)
+    #     self.pop_outgoing_branch(end_sw, end_index)
+    #     self.insert_branch(end_sw, end_index, -new_branch)
+    #     self._gluing_list.append([new_branch])
+    #     self._gluing_list.append([-branch])
+    #     self._num_branches += 1
 
-        new_switch = self.num_switches()
-        self._branch_endpoint[START].append(new_switch)
-        self._branch_endpoint[END].append(end_sw)
-        self._set_endpoint(branch, -new_switch)
+    #     new_switch = self.num_switches()
+    #     self._branch_endpoint[START].append(new_switch)
+    #     self._branch_endpoint[END].append(end_sw)
+    #     self._set_endpoint(branch, -new_switch)
 
-        if self.is_measured():
-            self._measure.append(self.branch_measure(branch))
-        return (new_switch, new_branch)
+    #     if self.is_measured():
+    #         self._measure.append(self.branch_measure(branch))
+    #     return (new_switch, new_branch)
 
-    def swap_switch_numbers(self, switch1, switch2):
-        out1 = self.outgoing_branches(switch1)
-        in1 = self.outgoing_branches(-switch1)
-        self._gluing_list[self._a(switch1)] = self.outgoing_branches(switch2)
-        self._gluing_list[self._a(-switch1)] = self.outgoing_branches(-switch2)
-        self._gluing_list[self._a(switch2)] = out1
-        self._gluing_list[self._a(-switch2)] = in1
+    # def swap_switch_numbers(self, switch1, switch2):
+    #     out1 = self.outgoing_branches(switch1)
+    #     in1 = self.outgoing_branches(-switch1)
+    #     self._gluing_list[self._a(switch1)] = self.outgoing_branches(switch2)
+    #     self._gluing_list[self._a(-switch1)] = self.outgoing_branches(-switch2)
+    #     self._gluing_list[self._a(switch2)] = out1
+    #     self._gluing_list[self._a(-switch2)] = in1
 
-        def swap(x):
-            if x == switch1:
-                return switch2
-            if x == -switch1:
-                return -switch2
-            if x == switch2:
-                return switch1
-            if x == -switch2:
-                return -switch1
-            return x
+    #     def swap(x):
+    #         if x == switch1:
+    #             return switch2
+    #         if x == -switch1:
+    #             return -switch2
+    #         if x == switch2:
+    #             return switch1
+    #         if x == -switch2:
+    #             return -switch1
+    #         return x
         
-        for side in [0,1]:
-            ls = self._branch_endpoint[side]
-            ls[:] = map(swap, ls)
-            # for i in range(len(self._branch_endpoint[side])):
+    #     for side in [0,1]:
+    #         ls = self._branch_endpoint[side]
+    #         ls[:] = map(swap, ls)
+    #         # for i in range(len(self._branch_endpoint[side])):
                 
-            #     x = self._branch_endpoint[side][i]
+    #         #     x = self._branch_endpoint[side][i]
 
 
         
-    def delete_switch(self, switch):
-        """
+    # def delete_switch(self, switch):
+    #     """
 
-        Keep the branch on the positive side, delete the one on the negative side.
-        """
-        if self.degree(switch) != 2:
-            raise ValueError("Only switches of valence two can be deleted")
-        if abs(switch) != self.num_switches():
-            raise ValueError("For now, only the switch with the largest number can be deleted")
-        pos_branch = self.outgoing_branch(switch, 0)
-        neg_branch = self.outgoing_branch(-switch, 0)
-        end = self.branch_endpoint(pos_branch)
-        start = self.branch_endpoint(neg_branch)
-        self._gluing_list.pop()
-        self._gluing_list.pop()
+    #     Keep the branch on the positive side, delete the one on the negative side.
+    #     """
+    #     if self.degree(switch) != 2:
+    #         raise ValueError("Only switches of valence two can be deleted")
+    #     if abs(switch) != self.num_switches():
+    #         raise ValueError("For now, only the switch with the largest number can be deleted")
+    #     pos_branch = self.outgoing_branch(switch, 0)
+    #     neg_branch = self.outgoing_branch(-switch, 0)
+    #     end = self.branch_endpoint(pos_branch)
+    #     start = self.branch_endpoint(neg_branch)
+    #     self._gluing_list.pop()
+    #     self._gluing_list.pop()
         
-        # self._set_endpoint(pos_branch, 0)
-        # self._set_endpoint(-pos_branch, 0)
-        # self._set_endpoint(-neg_branch, end)
+    #     # self._set_endpoint(pos_branch, 0)
+    #     # self._set_endpoint(-pos_branch, 0)
+    #     # self._set_endpoint(-neg_branch, end)
         
-        # self._set_measure(pos_branch, 0)
+    #     # self._set_measure(pos_branch, 0)
 
-        self._set_endpoint(neg_branch, 0)
-        self._set_endpoint(-neg_branch, 0)
-        self._set_endpoint(-pos_branch, start)
+    #     self._set_endpoint(neg_branch, 0)
+    #     self._set_endpoint(-neg_branch, 0)
+    #     self._set_endpoint(-pos_branch, start)
         
-        self._set_measure(neg_branch, 0)
+    #     self._set_measure(neg_branch, 0)
 
-        self._num_branches -= 1
+    #     self._num_branches -= 1
 
         
     @staticmethod

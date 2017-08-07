@@ -95,20 +95,20 @@ class BranchMap(SageObject):
         else:
             self._branch_map[-append_to][0:0] = self.branch_list(-appended_branch)
 
-    def append19(self, branch):
-        if branch > 0:
-            self._branch_map[branch].append(19)
-        else:
-            self._branch_map[-branch].insert(0,-19)
+    # def append19(self, branch):
+    #     if branch > 0:
+    #         self._branch_map[branch].append(19)
+    #     else:
+    #         self._branch_map[-branch].insert(0,-19)
         
-    def delete_first_branch(self, branch):
-        if branch > 0:
-            self._branch_map[branch].pop(0)
-        else:
-            self._branch_map[-branch].pop()
+    # def delete_first_branch(self, branch):
+    #     if branch > 0:
+    #         self._branch_map[branch].pop(0)
+    #     else:
+    #         self._branch_map[-branch].pop()
 
-    def set_branch_and_value(self, branch, value):
-        self._branch_map[branch] = value
+    # def set_branch_and_value(self, branch, value):
+    #     self._branch_map[branch] = value
 
     @staticmethod
     def reversed_path(path):
