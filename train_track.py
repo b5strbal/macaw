@@ -415,6 +415,11 @@ class TrainTrack(SageObject):
         """
         return 2*switch-2 if switch>0 else -2*switch-1
 
+    def copy(self):
+        if self.is_measured():
+            return TrainTrack(self._gluing_list, self._measure)
+        else:
+            return TrainTrack(self._gluing_list)
 
     def outgoing_branches(self,switch):
         """Return the outgoing branches from a switch.

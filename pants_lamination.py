@@ -809,7 +809,7 @@ class PantsLamination2(SageObject):
                 next_branch += 1
                 measure.append(abs(self_conn[self_conn_idx]))
 
-        self._tt = TrainTrack(gluing_list, measure)
+        self._tt = DehnThurstonTT(gluing_list, measure)
                 
         # self._m = {}
         # self._t = {}
@@ -827,6 +827,15 @@ class PantsLamination2(SageObject):
         # self._twists = twists # dictionary, keys are inner pants curves
         # self._pants_coordinates = pants_coordinates
 
+    def copy(self):
+
+        # It's silly right now: we create an arbitrary object and just change
+        # the train track.
+        p = PantsDecomposition([])
+        lam = cls(p, [])
+        lam._tt = self._tt.copy()
+        return lam
+        
     def _repr_(self):
         return repr(self.to_vector())
         

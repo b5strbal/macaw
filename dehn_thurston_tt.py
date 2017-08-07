@@ -376,6 +376,9 @@ class DehnThurstonTT(TrainTrack):
             sage: tt.get_turning(-3)
             1
 
+        TODO: This doesn't work for the once-punctured torus. We need to store
+        additional information.
+
         """
         for side in [LEFT,RIGHT]:
             if self.outgoing_branch(switch, 0, side) == \
