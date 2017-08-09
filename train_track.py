@@ -175,7 +175,15 @@ class TrainTrack(SageObject):
         # print self._branch_endpoint
         self._gluing_list = gluing_list
         self._measure = measure
-        
+
+        if measure != None:
+            for i in range(self.num_switches()):
+                sw = i+1
+                sums = [sum([self.branch_measure(b) for b in
+                             self.outgoing_branches(sgn*sw)]) for sgn in [-1,1]]
+                if sums[0] != sums[1]:
+                    raise ValueError("The switch condition is not satisfied at"
+                                     " switch " + str(sw))
         
     def _repr_(self):
         """
@@ -1135,7 +1143,7 @@ class TrainTrack(SageObject):
             sage: tt.fold(1, 1, 0)
             Traceback (most recent call last):
             ...
-            ValueError: The fold is not possible!
+            FoldError: The fold is not possible, because there is a blocking backward branch.
 
         """
 

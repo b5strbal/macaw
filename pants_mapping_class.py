@@ -23,7 +23,7 @@ AUTHORS:
 from surface import Surface 
 from sage.structure.sage_object import SageObject
 from pants_decomposition import PantsDecomposition
-
+from pants_lamination import PantsLamination, PantsLamination2
 
     
 
@@ -108,21 +108,30 @@ class PantsMappingClass(MappingClass):
             return lam
 
         if isinstance(other, PantsLamination2):
-            lam = other
-
+            lam = other.copy()
+            debug=True
+            if debug:
+                print "Mapping class:", self
             # apply twists from right to left
             for pants_twist in reversed(self._pants_twists):
-                # print other
+                if debug:
+                    print "Apply elementary moves..."
                 for curve in pants_twist.elementary_moves:
-                    # print lam
-                    lam.apply_elementary_move(curve)
+                    if debug:
+                        print lam
+                    lam.apply_elementary_move(curve, debug=debug)
                     # print other
-                # print lam
+                    if debug:
+                        print lam
+                        print "Applying twist..."
                 lam.apply_twist(pants_twist.pants_curve,pants_twist.power)
-                # print other
+                if debug:
+                    print lam
+                print "Applying inverse elementary moves..."
                 for curve in reversed(pants_twist.elementary_moves):
-                    # print lam
-                    lam.apply_elementary_move_inverse(curve)
+                    if debug:
+                        print lam
+                    lam.apply_elementary_move(curve, inverse=True, debug=debug)
                     # print other
             return lam
             
@@ -164,6 +173,27 @@ class PantsMappingClass(MappingClass):
                 return False
         return True
 
+    def is_identity2(self):
+        p = self._pants_decomposition
+        for c in p.inner_pants_curves():
+            lam = PantsLamination2.from_pants_curve(p,c)
+            # print "1:", lam
+            # print lam.parent()
+            # print isinstance(lam,PantsLamination)
+            # print "2:", self * lam
+            # print (self * lam).parent()
+            # return (lam,self*lam)
+            if lam != self * lam:
+                return False
+            lam = PantsLamination2.from_transversal(p,c)
+            # print "3:", lam
+            # print "4:", self * lam
+            if lam != self * lam:
+                return False
+        return True
+
+        
+    
     def __eq__(self,other):
         """
         TESTS::
@@ -205,7 +235,7 @@ class PantsMappingClass(MappingClass):
         #     print "B"
         #     return False
         # print "C"
-        return (self * other.inverse()).is_identity()
+        return (self * other.inverse()).is_identity2()
 
     def __ne__(self,other):
         return not self.__eq__(other)

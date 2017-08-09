@@ -297,36 +297,36 @@ class PantsLamination(MeasuredLamination):
             pant, i, j, sg = p.l_ij_encoding_inv(branch)
             return self.l(i,j,pant)
             
-    def construct_train_track(self):
-        """
-        Return the Dehn-Thurston train track for the current measure.
-        """
-        p = self._pants_decomposition
-        # p.index_of_inner_pants_curve
+    # def construct_train_track(self):
+    #     """
+    #     Return the Dehn-Thurston train track for the current measure.
+    #     """
+    #     p = self._pants_decomposition
+    #     # p.index_of_inner_pants_curve
 
-        tt_list = [None] * (2*p.num_pants_curves())
-        for pant in range(len(p._gluing_list)):
-            for bdy_index in range(3):
-                c = p._gluing_list[pant][bdy_index]
-                branch_list = p.branches_next_to_curve(pant,bdy_index)
-                branch_list = filter(lambda x: self.measure(x) > 0,
-                                      branch_list)
-                ti = self.measure(p.t_encoding(c))
-                if ti > 0:
-                    branch_list.append(p.t_encoding(c))
-                elif ti < 0:
-                    branch_list.insert(0,p.t_encoding(c))
+    #     tt_list = [None] * (2*p.num_pants_curves())
+    #     for pant in range(len(p._gluing_list)):
+    #         for bdy_index in range(3):
+    #             c = p._gluing_list[pant][bdy_index]
+    #             branch_list = p.branches_next_to_curve(pant,bdy_index)
+    #             branch_list = filter(lambda x: self.measure(x) > 0,
+    #                                   branch_list)
+    #             ti = self.measure(p.t_encoding(c))
+    #             if ti > 0:
+    #                 branch_list.append(p.t_encoding(c))
+    #             elif ti < 0:
+    #                 branch_list.insert(0,p.t_encoding(c))
 
-                pos = 2*c-2 if c>0 else 2*(-c)-1
-                tt_list[pos] = branch_list
+    #             pos = 2*c-2 if c>0 else 2*(-c)-1
+    #             tt_list[pos] = branch_list
 
-        # filtering out boundary pants curves
-        filtered_list = []
-        for i in range(len(tt_list)/2):
-            if len(tt_list[2*i]) != 0 and len(tt_list[2*i+1]) != 0:
-                filtered_list.extend([tt_list[2*i], tt_list[2*i+1]])
+    #     # filtering out boundary pants curves
+    #     filtered_list = []
+    #     for i in range(len(tt_list)/2):
+    #         if len(tt_list[2*i]) != 0 and len(tt_list[2*i+1]) != 0:
+    #             filtered_list.extend([tt_list[2*i], tt_list[2*i+1]])
 
-        return DehnThurstonTT(filtered_list)
+    #     return DehnThurstonTT(filtered_list)
 
     
     def apply_twist(self,pants_curve,power=1):
@@ -665,6 +665,10 @@ class PantsLamination2(SageObject):
             [0, 0, 0, 1, 0, 0, 0, 0, 0]        
 
         """
+        if pants_decomposition == None:
+            # creating empty object, just for the copy() method
+            return
+
         p = pants_decomposition
         # print coordinates
         n = p.num_inner_pants_curves()
@@ -769,18 +773,18 @@ class PantsLamination2(SageObject):
 
                 if coordinates[abs(c1)][1] >= 0:
                     # c1 is right-twisting
-                    gluing_list[TrainTrack._a(c1)].insert(-1, next_branch)
+                    gluing_list[DehnThurstonTT._a(c1)].insert(-1, next_branch)
                 else:
                     # c1 is left-twisting
-                    gluing_list[TrainTrack._a(-c1)].append(next_branch)
+                    gluing_list[DehnThurstonTT._a(-c1)].append(next_branch)
 
 
                 if coordinates[abs(c2)][1] >= 0:
                     # c2 is right-twisting
-                    gluing_list[TrainTrack._a(c2)].insert(0, -next_branch)
+                    gluing_list[DehnThurstonTT._a(c2)].insert(0, -next_branch)
                 else:
                     # c2 is left-twisting
-                    gluing_list[TrainTrack._a(-c2)].insert(1, -next_branch)
+                    gluing_list[DehnThurstonTT._a(-c2)].insert(1, -next_branch)
 
                 next_branch += 1
                 added_branches.append(i)
@@ -791,25 +795,25 @@ class PantsLamination2(SageObject):
                 c = curves[self_conn_idx]
                 switch = sign(c)*(ipc.index(abs(c))+1)
                 if coordinates[abs(c)][1] >= 0:
-                    gluing_list[TrainTrack._a(switch)].insert(-1, -next_branch)
+                    gluing_list[DehnThurstonTT._a(switch)].insert(-1, -next_branch)
                     if self_conn_idx in added_branches:
                         insert_pos = -3
                     else:
                         insert_pos = -2
-                    gluing_list[TrainTrack._a(switch)].insert(insert_pos,
+                    gluing_list[DehnThurstonTT._a(switch)].insert(insert_pos,
                                                          next_branch)
                 else:
-                    gluing_list[TrainTrack._a(-switch)].append(-next_branch)
+                    gluing_list[DehnThurstonTT._a(-switch)].append(-next_branch)
                     if self_conn_idx in added_branches:
                         insert_pos = -2
                     else:
                         insert_pos = -1
-                    gluing_list[TrainTrack._a(-switch)].insert(insert_pos,
+                    gluing_list[DehnThurstonTT._a(-switch)].insert(insert_pos,
                                                           next_branch)
                 next_branch += 1
                 measure.append(abs(self_conn[self_conn_idx]))
 
-        self._tt = DehnThurstonTT(gluing_list, measure)
+        self._tt = DehnThurstonTT(gluing_list, measure, range(1,n+1))
                 
         # self._m = {}
         # self._t = {}
@@ -829,10 +833,9 @@ class PantsLamination2(SageObject):
 
     def copy(self):
 
-        # It's silly right now: we create an arbitrary object and just change
+        # It's silly right now: we create an empty object and just change
         # the train track.
-        p = PantsDecomposition([])
-        lam = cls(p, [])
+        lam = PantsLamination2(None, None)
         lam._tt = self._tt.copy()
         return lam
         
@@ -915,9 +918,18 @@ class PantsLamination2(SageObject):
                 ls.append(-tt.branch_measure(b))
         return vector(ls)
 
-    def apply_elementary_move(self,pants_curve,inverse=False):
+    def apply_elementary_move(self,pants_curve,inverse=False, debug=False):
+        print debug
         tt = self._tt
+        if debug:
+            print "-------------------------------"
+            print "BEGIN: apply_elementary_move()"
+            print "-------------------------------"
+            print "Gluing list:", tt._gluing_list
+            print "pants_curve", pants_curve
         typ = tt.elem_move_type(pants_curve)
+        if debug:
+            print "Type: ", typ
         if typ == 1:
             if not inverse:
                 tt.unzip_fold_first_move(pants_curve)
