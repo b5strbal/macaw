@@ -31,6 +31,8 @@ from sage.structure.sage_object import SageObject
 from sage.misc.flatten import flatten
 from sage.graphs.graph import Graph
 from sage.graphs.digraph import DiGraph
+from branch_map import BranchMap
+from constants import LEFT, RIGHT
 
 LARGE = 0
 MIXED = 1
@@ -44,8 +46,6 @@ CENTRAL_SPLIT = 3
 FOLD = 4
 SHIFT = 5
 
-LEFT = 0
-RIGHT = 1
 
 class FoldError(Exception):
     pass
@@ -1074,6 +1074,69 @@ class TrainTrack(SageObject):
     #     # the negative side
     #     return (0,-s)
 
+
+    def peel(self, switch, side = LEFT, branch_map = None):
+        assert(self.is_measured())
+        if side == RIGHT:
+            self.peel(-switch, LEFT)
+
+        branches = [self.outgoing_branch(switch, 0),
+                    self.outgoing_branch(-switch, 0, start_side=RIGHT)]
+        assert(abs(branches[0])!=abs(branches[1]))
+
+        measures = [self.branch_measure(b) for b in branches]
+        sm_idx = 0 if measures[0] <= measures[1] else 1
+        lg_idx = (sm_idx+1)%2
+        side = LEFT if sm_idx == 0 else RIGHT
+        or_switch = switch if sm_idx == 0 else -switch
+
+        bottom_switch = self.branch_endpoint(branches[lg_idx])
+        idx = self.outgoing_branch_index(bottom_switch,
+                                         -branches[lg_idx],
+                                         start_side = side)
+        self.insert_branch(bottom_switch, idx, branches[sm_idx],
+                           start_side = side)
+        self.pop_outgoing_branch(or_switch, 0, start_side = side)
+        self._set_endpoint(-branches[sm_idx], bottom_switch)
+        self._set_measure(branches[lg_idx],
+                          measures[lg_idx] - measures[sm_idx])
+
+        if branch_map != None:
+            branch_map.append(-branches[sm_idx], branches[lg_idx])
+
+
+    def pop_fold(self, branch_map, debug=False):
+        branches = branch_map._branch_map.keys()
+        for b1 in branches:
+            # we want to fold b1 or -b1
+            ls = branch_map._branch_map[b1]
+            if len(ls) == 1:
+                # if path of length one, we can't fold the branch
+                continue
+            for b2 in branches:
+                if b1 == b2:
+                    continue
+                for sb1 in [b1, -b1]:
+                    for sb2 in [b2, -b2]:
+                        if branch_map.is_subpath(sb2,sb1):
+                            if debug:
+                                print sb2, " is a subpath of ", sb1
+                            try:
+                                self.fold_by_branch_labels(sb1, sb2)
+                                branch_map.subtract(sb1,sb2)
+                                if debug:
+                                    print "Folded branch:", sb1
+                                    print "Folding onto:", sb2
+                                return True
+                            except FoldError as err:
+                                if debug:
+                                    print err
+                                    print sb1, "cannot be folded on", sb2
+                                pass
+        return False
+    
+
+                              
     def fold_by_branch_labels(self, folded_branch, fold_onto_branch):
         sw1 = self.branch_endpoint(-folded_branch)
         sw2 = self.branch_endpoint(-fold_onto_branch)

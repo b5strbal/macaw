@@ -30,9 +30,7 @@ from sage.structure.sage_object import SageObject
 from sage.graphs.graph import Graph
 # from train_track import TrainTrack
 from sage.all import sign, n, norm
-
-LEFT = 0
-RIGHT = 1
+from constants import LEFT, RIGHT
 
 PANT = 0
 BDY_IDX = 1
