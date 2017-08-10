@@ -1076,9 +1076,23 @@ class TrainTrack(SageObject):
 
 
     def peel(self, switch, side = LEFT, branch_map = None):
+        """
+        
+        INPUT:
+
+        - ``side`` -- whether the leftmost branches or the rightmost branches
+          are compared
+
+        OUTPUT:
+
+        LEFT if we peel the branch which is on the left when looking towards
+        ``side`` and RIGHT otherwise.
+
+        """
+
         assert(self.is_measured())
         if side == RIGHT:
-            self.peel(-switch, LEFT)
+            return self.peel(-switch, LEFT)
 
         branches = [self.outgoing_branch(switch, 0),
                     self.outgoing_branch(-switch, 0, start_side=RIGHT)]
@@ -1101,11 +1115,15 @@ class TrainTrack(SageObject):
         self._set_measure(branches[lg_idx],
                           measures[lg_idx] - measures[sm_idx])
 
+        # TODO: should the branch map update be moved out of this method? That
+        # would make this file independent of branch maps. (IF pop_fold() gets
+        # moved also.)
         if branch_map != None:
             branch_map.append(-branches[sm_idx], branches[lg_idx])
-
+        return LEFT if sm_idx == 1 else RIGHT
 
     def pop_fold(self, branch_map, debug=False):
+        #TODO: maybe this should be a standalone function, not a classmethod
         branches = branch_map._branch_map.keys()
         for b1 in branches:
             # we want to fold b1 or -b1

@@ -918,7 +918,7 @@ class DehnThurstonTT(TrainTrack):
             print "After folding on fixed side:", self._gluing_list
             print "After folding on fixed side:", self._measure
             
-        # doing folds on unzips on the other side. This involves the positive
+        # doing folds or unzips on the other side. This involves the positive
         # direction of ``switch``.
         if good_twists_on_other_side >= 0:
             # if there are only good twists, we fold
@@ -927,62 +927,41 @@ class DehnThurstonTT(TrainTrack):
         else:
             # otherwise we unzip
 
-            while True:
+            while good_twists_on_other_side < 0:
                 if debug:
                     print self._gluing_list
                     print self._measure
-                # the positition of the first unzip
-                pos = min(nother_side,-good_twists_on_other_side) - 1
-                unzip_pos = self.unzip_with_collapse(switch,pos,TWO_SIDED,
-                                                     start_side=(turning+1)%2)
 
-                good_twists_on_other_side += pos + 1
+                pants_branch = self.outgoing_branch(-switch,0,start_side=turning)
+                side_branch = self.outgoing_branch(switch,0,start_side=(turning+1)%2)
+                
+                peeled_side = self.peel(switch,side = (turning+1)%2)
+                good_twists_on_other_side += 1
                 if debug:
-                    print "pos:", pos
-                    print "unzip_pos:", unzip_pos
-                    print "Good twists left on other side:", \
-                        good_twists_on_other_side
-                if unzip_pos == 0:
-                    # we unzipped into the pants curve
-                    if good_twists_on_other_side == 0:
-                        break
+                    print "After peeling:"
+                    print self._gluing_list
+                    print self._measure
+                    print "Peeled side:", peeled_side
+                    print "Remaining bad twist:", -good_twists_on_other_side
+
+
+                if peeled_side == turning:
+                    # we unzipped into the pants curve, there is nothing to do
+                    pass
+                    
                 else:
                     # we unzip into a branch on the other side
 
-                    # find the endpoint of the unzipped branch
-                    b = self.outgoing_branch(-switch,0,start_side=turning)
-                    sw = self.branch_endpoint(b)
-                    idx = self.outgoing_branch_index(sw,-b,start_side=turning)
-
-                    if debug:
-                        print "Unzipped branch:", b
-                        print "Endpoint of unzipped branch:", sw
-                        print "Index of unzipped branch at the endpoint", idx
-                        print "Folding index ", idx, "onto index", idx+1, \
-                            "from side", turning
-                    # fold back one of the split branches on the other
-                    # As a result, we get the pants curve back.
-                    self.fold(sw,idx+1,idx,start_side=turning)
                     if debug:
                         print self._gluing_list
                         print self._measure
-                    
-                    # Fold up the branches there were pulled around the pants curve.
-                    for i in range(unzip_pos-1):
-                        self.fold(-switch,1,0,start_side=(turning+1)%2)
-                        if debug:
-                            print self._gluing_list
-                            print self._measure
-
-                    # Fold up all remaining branches on the other side
+                        print self._branch_endpoint
+                        print side_branch, pants_branch
+                    self.fold_by_branch_labels(-side_branch, pants_branch)
                     for i in range(-good_twists_on_other_side):
                         self.fold(switch,1,0,start_side=(turning+1)%2)
-                        if debug:
-                            print self._gluing_list
-                            print self._measure
-                        
-                    # switch the orientation of the switch, because it was rotated
-                    # by 180 degrees
+
+                    
                     self.change_switch_orientation(switch)
                     break
 
