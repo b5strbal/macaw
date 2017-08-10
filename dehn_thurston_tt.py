@@ -138,12 +138,31 @@ class BranchMap(SageObject):
         ls = self.branch_list(branch)
         if debug:
             print "Branch map of branch:", ls
-        if ls[0] in [1, -4, -9, 13] or ls[0] == 4 and (len(ls)==1 or ls[1] != 13):
+
+        # if ls[0] in [1, -4, -9, 13] or \
+        #    ls[0] == 4 and (len(ls)==1 or ls[1] != 13) or\
+        #    ls[0] == 10 and len(ls)>1 and ls[1] == 19:
+        #     return [LEFT]
+        # if ls[0] in [7, -10, -3, 19] or \
+        #    ls[0] == 10 and (len(ls)==1 or ls[1] != 19) or\
+        #    ls[0] == 4 and len(ls)>1 and ls[1] == 13:
+        #     return [RIGHT]
+        # assert(False)
+
+        if ls[0] in [1, -4, -9, 13] or \
+           ls[0] == 4 and (len(ls)==1 or ls[1] != 13) or\
+           ls == [10, 19, -13, 1]:
             return [LEFT]
-        if ls[0] in [7, -10, -3, 19] or ls[0] == 10 and (len(ls)==1 or ls[1] != 19):
+        if ls[0] in [7, -10, -3, 19] or \
+           ls[0] == 10 and (len(ls)==1 or ls[1] != 19) or \
+           ls == [4, 13, -19, 7]:
             return [RIGHT]
         return [LEFT, RIGHT]
 
+    
+
+
+    
     # return LEFT if ls[0] in [-9,13,1,4,-4] else RIGHT
     
     # def to_be_peeled(self, branch, turning, step):
@@ -214,6 +233,31 @@ class BranchMap(SageObject):
 
             # = list(transform_rules[tuple(self._branch_map[b])])
 
+    def replace_type_2_3(self):
+        for b in self._branch_map.keys():
+            ls = self._branch_map[b]
+            if ls == [9, 19, -13, -9]:
+                self._branch_map[b] = [12]
+            if ls == [9, -13, 19, -9]:
+                self._branch_map[b] = [-12]
+            if ls == [3, 13, -19, -3]:
+                self._branch_map[b] = [6]
+            if ls == [3, -19, 13, -3]:
+                self._branch_map[b] = [-6]
+
+            # if ls == [9, 19, -13, -9]:
+            #     self._branch_map[b] = [-5]
+            # if ls == [9, -13, 19, -9]:
+            #     self._branch_map[b] = [5]
+            # if ls == [3, 13, -19, -3]:
+            #     self._branch_map[b] = [-11]
+            # if ls == [3, -19, 13, -3]:
+            #     self._branch_map[b] = [11]
+            
+
+
+
+            
     def standardize_values(self, branch_to_standard):
         for b in self._branch_map.keys():
             ls = self._branch_map[b]
@@ -374,7 +418,7 @@ transform_rules = {
     (13,): (4,13),
     (5,): (3,10,-3),
     (2,): (3,7),
-    (6,): (-7,4,13,-19,7,-17),
+    (6,): (-7,4,13,-19,7,-20),
     (-13,4,13): (-13,-4,19),
     (9,13): (14,-1,13),
     (9,4,13): (-1,19),
@@ -1573,6 +1617,10 @@ class DehnThurstonTT(TrainTrack):
                 print "Step:", step
                 print "current_switch", current_switch
             while True:
+                print self._gluing_list
+                print self._measure
+                print current_switch
+                print start_side
                 b = self.outgoing_branch(current_switch, 0,
                                          start_side=start_side)
                 if debug:
@@ -1590,6 +1638,8 @@ class DehnThurstonTT(TrainTrack):
                 else: 
                     if (LEFT+step)%2 in bm.which_side_to_start(b):
                         finished = True
+                if not finished and 
+                    
                 if finished:
                     if debug:
                         print "We have finished unzipping on this side."
@@ -1773,6 +1823,9 @@ class DehnThurstonTT(TrainTrack):
             if debug:
                 print "Gluing list after folding boundaries:", self._gluing_list
                 print "Measure after folding boundaries:", self._measure
+        # make replacements in type 2 and type 3 cases
+        bm.replace_type_2_3()
+
         while True:
             if debug:
                 print "---------------------"
