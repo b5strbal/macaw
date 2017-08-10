@@ -109,6 +109,8 @@ class PantsMappingClass(MappingClass):
 
         if isinstance(other, PantsLamination2):
             lam = other.copy()
+            # print type(other)
+            # print "Other", other
             debug=True
             if debug:
                 print "Mapping class:", self
@@ -118,21 +120,45 @@ class PantsMappingClass(MappingClass):
                     print "Apply elementary moves..."
                 for curve in pants_twist.elementary_moves:
                     if debug:
-                        print lam
+                        print "Curve", lam
+                        # print "Other", other
                     lam.apply_elementary_move(curve, debug=debug)
                     # print other
-                    if debug:
-                        print lam
-                        print "Applying twist..."
+                if debug:
+                    print "Curve", lam
+                    # print lam._tt._gluing_list
+                    # print lam._tt._measure
+                    # print lam._tt._branch_endpoint
+                    # print lam._tt._pants_branches
+                    # print "Other", other
+                    # print other._tt._gluing_list
+                    # print other._tt._measure
+                    # print other._tt._branch_endpoint
+                    # print other._tt._pants_branches
+                    print "Applying twist..."
                 lam.apply_twist(pants_twist.pants_curve,pants_twist.power)
                 if debug:
-                    print lam
-                print "Applying inverse elementary moves..."
+                    print "Curve", lam
+                    # print lam._tt._gluing_list
+                    # print lam._tt._measure
+                    # print lam._tt._branch_endpoint
+                    # print lam._tt._pants_branches
+                    # print "Other", other
+                    # print other._tt._gluing_list
+                    # print other._tt._measure
+                    # print other._tt._branch_endpoint
+                    # print other._tt._pants_branches
+                    print "Applying inverse elementary moves..."
                 for curve in reversed(pants_twist.elementary_moves):
                     if debug:
-                        print lam
+                        print "Curve", lam
+                        # print "Other", other
                     lam.apply_elementary_move(curve, inverse=True, debug=debug)
                     # print other
+            if debug:
+                print "FINAL curve:", lam
+                # print "Other", other
+                print "-------------------------"
             return lam
             
         
@@ -158,15 +184,23 @@ class PantsMappingClass(MappingClass):
         p = self._pants_decomposition
         for c in p.inner_pants_curves():
             lam = PantsLamination.from_pants_curve(p,c)
-            # print "1:", lam
+            # c1 = lam
+            # c2 = self *lam
+            # print "1:", c1
             # print lam.parent()
             # print isinstance(lam,PantsLamination)
-            # print "2:", self * lam
+            # print "2:", self * c2
             # print (self * lam).parent()
             # return (lam,self*lam)
             if lam != self * lam:
                 return False
             lam = PantsLamination.from_transversal(p,c)
+            # c1 = lam
+            # c2 = self *lam
+            # print "3:", c1
+            # print lam.parent()
+            # print isinstance(lam,PantsLamination)
+            # print "4:", self * c2
             # print "3:", lam
             # print "4:", self * lam
             if lam != self * lam:
@@ -177,6 +211,12 @@ class PantsMappingClass(MappingClass):
         p = self._pants_decomposition
         for c in p.inner_pants_curves():
             lam = PantsLamination2.from_pants_curve(p,c)
+            c1 = lam
+            c2 = self *lam
+            print "1:", c1
+            # print lam.parent()
+            # print isinstance(lam,PantsLamination)
+            print "2:", c2
             # print "1:", lam
             # print lam.parent()
             # print isinstance(lam,PantsLamination)
@@ -187,6 +227,12 @@ class PantsMappingClass(MappingClass):
                 return False
             lam = PantsLamination2.from_transversal(p,c)
             # print "3:", lam
+            c1 = lam
+            c2 = self *lam
+            print "3:", c1
+            # print lam.parent()
+            # print isinstance(lam,PantsLamination)
+            print "4:", c2
             # print "4:", self * lam
             if lam != self * lam:
                 return False

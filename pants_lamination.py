@@ -919,27 +919,28 @@ class PantsLamination2(SageObject):
         return vector(ls)
 
     def apply_elementary_move(self,pants_curve,inverse=False, debug=False):
-        print debug
+        # print debug
         tt = self._tt
         if debug:
             print "-------------------------------"
             print "BEGIN: apply_elementary_move()"
             print "-------------------------------"
             print "Gluing list:", tt._gluing_list
+            print "Measure:", tt._measure
             print "pants_curve", pants_curve
         typ = tt.elem_move_type(pants_curve)
         if debug:
             print "Type: ", typ
         if typ == 1:
             if not inverse:
-                tt.unzip_fold_first_move(pants_curve)
+                tt.unzip_fold_first_move(pants_curve,debug=debug)
             else:
-                tt.unzip_fold_first_move_inverse(pants_curve)
+                tt.unzip_fold_first_move_inverse(pants_curve,debug=debug)
         elif typ == 2:
-            tt.unzip_fold_second_move(pants_curve)
+            tt.unzip_fold_second_move(pants_curve,debug=debug)
 
     def apply_elementary_move_inverse(self,pants_curve):
-        self.apply_elementary_move(pants_curve,inverse=True)
+        self.apply_elementary_move(pants_curve,inverse=True,debug=False)
             
     def apply_twist(self,pants_curve,power=1):
         self._tt.unzip_fold_pants_twist(pants_curve,power)

@@ -1020,6 +1020,8 @@ class TrainTrack(SageObject):
             if s <= 0:
                 return (len(neg_side) - 1 - i, s+self.branch_measure(b), -s)
 
+
+            
     # def unzip_pos_old(self,switch,pos):
     #     """
     #     INPUT:
