@@ -40,9 +40,9 @@ class DehnThurstonTT(TrainTrack):
         self._pants_branches = []
         if pants_branches == None:
             # trying to determine the pants branches
-            for switch in range(1,self.num_switches()+1):
+            for switch in range(1, self.num_switches()+1):
                 options = set()
-                for side in [LEFT,RIGHT]:
+                for side in [LEFT, RIGHT]:
                     b1 = self.outgoing_branch(switch, 0, side)
                     b2 = self.outgoing_branch(-switch, 0, side)
                     if b1 == -b2:
@@ -96,7 +96,7 @@ class DehnThurstonTT(TrainTrack):
            abs(self.outgoing_branch(switch, 0, LEFT)):
             return LEFT
         return RIGHT
-        # for side in [LEFT,RIGHT]:
+        # for side in [LEFT, RIGHT]:
         #     if self.outgoing_branch(switch, 0, side) == \
         #        -self.outgoing_branch(-switch, 0, side):
         #         return side
@@ -161,13 +161,13 @@ class DehnThurstonTT(TrainTrack):
         turning = self.get_turning(switch)
 
         # naming the pants curve to 13
-        branch_to_standard[self.outgoing_branch(switch,0,turning)] = 13
+        branch_to_standard[self.outgoing_branch(switch, 0, turning)] = 13
 
         # changing the orientation of the switch so the left side can be
         # accessed in the positive direction
         or_switch = switch if turning == RIGHT else -switch
 
-        for side in [LEFT,RIGHT]:
+        for side in [LEFT, RIGHT]:
             if side == LEFT:
                 side_branches = self.outgoing_branches(or_switch)
             else:
@@ -203,12 +203,12 @@ class DehnThurstonTT(TrainTrack):
                 sw = self.branch_endpoint(side_branches[0])
                 branches = self.outgoing_branches(sw)
                 idx = branches.index(-side_branches[0])
-                if idx in [0,1]:
+                if idx in [0, 1]:
                     # type 2
                     branch_to_standard[branches[idx]] = -(1+6*side)
                     branch_to_standard[branches[idx+1]] = 5+6*side
                     branch_to_standard[branches[idx+2]] = 2+6*side
-                elif idx in [2,3]:
+                elif idx in [2, 3]:
                     # type 3
                     branch_to_standard[branches[idx-2]] = -(2+6*side)
                     branch_to_standard[branches[idx-1]] = 6+6*side
@@ -267,530 +267,18 @@ class DehnThurstonTT(TrainTrack):
         nbottom = len(bottom_branches)
 
         turning = self.get_turning(pants_curve)
-        return (nbottom-1,ntop-1) if turning == LEFT else (ntop-1,nbottom-1)
+        return (nbottom-1, ntop-1) if turning == LEFT else (ntop-1, nbottom-1)
 
 
     def transverse_measure(self, switch):
         return self.measure_on_switch(switch)-\
             self.branch_measure(self.pants_branch_on_switch(switch))
 
-    def unzip_with_collapse(self, switch, pos, collapse_type, branch_map=None,
-                            start_side=LEFT, debug=False):
-        r"""
-        The train track for the first elementary move, when `t_1>0` and
-        `\lambda_{23}` is present.
-        Performing the unzipping according to `r<t_1`.
 
-            sage: LEFT = 0
-            sage: RIGHT = 1
-            sage: UP = 0
-            sage: TWO_SIDED = 1
-            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
-            sage: tt = DehnThurstonTT([[-1,2,3], [-2,4,-3], [5, 6, -6], [-5,-4,1]], [11, 3, 100, 11, 2, 11])
-            sage: tt.unzip_with_collapse(1,0,UP,start_side = LEFT)
-            0
-            sage: tt._measure
-            [11, 3, 89, 11, 2, 11]
-
-        Now performing the unzipping according to `r>t_1`.
-
-            sage: tt = DehnThurstonTT([[-1,2,3], [-2,4,-3], [5, 6, -6], [-5,-4,1]], [100, 3, 11, 100, 2, 11])
-            sage: tt.unzip_with_collapse(1,0,UP,start_side=LEFT)
-            1
-            sage: tt._measure
-            [89, 3, 11, 11, 2, 11]
-
-        The train track for the first elementary move, when ``t_1<0`` and
-        ``\lambda_{23}`` is present.
-        Performing the unzipping according to `r<t_1`.
-
-            sage: tt = DehnThurstonTT([[1,-2,3], [-1,-4,2], [5, 6, -6], [-5,-3,4]], [100, 5, 11, 11, 2, 11])
-            sage: tt.unzip_with_collapse(1,0,UP,start_side=RIGHT)
-            0
-            sage: tt._measure
-            [89, 5, 11, 11, 2, 11]
-
-        Now performing the unzipping according to `r>t_1`.
-
-            sage: tt = DehnThurstonTT([[1,-2,3], [-1,-4,2], [5, 6, -6], [-5,-3,4]], [11, 5, 100, 100, 2, 11])
-            sage: tt.unzip_with_collapse(1,0,UP,start_side=RIGHT)
-            1
-            sage: tt._measure
-            [11, 5, 89, 11, 2, 11]
-
-        The next train track is a has a left-twisting annulus. We perform an
-        unzip not next to the core curve of the annulus but in the next cusp
-        that goes into the core curve.
-
-            sage: tt = DehnThurstonTT([[1, 2, 3, 4], [-1, -5, -6, -7], [5], [-4], [6], [-3], [7], [-2]], [100, 1, 5, 6, 6, 5, 1], [1, None, None, None])
-            sage: tt.unzip_with_collapse(1,1,TWO_SIDED,start_side=RIGHT)
-            0
-            sage: tt._measure
-            [89, 1, 5, 6, 6, 5, 1]
-
-        Now we unzip at the same cusp, going into the third branch on the other
-        side::
-
-            sage: tt = DehnThurstonTT([[1, 2, 3, 4], [-1, -5, -6, -7], [5], [-4], [6], [-3], [7], [-2]], [10, 6, 15, 3, 3, 15, 6], [1, None, None, None])
-            sage: tt.unzip_with_collapse(1,1,TWO_SIDED,start_side=RIGHT)
-            2
-            sage: tt._measure
-            [5, 6, 15, 3, 3, 10, 6]
-
-        The next train track is a has a right-twisting annulus. We perform an
-        unzip not next to the core curve of the annulus but in the next cusp
-        that goes into the core curve.
-
-            sage: tt = DehnThurstonTT([[2, 3, 4, 1], [-5, -6, -7, -1], [5], [-4], [6], [-3], [7], [-2]], [100, 1, 5, 6, 6, 5, 1], [1, None, None, None])
-            sage: tt.unzip_with_collapse(1,1,TWO_SIDED,start_side=LEFT)
-            0
-            sage: tt._measure
-            [94, 1, 5, 6, 6, 5, 1]
-
-        Now we unzip at the same cusp, going into the third branch on the other
-        side::
-
-            sage: tt = DehnThurstonTT([[2, 3, 4, 1], [-5, -6, -7, -1], [5], [-4], [6], [-3], [7], [-2]], [10, 8, 15, 6, 6, 15, 8], [1, None, None, None])
-            sage: tt.unzip_with_collapse(1,1,TWO_SIDED,start_side=LEFT)
-            2
-            sage: tt._measure
-            [5, 8, 15, 6, 6, 10, 8]
-
-
-
-
-
-
-
-
-        sage: tt = DehnThurstonTT([[4, 1], [-5, -1], [-9, 5, -6, -7, 6], [9, 8, -2, -4, 2], [-8, 3], [7, -3]], [0, 1, 0, 0, 0, 1, 0, 0, 2])
-        sage: tt.unzip_with_collapse(2, 0, UP)
-        sage: tt._gluing_list
-        [[4, 1], [-5, -1], [5, -6, -7, 6], [9, -4, -9, 2, 8, -2], [-8, 3], [7, -3]]
-        sage: tt._measure
-        [0, 0, 0, 0, 0, 1, 0, 0, 1]
-
-
-        """
-        # if there are not enough branches on the positive side, there is
-        # nothing to do
-        if pos > len(self.outgoing_branches(switch))-1:
-            return
-
-
-        if debug:
-            print "---------------------------"
-            print "BEGIN: unzip_with_collapse()"
-            print "---------------------------"
-            print "Gluing list:", self._gluing_list
-            print "Measure:", self._measure
-            print "switch:", switch
-            print "pos:", pos
-            print "start_side:", "LEFT" if start_side == LEFT else "RIGHT"
-
-        unzip_pos, meas1, meas2 = self.unzip_pos(switch, pos, start_side)
-
-        if debug:
-            print "Unzipped measures:", meas1, meas2
-            print "Unzip pos:",  unzip_pos
-        unzip_br = self.outgoing_branch(-switch, unzip_pos,
-                                        (start_side+1)%2)
-        if collapse_type == UP:
-            collapsed_branch = self.outgoing_branch(switch, 0, start_side)
-        elif collapse_type == TWO_SIDED:
-            pants_branch = self.outgoing_branch(switch, 0, (start_side+1)%2)
-
-        if debug:
-            print "Unzip branch:", unzip_br
-
-        # performing the unzip
-        self.unzip_with_collapse_no_measure(switch, pos, unzip_pos,
-                                            collapse_type, branch_map,
-                                            start_side, debug)
-
-
-        if not self.is_measured():
-            return unzip_pos
-
-        # updating the measure
-        if collapse_type == UP:
-            if debug:
-                print "Collapsed branch: ", collapsed_branch
-            self._set_measure(unzip_br, meas2)
-            self._set_measure(collapsed_branch, meas1)
-        elif collapse_type == TWO_SIDED:
-            if unzip_pos == 0:
-                self._set_measure(pants_branch, meas2)
-            else:
-                self._set_measure(unzip_br, meas2)
-                self._set_measure(pants_branch, meas1)
-
-        if debug:
-            print "Final gluing list:", self._gluing_list
-            print "Final measure:", self._measure
-            print "------------------------------"
-            print "END: unzip_with_collapse()"
-            print "------------------------------"
-
-        return unzip_pos
-
-
-
-    def unzip_with_collapse_no_measure(self, switch, pos, unzip_pos,
-                                       collapse_type, branch_map=None,
-                                       start_side=LEFT, debug=False):
-
-        r"""
-
-        EXAMPLES:
-
-
-        The train track for the first elementary move, when `t_1>0` and
-        `\lambda_{23}` is present.
-        Performing the unzipping according to `r<t_1`.
-
-            sage: LEFT = 0
-            sage: RIGHT = 1
-            sage: UP = 0
-            sage: TWO_SIDED = 1
-            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
-            sage: tt = DehnThurstonTT([[-1,2,3], [-2,4,-3], [5], [-5,-4,1] ])
-            sage: tt.unzip_with_collapse_no_measure(1,0,0,UP,start_side = LEFT)
-            sage: tt._gluing_list
-            [[2, -1, 3], [-2, 4, -3], [5], [-5, -4, 1]]
-            sage: tt._branch_endpoint
-            [[-2, 1, 1, -1, 2], [1, -1, -1, -2, -2]]
-
-        Now performing the unzipping according to `r>t_1`.
-
-            sage: tt = DehnThurstonTT([[-1,2,3], [-2,4,-3], [5], [-5,-4,1] ])
-            sage: tt.unzip_with_collapse_no_measure(1,0,1,UP,start_side=LEFT)
-            sage: tt._gluing_list
-            [[2, 3], [-2, 4], [5], [-5, -1, -4, 1, -3]]
-            sage: tt._branch_endpoint
-            [[-2, 1, 1, -1, 2], [-2, -1, -2, -2, -2]]
-
-        The train track for the first elementary move, when ``t_1<0`` and
-        ``\lambda_{23}`` is present.
-        Performing the unzipping according to `r<t_1`.
-
-            sage: tt = DehnThurstonTT([[1,-2,3], [-1,-4,2], [5], [-5,-3,4] ])
-            sage: tt.unzip_with_collapse_no_measure(1,0,0,UP,start_side=RIGHT)
-            sage: tt._gluing_list
-            [[1, 3, -2], [-1, -4, 2], [5], [-5, -3, 4]]
-            sage: tt._branch_endpoint
-            [[1, -1, 1, -2, 2], [-1, 1, -2, -1, -2]]
-
-        Now performing the unzipping according to `r>t_1`.
-
-            sage: tt = DehnThurstonTT([[1,-2,3], [-1,-4,2], [5], [-5,-3,4] ])
-            sage: tt.unzip_with_collapse_no_measure(1,0,1,UP,start_side=RIGHT)
-            sage: tt._gluing_list
-            [[1, -2], [-4, 2], [5], [-5, -1, -3, 4, 3]]
-            sage: tt._branch_endpoint
-            [[1, -1, -2, -2, 2], [-2, 1, -2, -1, -2]]
-
-        The next train track is a has a left-twisting annulus. We perform an
-        unzip not next to the core curve of the annulus but in the next cusp
-        that goes into the core curve.
-
-            sage: tt = DehnThurstonTT([[1, 2, 3, 4], [-1, -5, -6, -7], [5], [-2], [6], [-3], [7], [-4]], [1, None, None, None])
-            sage: tt.unzip_with_collapse_no_measure(1,1,0,TWO_SIDED,start_side=RIGHT)
-
-            sage: tt._gluing_list
-            [[1, 3, 4, 2], [-1, -5, -6, -7], [5], [-2], [6], [-3], [7], [-4]]
-            sage: tt._branch_endpoint
-            [[1, 1, 1, 1, 2, 3, 4], [-1, -2, -3, -4, -1, -1, -1]]
-
-        Now we unzip at the same cusp, going into the third branch on the other
-        side::
-
-            sage: tt = DehnThurstonTT([[1, 2, 3, 4], [-1, -5, -6, -7], [5], [-2], [6], [-3], [7], [-4]], pants_branches=[1, None, None, None])
-            sage: tt.unzip_with_collapse_no_measure(1,1,2,TWO_SIDED,start_side=RIGHT)
-            sage: tt._gluing_list
-            [[3, 4, 2], [-6, -7, -5, 1], [5], [-2], [6, -1], [-3], [7], [-4]]
-            sage: tt._branch_endpoint
-            [[-1, 1, 1, 1, 2, 3, 4], [3, -2, -3, -4, -1, -1, -1]]
-
-        The next train track is a has a right-twisting annulus. We perform an
-        unzip not next to the core curve of the annulus but in the next cusp
-        that goes into the core curve.
-
-            sage: tt = DehnThurstonTT([[2, 3, 4, 1], [-5, -6, -7, -1], [5], [-2], [6], [-3], [7], [-4]], pants_branches=[1, None, None, None])
-            sage: tt.unzip_with_collapse_no_measure(1,1,0,TWO_SIDED,start_side=LEFT)
-
-            sage: tt._gluing_list
-            [[4, 2, 3, 1], [-5, -6, -7, -1], [5], [-2], [6], [-3], [7], [-4]]
-            sage: tt._branch_endpoint
-            [[1, 1, 1, 1, 2, 3, 4], [-1, -2, -3, -4, -1, -1, -1]]
-
-        Now we unzip at the same cusp, going into the third branch on the other
-        side::
-
-            sage: tt = DehnThurstonTT([[2, 3, 4, 1], [-5, -6, -7, -1], [5], [-2], [6], [-3], [7], [-4]], pants_branches=[1, None, None, None])
-            sage: tt.unzip_with_collapse_no_measure(1,1,2,TWO_SIDED,start_side=LEFT)
-            sage: tt._gluing_list
-            [[4, 2, 3], [1, -7, -5, -6], [5], [-2], [-1, 6], [-3], [7], [-4]]
-            sage: tt._branch_endpoint
-            [[-1, 1, 1, 1, 2, 3, 4], [3, -2, -3, -4, -1, -1, -1]]
-
-
-        """
-
-
-
-        if collapse_type == UP:
-            assert(pos==0)
-        elif collapse_type == TWO_SIDED:
-            # pants_branch_pos = 0 if start_side == RIGHT else -1
-            # assert(self.outgoing_branches(switch)[pants_branch_pos] ==
-            #        -self.outgoing_branches(-switch)[pants_branch_pos])
-            pass
-
-
-        unzip_branch = self.outgoing_branch(-switch, unzip_pos, (start_side+1)%2)
-        bottom_switch = self.branch_endpoint(unzip_branch)
-        # if -switch == bottom_switch and unzip_pos > end_index:
-        #     unzip_pos += 1
-
-        # debug = False
-        end_index = self.outgoing_branch_index(bottom_switch, -unzip_branch,
-                                               start_side)
-
-
-        if debug:
-            print "---------------------------"
-            print "BEGIN: unzip_with_collapse_no_measure()"
-            print "---------------------------"
-            print "Unzip branch: ", unzip_branch
-            print "Bottom switch: ", bottom_switch
-            print "unzip_pos:", unzip_pos
-            print "end_index:", end_index
-
-        circling_back = False
-        if collapse_type == UP:
-            # cut the collapsed branch off the starting switch and gluing it to
-            # the bottom switch
-
-            collapsed_branch = self.outgoing_branch(switch, 0, start_side)
-
-
-            if debug:
-                print "Removing branches to move..."
-            branches_to_move = self.pop_outgoing_branches(-switch,0,unzip_pos,
-                                                         (start_side+1)%2)
-            if debug:
-                print "Branches to move:", branches_to_move
-                print "New gluing list:", self._gluing_list
-
-
-            top_switch = self.branch_endpoint(collapsed_branch)
-            insert_pos = self.outgoing_branch_index(top_switch, -collapsed_branch,
-                                                    (start_side+1)%2)
-
-            if debug:
-                print "Inserting moved branches..."
-                print "At switch", top_switch
-                print "At position", insert_pos
-
-            self.insert_branches(top_switch, insert_pos, branches_to_move,
-                                 (start_side+1)%2)
-            if debug:
-                print "New gluing_list", self._gluing_list
-                print "Updating endpoints..."
-
-            for branch in branches_to_move:
-                self._set_endpoint(-branch,top_switch)
-
-            if debug:
-                print "New branch_endpoint:", self._branch_endpoint
-                print "Inserting bottom of collapsed branch..."
-            bottom_switch = self.branch_endpoint(unzip_branch)
-            end_index = self.outgoing_branch_index(bottom_switch, -unzip_branch,
-                                                   start_side)
-            self.insert_branch(bottom_switch, end_index, collapsed_branch,
-                               start_side)
-            if debug:
-                print "New gluing list:", self._gluing_list
-
-
-            if debug:
-                print "Removing collapsed branch..."
-            self.pop_outgoing_branch(switch, 0, start_side)
-            if debug:
-                # print "Collapsed branch:", collapsed_branch
-                print "New gluing list:", self._gluing_list
-
-
-            # TODO: remove collapsed_branch later. circling_back shouldn't
-            # happen anyways
-
-
-
-            # if bottom_switch == switch:
-            #     # since we remove the leftmost branch, we need to adjust
-            #     # the index
-            #     if end_index > 0:
-            #         end_index -= 1
-            #         assert(collapsed_branch != -unzip_branch)
-            #     elif end_index == 0:
-            #         # this would mean the unzip circles back to the collapsed
-            #         # branch. We do not allow this.
-
-            #         # UPDATE: we do allow this.
-
-            #         # assert(False)
-
-            #         # the unzipping circles back to the collapsed branch. This
-            #         # happens when the unzip in the second elementary move
-            #         # (with left-turning switch) stays in the pants curve
-
-            #         # This is basically a TWO_SIDED type unzipping when the
-            #         # unzipping goes into the pants curve, so the gluing list
-            #         # and endpoint list remains the same. We just need to
-            #         # update the branch_list
-
-            #         # the only way it should circle back is in a pants_branch
-            #         circling_back = True
-            #         assert(pos == 0)
-            #         assert(unzip_pos == len(self.outgoing_branches(-switch))-1)
-
-            #         # there is nothing to do, the insert_branch() command below
-            #         # will put the collapsed_branch back
-
-
-
-
-            # if debug:
-            #     print "Corrected end index:", end_index
-            #     print "Collapsed branch:", collapsed_branch
-
-            # if debug:
-            #     print "Inserting collapsed branch..."
-            # self.insert_branch(bottom_switch, end_index, collapsed_branch,
-            #                    start_side)
-            # if debug:
-            #     print "New gluing list:", self._gluing_list
-            # self.outgoing_branches(bottom_switch).insert(end_index,
-            #                                            collapsed_branch)
-
-
-            # move branches
-            # bottom_branches = self.outgoing_branches(-switch)
-            # n = len(bottom_branches)
-            # if start_side == LEFT:
-            #     branches_to_move = bottom_branches[n-unzip_pos:]
-            #     del bottom_branches[n-unzip_pos:]
-            # else:
-            #     branches_to_move = bottom_branches[:unzip_pos]
-            #     del bottom_branches[:unzip_pos]
-
-            # branches_to_move = self.pop_outgoing_branches(-switch,0,unzip_pos,
-            #                                              (start_side+1)%2)
-            # if debug:
-            #     print "Branches to move:", branches_to_move
-            # top_switch = self.branch_endpoint(collapsed_branch)
-            # # k = self.outgoing_branches(top_switch).index(-collapsed_branch)
-            # insert_pos = self.outgoing_branch_index(top_switch, -collapsed_branch,
-            #                                         (start_side+1)%2)
-            # # if start_side == LEFT:
-            # #     insert_pos = k+1
-            # # else:
-            # #     insert_pos = k
-            # self.insert_branches(top_switch, insert_pos, branches_to_move,
-            #                      (start_side+1)%2)
-            # self.outgoing_branches(top_switch)[insert_pos:insert_pos] = \
-            #                                             branches_to_move
-            self._set_endpoint(-collapsed_branch,bottom_switch)
-            # for branch in branches_to_move:
-            #     self._set_endpoint(-branch,top_switch)
-
-
-            if branch_map != None:
-                # update branch map for the other branches
-
-                if debug:
-                    print "Old branch map:", branch_map._branch_map
-                for branch in branches_to_move:
-                    branch_map.append(-branch,collapsed_branch)
-
-                # update branch map of collapsed_branch
-                # if not circling_back:
-                if -collapsed_branch != unzip_branch:
-                    branch_map.append(-collapsed_branch,unzip_branch)
-                if debug:
-                    print "New branch map:", branch_map._branch_map
-                # else:
-                #     pass
-                #     # If it circles back, then collapsed_branch maps to itself, so
-                #     # we don't need to append.
-                #     # But we rotate the pants branch halfway.
-                #     if debug:
-                #         print "Circling back!!!"
-                #         print "Branch map before rotating the pants curve", branch_map._branch_map
-
-
-                #     for b in self.outgoing_branches(switch):
-                #         branch_map.append19(-b)
-                #     for b in self.outgoing_branches(-switch):
-                #         branch_map.delete_first_branch(b)
-                #     if debug:
-                #         print "Branch map after rotating the pants curve", branch_map._branch_map
-
-
-        elif collapse_type == TWO_SIDED:
-
-            # moving the top branches
-            top = self.outgoing_branches(switch)
-            n = len(top)
-            if start_side == LEFT:
-                branches_to_move = self.outgoing_branches(switch)[:pos+1]
-                top[-1:-1] = branches_to_move
-                del top[:-n]
-            else:
-                branches_to_move = self.outgoing_branches(switch)[-pos-1:]
-                top[1:1] = branches_to_move
-                del top[n:]
-
-            if unzip_pos > 0:
-
-                pop_pos = -1 if start_side == LEFT else 0
-                collapsed_branch = self.outgoing_branches(switch).pop(pop_pos)
-                self.outgoing_branches(-switch).pop(pop_pos)
-                # pos -= 1
-
-                # top.insert(0,top[pos:])
-                # del top[n:]
-                bottom = self.outgoing_branches(-switch)
-                m = len(bottom)
-                # the pants branch has already been removed
-                if start_side == LEFT:
-                    bottom[0:0] = bottom[m+1-unzip_pos:]
-                    del bottom[m:]
-                    bottom.insert(0, collapsed_branch)
-                else:
-                    bottom.extend(bottom[:unzip_pos-1])
-                    del bottom[:-m]
-                    bottom.append(collapsed_branch)
-
-                k = self.outgoing_branches(bottom_switch).index(-unzip_branch)
-                insert_pos = k if start_side == LEFT else k+1
-                self.outgoing_branches(bottom_switch).insert(insert_pos,
-                                                             -collapsed_branch)
-
-                self._set_endpoint(-collapsed_branch,-switch)
-                self._set_endpoint(collapsed_branch,bottom_switch)
-
-
-        if debug:
-            print "Final gluing list:", self._gluing_list
-            print "------------------------------"
-            print "END: unzip_with_collapse_no_measure()"
-            print "------------------------------"
 
 
     def unzip_fold_general_twist(self, pants_curve, twists_on_left,
-                                 twists_on_right,debug=False):
+                                 twists_on_right, debug=False):
         """
         EXAMPLES:
 
@@ -913,7 +401,7 @@ class DehnThurstonTT(TrainTrack):
                 print i, self._gluing_list
                 print i, self._measure
 
-            self.fold(-switch,1,0,start_side = turning)
+            self.fold(-switch, 1, 0, start_side = turning)
 
         if debug:
             print "After folding on fixed side:", self._gluing_list
@@ -924,7 +412,7 @@ class DehnThurstonTT(TrainTrack):
         if good_twists_on_other_side >= 0:
             # if there are only good twists, we fold
             for i in range(good_twists_on_other_side):
-                self.fold(switch,1,0,start_side = turning)
+                self.fold(switch, 1, 0, start_side = turning)
         else:
             # otherwise we unzip
 
@@ -933,10 +421,10 @@ class DehnThurstonTT(TrainTrack):
                     print self._gluing_list
                     print self._measure
 
-                pants_branch = self.outgoing_branch(-switch,0,start_side=turning)
-                side_branch = self.outgoing_branch(switch,0,start_side=(turning+1)%2)
+                pants_branch = self.outgoing_branch(-switch, 0, start_side=turning)
+                side_branch = self.outgoing_branch(switch, 0, start_side=(turning+1)%2)
 
-                peeled_side = self.peel(switch,side = (turning+1)%2, debug=debug)
+                peeled_side = self.peel(switch, side = (turning+1)%2, debug=debug)
                 good_twists_on_other_side += 1
                 if debug:
                     print "After peeling:"
@@ -960,7 +448,7 @@ class DehnThurstonTT(TrainTrack):
                         print side_branch, pants_branch
                     self.fold_by_branch_labels(-side_branch, pants_branch)
                     for i in range(-good_twists_on_other_side):
-                        self.fold(switch,1,0,start_side=(turning+1)%2)
+                        self.fold(switch, 1, 0, start_side=(turning+1)%2)
 
                     self.swap_branch_numbers(-side_branch, pants_branch)
                     self.change_switch_orientation(switch)
@@ -1023,18 +511,18 @@ class DehnThurstonTT(TrainTrack):
         nright = self.num_curves_on_sides(pants_curve)[RIGHT]
         self.unzip_fold_general_twist(pants_curve, 0, power * nright)
 
-    def construct_general_twist_data(self,boundary_folds,debug=False):
+    def construct_general_twist_data(self, boundary_folds, debug=False):
         """
 
         INPUT:
 
-        -- ``boundary_folds`` - a list of pairs (b,1) or (b,-1) as in the
+        -- ``boundary_folds`` - a list of pairs (b, 1) or (b, -1) as in the
         output of find_boundary_folds()
 
         OUTPUT:
 
         a dictionary whose keys are the pants curves where general twisting
-        happens and the values are lists [t_left,t_right] where t_left and
+        happens and the values are lists [t_left, t_right] where t_left and
         t_right are the amount of twisting on the left and right side of the curves
         """
         if debug:
@@ -1159,7 +647,7 @@ class DehnThurstonTT(TrainTrack):
 
         # left_measure = [0, 0]
 
-        # for step in [0,1]:
+        # for step in [0, 1]:
         #     # if step == 0, we count the measure going into the left pair of
         #     # pants from the positive side of the switch
 
@@ -1225,7 +713,7 @@ class DehnThurstonTT(TrainTrack):
 
                 if debug:
                     print "Branches to compare:", b1, b2
-                    print "They start to sides:", bm.which_side_to_start(b1),\
+                    print "They start to sides:", bm.which_side_to_start(b1), \
                         bm.which_side_to_start(b2)
 
                 if bm.which_side_to_start(b1) != step or \
@@ -1253,7 +741,7 @@ class DehnThurstonTT(TrainTrack):
                 #                          start_side=start_side)
                 # if debug:
                 #     print "Branch b:", b
-                #     print "This branch starts to sides",\
+                #     print "This branch starts to sides", \
                 #         bm.which_side_to_start(b, debug)
 
                 # If left_measure[0] < left_measure[1], we finish unzipping on this side if
@@ -1295,7 +783,7 @@ class DehnThurstonTT(TrainTrack):
         folds = bm.find_boundary_folds()
         if debug:
             print "Boundary folds:", folds
-        general_twist_data = self.construct_general_twist_data(folds,debug)
+        general_twist_data = self.construct_general_twist_data(folds, debug)
         if debug:
             print general_twist_data
             print "Gluing list before folding boundaries:", self._gluing_list
@@ -1306,7 +794,7 @@ class DehnThurstonTT(TrainTrack):
                 print "Switch:", sw
                 print "Left twists:", left_twists
                 print "Right twists:", right_twists
-            self.unzip_fold_general_twist(sw,left_twists,right_twists,
+            self.unzip_fold_general_twist(sw, left_twists, right_twists,
                                           debug=debug)
             if debug:
                 print "Gluing list after folding boundaries:", self._gluing_list
@@ -1382,7 +870,7 @@ class DehnThurstonTT(TrainTrack):
         for i in range(3):
             self.unzip_fold_first_move(switch, debug=debug)
         bdy_switch = self.torus_boundary_switch(switch)
-        self.unzip_fold_pants_twist(bdy_switch,-1)
+        self.unzip_fold_pants_twist(bdy_switch, -1)
 
     def pants_branch_on_switch(self, switch):
         """
@@ -1405,7 +893,7 @@ class DehnThurstonTT(TrainTrack):
 
         """
         return self._pants_branches[abs(switch)-1]
-        # for side in [LEFT,RIGHT]:
+        # for side in [LEFT, RIGHT]:
         #     b1 = self.outgoing_branch(switch, 0, side)
         #     b2 = self.outgoing_branch(-switch, 0, side)
         #     if b1 == -b2:
@@ -1437,12 +925,12 @@ class DehnThurstonTT(TrainTrack):
             [[1, 5, 6], [4, -1, -6], [-5, -4, 2], [-7, -8, -2], [9, 3, 7], [-9, 8, -3]]
             sage: tt._measure
             [99, 22, 28, 1, 1, 5, 2, 2, 3]
-            sage: tt.unzip_fold_first_move(-3,inverse=True)
+            sage: tt.unzip_fold_first_move(-3, inverse=True)
             sage: tt._gluing_list
             [[1, 5, 6], [4, -1, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]]
             sage: tt._measure
             [99, 20, 30, 1, 1, 5, 2, 2, 1]
-            sage: tt.unzip_fold_first_move(1,inverse=True)
+            sage: tt.unzip_fold_first_move(1, inverse=True)
             sage: tt._gluing_list
             [[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]]
             sage: tt._measure
@@ -1503,7 +991,7 @@ class DehnThurstonTT(TrainTrack):
 
         #     sage: tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]], [100, 20, 30, 1, 1, 4, 2, 2, 1])
         #     sage: from sage.topology.dehn_thurston_tt import BranchMap
-        #     sage: bm = BranchMap(range(1,10))
+        #     sage: bm = BranchMap(range(1, 10))
         #     sage: tt.unzip_fold_first_move(1, bm)
         #     sage: bm.branch_list(5)
         #     [1, 5]
@@ -1518,7 +1006,7 @@ class DehnThurstonTT(TrainTrack):
         # Now the unzippings go across.
 
         #     sage: tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]], [3, 20, 3, 10, 10, 4, 15, 15, 1])
-        #     sage: bm = BranchMap(range(1,10))
+        #     sage: bm = BranchMap(range(1, 10))
         #     sage: tt.unzip_fold_first_move(1, bm)
         #     sage: bm.branch_list(5)
         #     [-4, 5]
@@ -1564,11 +1052,17 @@ class DehnThurstonTT(TrainTrack):
             print "Turning:", "LEFT" if turning == LEFT else "RIGHT"
             print "Lambda_23" if lamb23 else "Lambda_11"
             print "bdy_switch", bdy_switch
-        unzip_pos = self.unzip_with_collapse(switch,0,UP,branch_map=None,
-                                             start_side=(turning+1)%2)
+        # unzip_pos = self.unzip_with_collapse(switch, 0, UP, branch_map=None,
+        #                                      start_side=(turning+1)%2)
+        peeled_side = self.peel(switch, side=(turning+1) % 2, debug=debug)
+        if debug:
+            print "Peeled side:", "LEFT" if peeled_side == LEFT else "RIGHT"
+        if peeled_side == (turning+1) % 2:
+            self.peel(switch, side=(turning+1) % 2, debug=debug,
+                      preferred_peeled_side=turning)
 
         if debug:
-            print "Unzip pos:", unzip_pos
+            # print "Unzip pos:", unzip_pos
             print "Gluing list:", self._gluing_list
             print "Measure:", self._measure
             print "Outgoing branches in positive direction:", \
@@ -1579,64 +1073,70 @@ class DehnThurstonTT(TrainTrack):
         # The inverse works in cases A, B, E
         # Doesn't work for C, D, F, G, and probably H
 
-        if unzip_pos == 0:
+        if peeled_side == turning:
             if lamb23:
                 if (turning == LEFT) == (not inverse):
                     if debug:
                         print "A"
-                    self.fold(-switch,1,2,start_side=turning)
+                    self.fold(-switch, 1, 2, start_side=turning)
                 else:
                     if debug:
                         print "B"
-                    self.fold(switch,1,0,(turning+1)%2)
-                    self.unzip_fold_general_twist(bdy_switch,twist_sign,0)
+                    self.fold(switch, 1, 0, (turning+1)%2)
+                    self.unzip_fold_general_twist(bdy_switch, twist_sign, 0)
             else:
                 if (turning == LEFT) == (not inverse):
                     if debug:
                         print "C"
                         print "Gluing list:", self._gluing_list
                         print "Measure:", self._measure
-                    self.unzip_fold_general_twist(bdy_switch,twist_sign,0)
+                    self.unzip_fold_general_twist(bdy_switch, twist_sign, 0)
                     if debug:
                         print "Gluing list:", self._gluing_list
                         print "Measure:", self._measure
-                    self.fold_left_of_pants_curve(bdy_switch,0,1,inverse)
-                    self.fold_left_of_pants_curve(bdy_switch,2,1,inverse)
+                    self.fold_left_of_pants_curve(bdy_switch, 0, 1, inverse)
+                    self.fold_left_of_pants_curve(bdy_switch, 2, 1, inverse)
                 else:
                     if debug:
                         print "D"
-                    self.unzip_fold_general_twist(bdy_switch,2*twist_sign,0)
-                    self.fold_left_of_pants_curve(bdy_switch,3,2,inverse)
-                    self.fold_left_of_pants_curve(bdy_switch,0,1,inverse)
+                    self.unzip_fold_general_twist(bdy_switch, 2*twist_sign, 0)
+                    if debug:
+                        print self._gluing_list
+                    self.fold_left_of_pants_curve(bdy_switch, 3, 2, inverse)
+                    if debug:
+                        print self._gluing_list
+                    self.fold_left_of_pants_curve(bdy_switch, 0, 1, inverse)
+                    if debug:
+                        print self._gluing_list
 
-        elif unzip_pos == 1:
+        else:
             if lamb23:
                 if (turning == LEFT) == (not inverse):
                     if debug:
                         print "E"
-                    self.fold(-switch,0,1,turning)
+                    self.fold(-switch, 0, 1, turning)
                 else:
                     if debug:
                         print "F"
-                    self.fold(switch,1,0,(turning+1)%2)
-                    self.unzip_fold_general_twist(bdy_switch,twist_sign,0)
+                    self.fold(switch, 1, 0, (turning+1)%2)
+                    self.unzip_fold_general_twist(bdy_switch, twist_sign, 0)
             else:
                 if (turning == LEFT) == (not inverse):
                     if debug:
                         print "G"
-                    self.unzip_fold_general_twist(bdy_switch,twist_sign,0)
-                    self.fold_left_of_pants_curve(bdy_switch,0,1,inverse)
-                    self.fold_left_of_pants_curve(bdy_switch,3,2,inverse)
+                    self.unzip_fold_general_twist(bdy_switch, twist_sign, 0)
+                    self.fold_left_of_pants_curve(bdy_switch, 0, 1, inverse)
+                    self.fold_left_of_pants_curve(bdy_switch, 3, 2, inverse)
                 else:
                     if debug:
                         print "H"
-                    self.unzip_fold_general_twist(bdy_switch,2*twist_sign,0)
+                    self.unzip_fold_general_twist(bdy_switch, 2*twist_sign, 0)
                     if debug:
                         print "Gluing list:", self._gluing_list
                         print "Measure:", self._measure
 
-                    self.fold_left_of_pants_curve(bdy_switch,4,3,inverse)
-                    self.fold_left_of_pants_curve(bdy_switch,0,1,inverse)
+                    self.fold_left_of_pants_curve(bdy_switch, 4, 3, inverse)
+                    self.fold_left_of_pants_curve(bdy_switch, 0, 1, inverse)
 
 
         # if the switch was initually left turning, then it become
@@ -1647,18 +1147,18 @@ class DehnThurstonTT(TrainTrack):
 
         # new_turning = self.get_turning(switch)
         # print new_turning
-        # new_pants_branch = self.outgoing_branch(switch,0,start_side=new_turning)
+        # new_pants_branch = self.outgoing_branch(switch, 0, start_side=new_turning)
 
-        # if abs(self.outgoing_branch(switch,0)) == \
-        #    abs(self.outgoing_branch(-switch,0)):
-        #     new_pants_branch = self.outgoing_branch(switch,0)
+        # if abs(self.outgoing_branch(switch, 0)) == \
+        #    abs(self.outgoing_branch(-switch, 0)):
+        #     new_pants_branch = self.outgoing_branch(switch, 0)
         # else:
-        #     new_pants_branch = self.outgoing_branch(switch,0,RIGHT)
+        #     new_pants_branch = self.outgoing_branch(switch, 0, RIGHT)
 
         # print switch
         # print new_pants_branch
 
-        # self.swap_branch_numbers(switch,sign(switch)*abs(new_pants_branch))
+        # self.swap_branch_numbers(switch, sign(switch)*abs(new_pants_branch))
 
 
     def fold_left_of_pants_curve(self, bdy_switch, folded_branch_index,
@@ -1701,12 +1201,12 @@ def pop_fold(train_track, branch_map, debug=False):
                 continue
             for sb1 in [b1, -b1]:
                 for sb2 in [b2, -b2]:
-                    if branch_map.is_subpath(sb2,sb1):
+                    if branch_map.is_subpath(sb2, sb1):
                         if debug:
                             print sb2, " is a subpath of ", sb1
                         try:
                             train_track.fold_by_branch_labels(sb1, sb2)
-                            branch_map.subtract(sb1,sb2)
+                            branch_map.subtract(sb1, sb2)
                             if debug:
                                 print "Folded branch:", sb1
                                 print "Folding onto:", sb2

@@ -528,7 +528,7 @@ class TrainTrack(SageObject):
 
     def is_measured(self):
         """Return if the train track has a measure on it."""
-        return self._measure != None
+        return self._measure is not None
 
     def measure(self):
         """Return the measure on the train track."""
@@ -974,140 +974,8 @@ class TrainTrack(SageObject):
 
 
 
-    def unzip_pos(self, switch, pos, start_side=LEFT):
-        """INPUT:
-
-        - ``switch`` --
-
-        - ``pos`` --
-
-        - ``start_side`` --
-
-        OUTPUT:
-
-        the position of the unzip on the opposite side of ``switch``, starting
-        from the side opposite of ``start_side``. If multiple unzips are
-        possible, the first one is chosen.
-
-        EXAMPLES:
-
-            sage: tt = TrainTrack([[1, 2], [-1, -2]], [5, 8])
-            sage: tt.unzip_pos(1, 0)
-            (0, 5, 3)
-            sage: tt.unzip_pos(-1, 0)
-            (0, 5, 3)
-            sage: RIGHT = 1
-            sage: tt.unzip_pos(1, 0, start_side=RIGHT)
-            (1, 3, 5)
-            sage: tt.unzip_pos(-1, 0, start_side=RIGHT)
-            (1, 3, 5)
-
-            sage: tt = TrainTrack([[1, 2], [-1, -2]], [8, 5])
-            sage: tt.unzip_pos(1, 0)
-            (1, 3, 5)
-            sage: tt.unzip_pos(-1, 0)
-            (1, 3, 5)
-
-            sage: tt = TrainTrack([[1, 2], [-1, -2]], [8, 8])
-            sage: tt.unzip_pos(1, 0)
-            (0, 8, 0)
-            sage: tt.unzip_pos(-1, 0)
-            (0, 8, 0)
-            sage: tt.unzip_pos(1, 0, start_side=RIGHT)
-            (0, 8, 0)
-            sage: tt.unzip_pos(-1, 0, start_side=RIGHT)
-            (0, 8, 0)
-
-        """
-        if not self.is_measured():
-            raise ValueError("Determining the position of the unzip is only "
-                             "possible if the train track is measured.")
-        if start_side == LEFT:
-            s = sum(map(self.branch_measure, self.outgoing_branches(switch)[:pos+1]))
-        else:
-            s = sum(map(self.branch_measure, self.outgoing_branches(switch)[-pos-1:]))
-
-        debug = False
-        if debug:
-            print "---------------------------"
-            print "BEGIN: unzip_pos()"
-            print "---------------------------"
-            print "Gluing list:", self._gluing_list
-            print "Measure:", self._measure
-            print "switch:", switch
-            print "pos:", pos
-            print "start_side:", "LEFT" if start_side == LEFT else "RIGHT"
-            print "Starting sum:", s
-
-        neg_side = self.outgoing_branches(-switch)
-        if start_side == RIGHT:
-            neg_side = list(reversed(neg_side))
-        for i in range(len(neg_side)-1, -1, -1):
-            b = neg_side[i]
-            s -= self.branch_measure(b)
-            if debug:
-                print "Current branch:", b
-                print "Remaining branch measure:", s
-            if s <= 0:
-                return (len(neg_side) - 1 - i, s+self.branch_measure(b), -s)
-        # print b, s
-        assert(False)
-
-
-    # def unzip_pos_old(self, switch, pos):
-    #     """
-    #     INPUT:
-
-    #     - ``switch`` --
-
-    #     - ``pos`` --
-
-    #     OUTPUT:
-
-    #     a tuple (``unzip_pos_old``, ``remaining_measure``) where ``unzip_pos_old``
-    #     is the position of the unzip on the opposite side of
-    #     ``switch`` and ``remaining_measure`` is the measure left on
-    #     the left side of the unzipped train track.
-
-    #     EXAMPLES:
-
-    #         sage: tt = TrainTrack([[1, 2], [-1, -2]], [5, 8])
-    #         sage: tt.unzip_pos_old(1, 0)
-    #         (1, 3)
-    #         sage: tt.unzip_pos_old(-1, 0)
-    #         (1, 3)
-
-    #         sage: tt = TrainTrack([[1, 2], [-1, -2]], [8, 5])
-    #         sage: tt.unzip_pos_old(1, 0)
-    #         (0, 5)
-    #         sage: tt.unzip_pos_old(-1, 0)
-    #         (0, 5)
-
-    #         sage: tt = TrainTrack([[1, 2], [-1, -2]], [8, 8])
-    #         sage: tt.unzip_pos_old(1, 0)
-    #         (0, 0)
-    #         sage: tt.unzip_pos_old(-1, 0)
-    #         (0, 0)
-
-
-    #     """
-
-    #     s = sum(map(self.branch_measure, self.outgoing_branches(switch)[:pos+1]))
-    #     neg_side = self.outgoing_branches(-switch)
-    #     for i in range(len(neg_side)-1, -1, -1):
-    #         b = neg_side[i]
-    #         s -= self.branch_measure(b)
-    #         if s == 0:
-    #             return (i-1, 0)
-    #         elif s < 0:
-    #             return (i, -s)
-    #     # if the sum of the measures of the branches to the right of
-    #     # pos is zero, we do the unzip into the left-most branch on
-    #     # the negative side
-    #     return (0, -s)
-
-
-    def peel(self, switch, side, branch_map=None, debug=False):
+    def peel(self, switch, side, branch_map=None, debug=False,
+             preferred_peeled_side=RIGHT):
         """
 
         INPUT:
@@ -1123,7 +991,8 @@ class TrainTrack(SageObject):
         """
         assert(self.is_measured())
         if side == RIGHT:
-            return self.peel(-switch, LEFT, branch_map, debug=debug)
+            return self.peel(-switch, LEFT, branch_map, debug=debug,
+                             preferred_peeled_side=preferred_peeled_side)
 
         if debug:
             print "-------------------------------"
@@ -1131,39 +1000,51 @@ class TrainTrack(SageObject):
             print "-------------------------------"
             print "Gluing list at beginning", self._gluing_list
             print "Measure at beginning", self._measure
-            if branch_map != None:
+            if branch_map is not None:
                 print "Branch map at the beginning", branch_map._branch_map
             print "Switch:", switch
-            print "side", "LEFT" if side == LEFT else "RIGHT"
+            print "Preferred side:", preferred_peeled_side
 
-        branches = [self.outgoing_branch(switch, 0),
-                    self.outgoing_branch(-switch, 0, start_side=RIGHT)]
-        assert(abs(branches[0])!=abs(branches[1]))
+        branches = [self.outgoing_branch(-switch, 0, start_side=RIGHT),
+                    self.outgoing_branch(switch, 0)]
 
-        len1 = len(self.outgoing_branches(switch))
-        len2 = len(self.outgoing_branches(-switch))
-        assert(len1>1 or len2>1)
+        assert(abs(branches[0]) != abs(branches[1]))
+
+        lens = [len(self.outgoing_branches(-switch)),
+                len(self.outgoing_branches(switch))]
+
+        assert(lens[LEFT] > 1 or lens[RIGHT] > 1)
 
         measures = [self.branch_measure(b) for b in branches]
 
-        if len1 == 1:
-            sm_idx = 1
-        elif len2 == 1:
-            sm_idx = 0
+        if lens[RIGHT] == 1:
+            sm_idx = LEFT
+        elif lens[LEFT] == 1:
+            sm_idx = RIGHT
+        elif measures[LEFT] < measures[RIGHT]:
+            sm_idx = LEFT
+        elif measures[RIGHT] < measures[LEFT]:
+            sm_idx = RIGHT
         else:
-            sm_idx = 0 if measures[0] <= measures[1] else 1
+            sm_idx = preferred_peeled_side
 
-        lg_idx = (sm_idx+1)%2
-        side = LEFT if sm_idx == 0 else RIGHT
-        or_switch = switch if sm_idx == 0 else -switch
+        if debug:
+            print "Peeled side:", "LEFT" if sm_idx == LEFT else "RIGHT"
+            
+        lg_idx = (sm_idx+1) % 2
+        or_switch = -switch if sm_idx == LEFT else switch
 
         bottom_switch = self.branch_endpoint(branches[lg_idx])
         idx = self.outgoing_branch_index(bottom_switch,
                                          -branches[lg_idx],
-                                         start_side = side)
+                                         start_side=lg_idx)
+        if debug:
+            print "Peeling branch", branches[sm_idx], "off of",\
+                branches[lg_idx]
+
         self.insert_branch(bottom_switch, idx, branches[sm_idx],
-                           start_side = side)
-        self.pop_outgoing_branch(or_switch, 0, start_side = side)
+                           start_side=lg_idx)
+        self.pop_outgoing_branch(or_switch, 0, start_side=lg_idx)
         self._set_endpoint(-branches[sm_idx], bottom_switch)
         self._set_measure(branches[lg_idx],
                           measures[lg_idx] - measures[sm_idx])
@@ -1171,20 +1052,20 @@ class TrainTrack(SageObject):
         # TODO: should the branch map update be moved out of this method? That
         # would make this file independent of branch maps. (IF pop_fold() gets
         # moved also.)
-        if branch_map != None:
+        if branch_map is not None:
             branch_map.append(-branches[sm_idx], branches[lg_idx])
 
         if debug:
             print "Gluing list at the end", self._gluing_list
             print "Measure at the end", self._measure
-            if branch_map != None:
+            if branch_map is not None:
                 print "Branch map at the end", branch_map._branch_map
             print "-------------------------------"
             print "END: peel()"
             print "-------------------------------"
 
 
-        return LEFT if sm_idx == 1 else RIGHT
+        return sm_idx
 
 
 

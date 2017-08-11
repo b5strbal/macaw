@@ -111,7 +111,7 @@ class PantsMappingClass(MappingClass):
             lam = other.copy()
             # print type(other)
             # print "Other", other
-            debug=False
+            debug = False
             if debug:
                 print "Mapping class:", self
             # apply twists from right to left
@@ -365,24 +365,25 @@ lam = PantsLamination.from_pants_curve(p,1)
 
 
 def test():
-    A[0]*A[1] == A[1]*A[0]
-    A[0]*B[1] == B[1]*A[0]
-    A[0]*c == c*A[0]
-    A[0]*B[0] == B[0]*A[0]
-    A[0]*B[0]*A[0] == B[0]*A[0]*B[0]
-    B[0]*c == c*B[0]
-    B[0]*B[1] == B[1]*B[0]
-    B[0]*A[1] == A[1]*B[0]
-    B[0]*A[1]*B[0] == A[1]*B[0]*A[1]
-    A[1]*c == c*A[1]
-    A[1]*B[1] == B[1]*A[1] 
-    A[1]*B[1]*A[1] == B[1]*A[1]*B[1]
-    B[1]*c == c*B[1]
-    B[1]*c*B[1] == c*B[1]*c
+    print (A[0]*A[1] == A[1]*A[0]) is True
+    print (A[0]*B[1] == B[1]*A[0]) is True
+    print (A[0]*c == c*A[0]) is True
+    print (A[0]*B[0] == B[0]*A[0]) is False
+    print (A[0]*B[0]*A[0] == B[0]*A[0]*B[0]) is True
+    print (B[0]*c == c*B[0]) is True
+    print (B[0]*B[1] == B[1]*B[0]) is True
+    print (B[0]*A[1] == A[1]*B[0]) is False
+    print (B[0]*A[1]*B[0] == A[1]*B[0]*A[1]) is True
+    print (A[1]*c == c*A[1]) is True
+    print (A[1]*B[1] == B[1]*A[1]) is False
+    print (A[1]*B[1]*A[1] == B[1]*A[1]*B[1]) is True
+    print (B[1]*c == c*B[1]) is False
+    print (B[1]*c*B[1] == c*B[1]*c) is True
 
     # %timeit test() runs in
     # - 262 ms for PantsLamination
     # - 380 ms for PantsLamination2
+
 
 def test100():
     for i in range(100):
