@@ -25,6 +25,7 @@ from train_track import TrainTrack, FoldError
 # from pants_decomposition import PantsDecomposition
 from sage.structure.sage_object import SageObject
 from constants import LEFT, RIGHT
+from branch_map import BranchMap
 
 UP = 0
 TWO_SIDED = 1
@@ -935,7 +936,7 @@ class DehnThurstonTT(TrainTrack):
                 pants_branch = self.outgoing_branch(-switch,0,start_side=turning)
                 side_branch = self.outgoing_branch(switch,0,start_side=(turning+1)%2)
                 
-                peeled_side = self.peel(switch,side = (turning+1)%2)
+                peeled_side = self.peel(switch,side = (turning+1)%2, debug=debug)
                 good_twists_on_other_side += 1
                 if debug:
                     print "After peeling:"
@@ -961,7 +962,7 @@ class DehnThurstonTT(TrainTrack):
                     for i in range(-good_twists_on_other_side):
                         self.fold(switch,1,0,start_side=(turning+1)%2)
 
-                    
+                    self.swap_branch_numbers(-side_branch, pants_branch)
                     self.change_switch_orientation(switch)
                     break
 
@@ -1070,17 +1071,17 @@ class DehnThurstonTT(TrainTrack):
         A right-turning example and its inverse which is left-turning:
 
             sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
-            sage: tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]], [100, 20, 30, 1, 1, 4, 2, 2, 1])
-            sage: tt.unzip_fold_second_move(2)
-            sage: tt._gluing_list
-            [[1, 6], [-1, 4], [-8, -4, -5, 9, 5], [8, -7, -2, -6, 2], [7, 3], [-9, -3]]
-            sage: tt._measure
-            [99, 19, 32, 5, 18, 5, 3, 20, 3]
-            sage: tt.unzip_fold_second_move(2)
-            sage: tt._gluing_list
-            [[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]]
-            sage: tt._measure
-            [100, 20, 30, 1, 1, 4, 2, 2, 1]
+            # sage: tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]], [100, 20, 30, 1, 1, 4, 2, 2, 1])
+            # sage: tt.unzip_fold_second_move(2)
+            # sage: tt._gluing_list
+            # [[1, 6], [-1, 4], [-8, -4, -5, 9, 5], [8, -7, -2, -6, 2], [7, 3], [-9, -3]]
+            # sage: tt._measure
+            # [99, 19, 32, 5, 18, 5, 3, 20, 3]
+            # sage: tt.unzip_fold_second_move(2)
+            # sage: tt._gluing_list
+            # [[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]]
+            # sage: tt._measure
+            # [100, 20, 30, 1, 1, 4, 2, 2, 1]
         
 
         # Switch condition isn't satisfied!!!!!!!!!!!!!!!!!!!!!1
@@ -1117,17 +1118,17 @@ class DehnThurstonTT(TrainTrack):
 
 
 
-            sage: tt = DehnThurstonTT([[1, 5], [-1, 4], [2, -8, 9, -7, -9], [-2, -5, 6, -4, -6], [7, 3], [8, -3]], [3, 20, 3, 10, 10, 13, 15, 15, 8])
-            sage: tt.unzip_fold_second_move(2)
-            sage: tt._gluing_list
-            [[1, 5, -7], [-1, 4, -9], [9, -8, -6], [2, -5, 6], [3, 8, -4], [-3, 7, -2]]
-            sage: tt._measure
-            [10, 12, 9, 3, 7, 20, 3, 12, 7]
-            sage: tt.unzip_fold_second_move(2)
-            sage: tt._gluing_list
-            [[1, 5], [-1, 4], [-9, -8, -6, -7, 6], [9, -5, 2, -4, -2], [7, 3], [8, -3]]
-            sage: tt._measure
-            [3, 13, 3, 10, 10, 8, 15, 15, 20]
+            # sage: tt = DehnThurstonTT([[1, 5], [-1, 4], [2, -8, 9, -7, -9], [-2, -5, 6, -4, -6], [7, 3], [8, -3]], [3, 20, 3, 10, 10, 13, 15, 15, 8])
+            # sage: tt.unzip_fold_second_move(2)
+            # sage: tt._gluing_list
+            # [[1, 5, -7], [-1, 4, -9], [9, -8, -6], [2, -5, 6], [3, 8, -4], [-3, 7, -2]]
+            # sage: tt._measure
+            # [10, 12, 9, 3, 7, 20, 3, 12, 7]
+            # sage: tt.unzip_fold_second_move(2)
+            # sage: tt._gluing_list
+            # [[1, 5], [-1, 4], [-9, -8, -6, -7, 6], [9, -5, 2, -4, -2], [7, 3], [8, -3]]
+            # sage: tt._measure
+            # [3, 13, 3, 10, 10, 8, 15, 15, 20]
 
   
 
@@ -1154,28 +1155,28 @@ class DehnThurstonTT(TrainTrack):
             
         # circling_back = False
         # print "A", bm.branch_list(self.outgoing_branch(switch, 0))
-        num_unzips = 0
+        # num_unzips = 0
 
-        left_measure = [0, 0]
+        # left_measure = [0, 0]
 
-        for step in [0,1]:
-            # if step == 0, we count the measure going into the left pair of
-            # pants from the positive side of the switch
+        # for step in [0,1]:
+        #     # if step == 0, we count the measure going into the left pair of
+        #     # pants from the positive side of the switch
 
-            # if step ==1, we count the measure going also into the left pair
-            # of pants, but from the negative side of the switch
-            sgn = 1 if step == 0 else -1
-            for i in range(len(self.outgoing_branches(sgn*switch))):
-                # for a left-turning switch, we start counting from the
-                # leftmost branch. For a right-turning branch we count from the
-                # right. This is for step 0. For step 1, count from the other side.
-                b = self.outgoing_branch(sgn*switch, i, (turning+step)%2)
-                if bm.which_side_to_start(b)[0] == LEFT:
-                    assert(len(bm.which_side_to_start(b)) == 1)
-                    # if the branch goes to the left, we add the measure
-                    left_measure[step] += self.branch_measure(b)
-                else:
-                    break
+        #     # if step ==1, we count the measure going also into the left pair
+        #     # of pants, but from the negative side of the switch
+        #     sgn = 1 if step == 0 else -1
+        #     for i in range(len(self.outgoing_branches(sgn*switch))):
+        #         # for a left-turning switch, we start counting from the
+        #         # leftmost branch. For a right-turning branch we count from the
+        #         # right. This is for step 0. For step 1, count from the other side.
+        #         b = self.outgoing_branch(sgn*switch, i, (turning+step)%2)
+        #         if bm.which_side_to_start(b)[0] == LEFT:
+        #             assert(len(bm.which_side_to_start(b)) == 1)
+        #             # if the branch goes to the left, we add the measure
+        #             left_measure[step] += self.branch_measure(b)
+        #         else:
+        #             break
 
         # Fix the measure computation for left-turning train tracks. We do this
         # beacuse it there is self-connecting branch on the bottom train track,
@@ -1183,64 +1184,102 @@ class DehnThurstonTT(TrainTrack):
         # can be isotoped completely to the right
                 
                 
-        if left_measure[0] < left_measure[1]:
-            # if the measure counted on the positive side is less, then in the
-            # left-turning case we unzip from the left (removing the branches
-            # going to the left). In the right-turning
-            # case we unzip from the right (also removing the branches going to
-            # the left)
-            start_side = turning
-        else:
-            # otherwise we unzip from the other side, removing the branches
-            # going to the right
-            start_side = (turning+1)%2
+        # if left_measure[0] < left_measure[1]:
+        #     # if the measure counted on the positive side is less, then in the
+        #     # left-turning case we unzip from the left (removing the branches
+        #     # going to the left). In the right-turning
+        #     # case we unzip from the right (also removing the branches going to
+        #     # the left)
+        #     start_side = turning
+        # else:
+        #     # otherwise we unzip from the other side, removing the branches
+        #     # going to the right
+        #     start_side = (turning+1)%2
 
 
-        if debug:
-            print "left_measure", left_measure
-            print "start_side", "LEFT" if start_side == LEFT else "RIGHT"
-            
+        # if debug:
+        #     print "left_measure", left_measure
+        #     print "start_side", "LEFT" if start_side == LEFT else "RIGHT"
+
+
+
+        # first we unzip once on the left and once on the right if the switch
+        # is left-turning to reveal any tricky branches
+        
+        if turning == LEFT:
+            for side in [LEFT, RIGHT]:
+                current_switch = switch if side == LEFT else -switch
+                b = self.outgoing_branch(-current_switch, 0, RIGHT)
+                if self.branch_endpoint(b) == -current_switch:
+                    # b is a self-connecting branch
+                    self.peel(current_switch, LEFT, bm, debug=debug)
+
         for step in [0, 1]:
             current_switch = switch if step == 0 else -switch
             if debug:
                 print "Step:", step
                 print "current_switch", current_switch
             while True:
-                print self._gluing_list
-                print self._measure
-                print current_switch
-                print start_side
-                b = self.outgoing_branch(current_switch, 0,
-                                         start_side=start_side)
-                if debug:
-                    print "Branch b:", b
-                    print "This branch starts to sides",\
-                        bm.which_side_to_start(b, debug) 
+                b1 = self.outgoing_branch(current_switch, 0, turning)
+                b2 = self.outgoing_branch(-current_switch, 0, (turning+1)%2)
 
-                # If left_measure[0] < left_measure[1], we finish unzipping on this side if
-                # the current branch goes to the right if step == 0 and to the
-                # left if step == 1. If left_measure[0] >= left_measure[1], it is the opposite.
-                finished = False
-                if left_measure[0] < left_measure[1]:
-                    if (RIGHT+step)%2 in bm.which_side_to_start(b):
-                        finished = True
-                else: 
-                    if (LEFT+step)%2 in bm.which_side_to_start(b):
-                        finished = True
-                # if not finished and 
-                    
-                if finished:
+                if debug:
+                    print "Branches to compare:", b1, b2
+                    print "They start to sides:", bm.which_side_to_start(b1),\
+                        bm.which_side_to_start(b2)  
+                
+                if bm.which_side_to_start(b1) != step or \
+                   bm.which_side_to_start(b2) != step:
                     if debug:
                         print "We have finished unzipping on this side."
                         if step == 0:
                             print "Moving on to Step 1."
                         else:
-                            print "Unzipping completed!"
+                            print "Unzipping completed!"                    
                     break
-                self.unzip_with_collapse(current_switch, 0, UP,
-                                         branch_map=bm,
-                                         start_side=start_side,
-                                         debug=debug)
+                
+                if debug:
+                    print "Peeling..."
+                self.peel(current_switch, turning, bm, debug=debug)
+                if debug:
+                    print "Gluing list after peeling:", self._gluing_list
+                    print "Measure after peeling:", self._measure
+
+
+                    
+                
+                # print start_side
+                # b = self.outgoing_branch(current_switch, 0,
+                #                          start_side=start_side)
+                # if debug:
+                #     print "Branch b:", b
+                #     print "This branch starts to sides",\
+                #         bm.which_side_to_start(b, debug) 
+
+                # If left_measure[0] < left_measure[1], we finish unzipping on this side if
+                # the current branch goes to the right if step == 0 and to the
+                # left if step == 1. If left_measure[0] >= left_measure[1], it is the opposite.
+                # finished = False
+                # if left_measure[0] < left_measure[1]:
+                #     if (RIGHT+step)%2 in bm.which_side_to_start(b):
+                #         finished = True
+                # else: 
+                #     if (LEFT+step)%2 in bm.which_side_to_start(b):
+                #         finished = True
+                # # if not finished and 
+                    
+                # if finished:
+                #     if debug:
+                #         print "We have finished unzipping on this side."
+                #         if step == 0:
+                #             print "Moving on to Step 1."
+                #         else:
+                #             print "Unzipping completed!"
+                #     break
+                # self.unzip_with_collapse(current_switch, 0, UP,
+                #                          branch_map=bm,
+                #                          start_side=start_side,
+                #                          debug=debug)
 
 
 
@@ -1250,7 +1289,7 @@ class DehnThurstonTT(TrainTrack):
         bm.chop_paths(debug)
         if debug:
             print "Branch map after chopping paths:", bm._branch_map
-        bm.transform(transform_rules, debug)
+        bm.transform(debug)
         if debug:
             print "Branch map after transforming (isotopy):", bm._branch_map
         folds = bm.find_boundary_folds()
@@ -1282,7 +1321,7 @@ class DehnThurstonTT(TrainTrack):
                 print "---------------------"
                 print "Branch map before folding", bm._branch_map
                 print "Gluing list:", self._gluing_list
-            success = self.pop_fold(bm,debug)
+            success = pop_fold(self,bm,debug)
             if success == False:
                 if debug:
                     print "No fold found."
@@ -1649,3 +1688,33 @@ class DehnThurstonTT(TrainTrack):
 
 
 
+
+def pop_fold(train_track, branch_map, debug=False):
+    branches = branch_map._branch_map.keys()
+    for b1 in branches:
+        # we want to fold b1 or -b1
+        ls = branch_map._branch_map[b1]
+        if len(ls) == 1:
+            # if path of length one, we can't fold the branch
+            continue
+        for b2 in branches:
+            if b1 == b2:
+                continue
+            for sb1 in [b1, -b1]:
+                for sb2 in [b2, -b2]:
+                    if branch_map.is_subpath(sb2,sb1):
+                        if debug:
+                            print sb2, " is a subpath of ", sb1
+                        try:
+                            train_track.fold_by_branch_labels(sb1, sb2)
+                            branch_map.subtract(sb1,sb2)
+                            if debug:
+                                print "Folded branch:", sb1
+                                print "Folding onto:", sb2
+                            return True
+                        except FoldError as err:
+                            if debug:
+                                print err
+                                print sb1, "cannot be folded on", sb2
+                            pass
+    return False

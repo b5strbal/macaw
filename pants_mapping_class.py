@@ -111,7 +111,7 @@ class PantsMappingClass(MappingClass):
             lam = other.copy()
             # print type(other)
             # print "Other", other
-            debug=True
+            debug=False
             if debug:
                 print "Mapping class:", self
             # apply twists from right to left
@@ -213,10 +213,10 @@ class PantsMappingClass(MappingClass):
             lam = PantsLamination2.from_pants_curve(p,c)
             c1 = lam
             c2 = self *lam
-            print "1:", c1
+            # print "1:", c1
             # print lam.parent()
             # print isinstance(lam,PantsLamination)
-            print "2:", c2
+            # print "2:", c2
             # print "1:", lam
             # print lam.parent()
             # print isinstance(lam,PantsLamination)
@@ -229,10 +229,10 @@ class PantsMappingClass(MappingClass):
             # print "3:", lam
             c1 = lam
             c2 = self *lam
-            print "3:", c1
+            # print "3:", c1
             # print lam.parent()
             # print isinstance(lam,PantsLamination)
-            print "4:", c2
+            # print "4:", c2
             # print "4:", self * lam
             if lam != self * lam:
                 return False
@@ -362,3 +362,28 @@ f = A[0]*A[1]*B[0]*B[1]
 p = f._pants_decomposition
 lam = PantsLamination.from_pants_curve(p,1)
 # f.nielsen_thurston_type()
+
+
+def test():
+    A[0]*A[1] == A[1]*A[0]
+    A[0]*B[1] == B[1]*A[0]
+    A[0]*c == c*A[0]
+    A[0]*B[0] == B[0]*A[0]
+    A[0]*B[0]*A[0] == B[0]*A[0]*B[0]
+    B[0]*c == c*B[0]
+    B[0]*B[1] == B[1]*B[0]
+    B[0]*A[1] == A[1]*B[0]
+    B[0]*A[1]*B[0] == A[1]*B[0]*A[1]
+    A[1]*c == c*A[1]
+    A[1]*B[1] == B[1]*A[1] 
+    A[1]*B[1]*A[1] == B[1]*A[1]*B[1]
+    B[1]*c == c*B[1]
+    B[1]*c*B[1] == c*B[1]*c
+
+    # %timeit test() runs in
+    # - 262 ms for PantsLamination
+    # - 380 ms for PantsLamination2
+
+def test100():
+    for i in range(100):
+        test()

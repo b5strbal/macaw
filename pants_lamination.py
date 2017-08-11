@@ -20,12 +20,12 @@ AUTHORS:
 #*****************************************************************************
 
 
-from pants_decomposition import PantsDecomposition
+from pants_decomposition import PantsDecomposition, PANT, BDY_IDX
 from sage.structure.sage_object import SageObject
 
 from sage.all import matrix, vector, QQ, sign, Integer
 from dehn_thurston_tt import DehnThurstonTT
-
+from constants import LEFT, RIGHT
 
 
 
@@ -391,7 +391,7 @@ class PantsLamination(MeasuredLamination):
             print p
             print "Pants curve: ", pants_curve
             print "Elementary move type: ", typ
-        sides = [LEFT,RIGHT] if typ == TYPE_2 else [LEFT]
+        sides = [LEFT,RIGHT] if typ == 2 else [LEFT]
         # print "1: ", self
             
         if debug:
@@ -403,7 +403,7 @@ class PantsLamination(MeasuredLamination):
             print "Bdy index: ", bdy_idx
             
         shift = [0,0]
-        if typ == TYPE_1:
+        if typ == 1:
             torus_boundary_curve, shift[LEFT] = p._torus_boundary_curve(pants_curve)
         else:
             shift = bdy_idx
@@ -434,7 +434,7 @@ class PantsLamination(MeasuredLamination):
 
         # old coordinates
         t = [self.t(pants_curve)]
-        if typ == TYPE_1:            
+        if typ == 1:            
             t.append(self.t(torus_boundary_curve))
             l = l[LEFT]
             r = l[0,1]
@@ -450,7 +450,7 @@ class PantsLamination(MeasuredLamination):
 
         
         # new coordinates
-        if typ == TYPE_1:
+        if typ == 1:
             ll = matrix(QQ,3)
             ll[0,0] = max(r-abs(t[0]),0)
             L = r - ll[0,0]
@@ -591,7 +591,7 @@ class PantsLamination(MeasuredLamination):
             print "-----------------------"
         p = self._pants_decomposition
         lam = self
-        if p.elementary_move_type(pants_curve) == TYPE_1:
+        if p.elementary_move_type(pants_curve) == 1:
             # fourth iterate differs from the original by a Dehn twist about
             # the curve bounding the torus
             for i in range(3):

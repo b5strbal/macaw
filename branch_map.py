@@ -25,6 +25,27 @@ from sage.all import sign
 
 
 
+transform_rules = {
+    (1,): (-3,),
+    (4,): (19,-13,-4),
+    (9,4,-9): (5,),
+    (4,-9): (19,-13,1,-14),
+    (9,): (-1,),
+    (9,1): (2,),
+    (4,13): (19,),
+    (13,): (4,13),
+    (5,): (3,10,-3),
+    (2,): (3,7),
+    (6,): (-7,4,13,-19,7,-20),
+    (-13,4,13): (-13,-4,19),
+    (9,13): (14,-1,13),
+    (9,4,13): (-1,19),
+    (-1,13): (-15,3,19)
+}
+
+            
+
+
 class BranchMap(SageObject):
     def __init__(self,branches):
         """
@@ -130,26 +151,31 @@ class BranchMap(SageObject):
         if debug:
             print "Branch map of branch:", ls
 
-        # if ls[0] in [1, -4, -9, 13] or \
-        #    ls[0] == 4 and (len(ls)==1 or ls[1] != 13) or\
-        #    ls[0] == 10 and len(ls)>1 and ls[1] == 19:
-        #     return [LEFT]
-        # if ls[0] in [7, -10, -3, 19] or \
-        #    ls[0] == 10 and (len(ls)==1 or ls[1] != 19) or\
-        #    ls[0] == 4 and len(ls)>1 and ls[1] == 13:
-        #     return [RIGHT]
-        # assert(False)
-
+        if ls == [10, 19, -13, -4] or ls == [4, 13, -19, -10]:
+            return None
         if ls[0] in [1, -4, -9, 13] or \
            ls[0] == 4 and (len(ls)==1 or ls[1] != 13) or\
-           ls == [10, 19, -13, 1]:
-            return [LEFT]
+           ls[0] == 10 and len(ls)>1 and ls[1] == 19:
+            return LEFT
         if ls[0] in [7, -10, -3, 19] or \
-           ls[0] == 10 and (len(ls)==1 or ls[1] != 19) or \
-           ls == [4, 13, -19, 7]:
-            return [RIGHT]
-        return [LEFT, RIGHT]
+           ls[0] == 10 and (len(ls)==1 or ls[1] != 19) or\
+           ls[0] == 4 and len(ls)>1 and ls[1] == 13:
+            return RIGHT
+        assert(False)
 
+
+        
+        # if ls[0] in [1, -4, -9, 13] or \
+        #    ls[0] == 4 and (len(ls)==1 or ls[1] != 13) or\
+        #    ls == [10, 19, -13, 1]:
+        #     return [LEFT]
+        # if ls[0] in [7, -10, -3, 19] or \
+        #    ls[0] == 10 and (len(ls)==1 or ls[1] != 19) or \
+        #    ls == [4, 13, -19, 7]:
+        #     return [RIGHT]
+        # return [LEFT, RIGHT]
+
+    
     
 
 
@@ -172,7 +198,7 @@ class BranchMap(SageObject):
     #             return True
     #     return False
     
-    def transform(self, transform_rules, debug):
+    def transform(self, debug):
         for b in self._branch_map.keys():
             ls = self._branch_map[b]
             new_ls = []
@@ -229,13 +255,13 @@ class BranchMap(SageObject):
             ls = self._branch_map[b]
             if ls == [9, 19, -13, -9]:
                 self._branch_map[b] = [12]
-            if ls == [9, -13, 19, -9]:
+            if ls == [9, 13, -19, -9]:
                 self._branch_map[b] = [-12]
             if ls == [3, 13, -19, -3]:
                 self._branch_map[b] = [6]
-            if ls == [3, -19, 13, -3]:
+            if ls == [3, 19, -13, -3]:
                 self._branch_map[b] = [-6]
-
+            
             # if ls == [9, 19, -13, -9]:
             #     self._branch_map[b] = [-5]
             # if ls == [9, -13, 19, -9]:
@@ -367,23 +393,3 @@ class BranchMap(SageObject):
                 self._branch_map[b].pop()
         return fold_list
 
-
-transform_rules = {
-    (1,): (-3,),
-    (4,): (19,-13,-4),
-    (9,4,-9): (5,),
-    (4,-9): (19,-13,1,-14),
-    (9,): (-1,),
-    (9,1): (2,),
-    (4,13): (19,),
-    (13,): (4,13),
-    (5,): (3,10,-3),
-    (2,): (3,7),
-    (6,): (-7,4,13,-19,7,-20),
-    (-13,4,13): (-13,-4,19),
-    (9,13): (14,-1,13),
-    (9,4,13): (-1,19),
-    (-1,13): (-15,3,19)
-}
-
-            

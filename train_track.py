@@ -31,7 +31,6 @@ from sage.structure.sage_object import SageObject
 from sage.misc.flatten import flatten
 from sage.graphs.graph import Graph
 from sage.graphs.digraph import DiGraph
-from branch_map import BranchMap
 from constants import LEFT, RIGHT
 
 LARGE = 0
@@ -412,6 +411,33 @@ class TrainTrack(SageObject):
 
     #     self._num_branches -= 1
 
+
+    def swap_branch_numbers(self, branch1, branch2):
+        sw1p = self.branch_endpoint(branch1)
+        sw1m = self.branch_endpoint(-branch1)
+        sw2p = self.branch_endpoint(branch2)
+        sw2m = self.branch_endpoint(-branch2)
+        m1 = self.branch_measure(branch1)
+        m2 = self.branch_measure(branch2)
+        
+        for x in self._gluing_list:
+            for i in range(len(x)):
+                if x[i] == branch1:
+                    x[i] = branch2
+                elif x[i] == branch2:
+                    x[i] = branch1
+                elif x[i] == -branch1:
+                    x[i] = -branch2
+                elif x[i] == -branch2:
+                    x[i] = -branch1
+        self._set_endpoint(branch1, sw2p)
+        self._set_endpoint(-branch1, sw2m)
+        self._set_endpoint(branch2, sw1p)
+        self._set_endpoint(-branch2, sw1m)
+
+        if self.is_measured():
+            self._set_measure(branch1, m2)
+            self._set_measure(branch2, m1)
         
     @staticmethod
     def _a(switch):
@@ -1003,6 +1029,8 @@ class TrainTrack(SageObject):
             print "---------------------------"
             print "BEGIN: unzip_pos()"
             print "---------------------------"
+            print "Gluing list:", self._gluing_list
+            print "Measure:", self._measure
             print "switch:", switch
             print "pos:", pos
             print "start_side:", "LEFT" if start_side == LEFT else "RIGHT"
@@ -1019,7 +1047,8 @@ class TrainTrack(SageObject):
                 print "Remaining branch measure:", s
             if s <= 0:
                 return (len(neg_side) - 1 - i, s+self.branch_measure(b), -s)
-
+        # print b, s
+        assert(False)
 
             
     # def unzip_pos_old(self,switch,pos):
@@ -1075,7 +1104,7 @@ class TrainTrack(SageObject):
     #     return (0,-s)
 
 
-    def peel(self, switch, side = LEFT, branch_map = None):
+    def peel(self, switch, side, branch_map=None, debug=False):
         """
         
         INPUT:
@@ -1089,17 +1118,38 @@ class TrainTrack(SageObject):
         ``side`` and RIGHT otherwise.
 
         """
-
         assert(self.is_measured())
         if side == RIGHT:
-            return self.peel(-switch, LEFT)
+            return self.peel(-switch, LEFT, branch_map, debug=debug)
+
+        if debug:
+            print "-------------------------------"
+            print "BEGIN: peel()"
+            print "-------------------------------"
+            print "Gluing list at beginning", self._gluing_list
+            print "Measure at beginning", self._measure
+            if branch_map != None:
+                print "Branch map at the beginning", branch_map._branch_map
+            print "Switch:", switch
+            print "side", "LEFT" if side == LEFT else "RIGHT"
 
         branches = [self.outgoing_branch(switch, 0),
                     self.outgoing_branch(-switch, 0, start_side=RIGHT)]
         assert(abs(branches[0])!=abs(branches[1]))
+        
+        len1 = len(self.outgoing_branches(switch))
+        len2 = len(self.outgoing_branches(-switch))
+        assert(len1>1 or len2>1)
 
         measures = [self.branch_measure(b) for b in branches]
-        sm_idx = 0 if measures[0] <= measures[1] else 1
+
+        if len1 == 1:
+            sm_idx = 1
+        elif len2 == 1:
+            sm_idx = 0
+        else:
+            sm_idx = 0 if measures[0] <= measures[1] else 1
+
         lg_idx = (sm_idx+1)%2
         side = LEFT if sm_idx == 0 else RIGHT
         or_switch = switch if sm_idx == 0 else -switch
@@ -1120,38 +1170,18 @@ class TrainTrack(SageObject):
         # moved also.)
         if branch_map != None:
             branch_map.append(-branches[sm_idx], branches[lg_idx])
-        return LEFT if sm_idx == 1 else RIGHT
 
-    def pop_fold(self, branch_map, debug=False):
-        #TODO: maybe this should be a standalone function, not a classmethod
-        branches = branch_map._branch_map.keys()
-        for b1 in branches:
-            # we want to fold b1 or -b1
-            ls = branch_map._branch_map[b1]
-            if len(ls) == 1:
-                # if path of length one, we can't fold the branch
-                continue
-            for b2 in branches:
-                if b1 == b2:
-                    continue
-                for sb1 in [b1, -b1]:
-                    for sb2 in [b2, -b2]:
-                        if branch_map.is_subpath(sb2,sb1):
-                            if debug:
-                                print sb2, " is a subpath of ", sb1
-                            try:
-                                self.fold_by_branch_labels(sb1, sb2)
-                                branch_map.subtract(sb1,sb2)
-                                if debug:
-                                    print "Folded branch:", sb1
-                                    print "Folding onto:", sb2
-                                return True
-                            except FoldError as err:
-                                if debug:
-                                    print err
-                                    print sb1, "cannot be folded on", sb2
-                                pass
-        return False
+        if debug:
+            print "Gluing list at the end", self._gluing_list
+            print "Measure at the end", self._measure
+            if branch_map != None:
+                print "Branch map at the end", branch_map._branch_map
+            print "-------------------------------"
+            print "END: peel()"
+            print "-------------------------------"
+
+
+        return LEFT if sm_idx == 1 else RIGHT
     
 
                               
