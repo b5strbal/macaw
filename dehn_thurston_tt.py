@@ -21,7 +21,7 @@ AUTHORS:
 
 
 # from surface import Surface
-from train_track import TrainTrack, FoldError
+from train_track1 import TrainTrack, FoldError
 # from pants_decomposition import PantsDecomposition
 from sage.structure.sage_object import SageObject
 from constants import LEFT, RIGHT

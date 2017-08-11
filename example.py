@@ -26,7 +26,7 @@ EXAMPLES::
 # from surface import Surface
 from sage.structure.sage_object import SageObject
 # from sage.graphs.graph import Graph
-# from train_track import TrainTrack
+# from train_track1 import TrainTrack
 # from collections import namedtuple
 from pants_decomposition import PantsDecomposition, PantsTwist, PantsMappingClass
 
