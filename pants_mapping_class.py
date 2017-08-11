@@ -22,9 +22,10 @@ AUTHORS:
 
 from sage.structure.sage_object import SageObject
 from pants_decomposition import PantsDecomposition
-from pants_lamination import PantsLamination, PantsLamination2
+from pants_lamination import PantsLamination
+# from pants_lamination_old import PantsLamination
 from mapping_class import MappingClass
-from sage.all import n, norm
+from sage.all import numerical_approx, norm
 
 
 class PantsTwist(SageObject):
@@ -63,7 +64,8 @@ class PantsMappingClass(MappingClass):
         self._pants_decomposition = pants_decomposition
 
     def _repr_(self):
-        return "Mapping class; product of the twists " + repr(self._pants_twists)
+        return "Mapping class; product of the twists " + \
+            repr(self._pants_twists)
 
     @classmethod
     def identity(cls, pants_decomposition):
@@ -81,31 +83,6 @@ class PantsMappingClass(MappingClass):
                                      other._pants_twists)
 
         if isinstance(other, PantsLamination):
-            lam = other
-            # p = self._pants_decomposition
-            # if p != lam._pants_decomposition:
-            #     raise ValueError("Cannot multiply a PantsMappingClass "
-            #                      "and PantsLamination "
-            #                      "corresponding to different pants "
-            #                      "decompositions")
-
-            # apply twists from right to left
-            for pants_twist in reversed(self._pants_twists):
-                # print other
-                for curve in pants_twist.elementary_moves:
-                    # print lam
-                    lam = lam.apply_elementary_move(curve)
-                    # print other
-                # print lam
-                lam = lam.apply_twist(pants_twist.pants_curve, pants_twist.power)
-                # print other
-                for curve in reversed(pants_twist.elementary_moves):
-                    # print lam
-                    lam = lam.apply_elementary_move_inverse(curve)
-                    # print other
-            return lam
-
-        if isinstance(other, PantsLamination2):
             lam = other.copy()
             # print type(other)
             # print "Other", other
@@ -159,7 +136,6 @@ class PantsMappingClass(MappingClass):
                 print "-------------------------"
             return lam
 
-
         raise ValueError
 
     # def __rmul__(self, pants_lamination):
@@ -173,7 +149,8 @@ class PantsMappingClass(MappingClass):
         if k > 0:
             return PantsMappingClass(p, twists)
         if k < 0:
-            return PantsMappingClass(p, [t.inverse() for t in reversed(twists)])
+            return PantsMappingClass(p, [t.inverse() for t in
+                                         reversed(twists)])
 
     def inverse(self):
         return self**(-1)
@@ -183,34 +160,7 @@ class PantsMappingClass(MappingClass):
         for c in p.inner_pants_curves():
             lam = PantsLamination.from_pants_curve(p, c)
             # c1 = lam
-            # c2 = self *lam
-            # print "1:", c1
-            # print lam.parent()
-            # print isinstance(lam, PantsLamination)
-            # print "2:", self * c2
-            # print (self * lam).parent()
-            # return (lam, self*lam)
-            if lam != self * lam:
-                return False
-            lam = PantsLamination.from_transversal(p, c)
-            # c1 = lam
-            # c2 = self *lam
-            # print "3:", c1
-            # print lam.parent()
-            # print isinstance(lam, PantsLamination)
-            # print "4:", self * c2
-            # print "3:", lam
-            # print "4:", self * lam
-            if lam != self * lam:
-                return False
-        return True
-
-    def is_identity2(self):
-        p = self._pants_decomposition
-        for c in p.inner_pants_curves():
-            lam = PantsLamination2.from_pants_curve(p, c)
-            c1 = lam
-            c2 = self *lam
+            # c2 = self * lam
             # print "1:", c1
             # print lam.parent()
             # print isinstance(lam, PantsLamination)
@@ -223,10 +173,10 @@ class PantsMappingClass(MappingClass):
             # return (lam, self*lam)
             if lam != self * lam:
                 return False
-            lam = PantsLamination2.from_transversal(p, c)
+            lam = PantsLamination.from_transversal(p, c)
             # print "3:", lam
-            c1 = lam
-            c2 = self *lam
+            # c1 = lam
+            # c2 = self * lam
             # print "3:", c1
             # print lam.parent()
             # print isinstance(lam, PantsLamination)
@@ -235,8 +185,6 @@ class PantsMappingClass(MappingClass):
             if lam != self * lam:
                 return False
         return True
-
-
 
     def __eq__(self, other):
         """
@@ -279,16 +227,15 @@ class PantsMappingClass(MappingClass):
         #     print "B"
         #     return False
         # print "C"
-        return (self * other.inverse()).is_identity2()
+        return (self * other.inverse()).is_identity()
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
-        # if isinstance(other)
-    def nielsen_thurston_type(self):
-        p = self._pants_decomposition
-        inner_curve = p.inner_pants_curves()[0]
-        c = PantsLamination.from_pants_curve(p, inner_curve)
+    # def nielsen_thurston_type(self):
+    #     p = self._pants_decomposition
+    #     inner_curve = p.inner_pants_curves()[0]
+    #     c = PantsLamination.from_pants_curve(p, inner_curve)
 
     def stretch_factor(self):
         """
@@ -298,21 +245,37 @@ class PantsMappingClass(MappingClass):
         sage: f = A[0]*B[0]^(-1)
         sage: n(f.stretch_factor(), digits=4)
         2.618
+        sage: g = A[0]*B[0]
+        sage: 0.9 < g.stretch_factor() < 1.1
+        True
 
         """
         p = self._pants_decomposition
 
         # pick a curve to iterate
-        inner_curve = p.inner_pants_curves()[0]
         c = PantsLamination.random(p)
         # print c
 
         cc = (self**100) * c
         # print self**100
         # print cc
-        return n(norm((self*cc).to_vector())/norm(cc.to_vector()))
+        return numerical_approx(norm((self*cc).to_vector()) /
+                                norm(cc.to_vector()))
 
     def order(self):
+        """
+
+        TESTS::
+
+        sage: A, B, c = humphries_generators(4)
+        sage: A[0].order()
+        0
+        sage: (A[0]*B[0]^(-1)).order()
+        0
+        sage: g = hyperelliptic_involution(3)
+        sage: g.order()
+        2
+        """
         # TODO: test using this:
         # https://projecteuclid.org/euclid.ojm/1277298910
         p = self._pants_decomposition
@@ -341,6 +304,19 @@ def humphries_generators(g):
 
 
 def hyperelliptic_involution(g):
+    """
+
+    TESTS::
+
+    sage: g = hyperelliptic_involution(3)
+    sage: g.order()
+    2
+
+    sage: g = hyperelliptic_involution(4)
+    sage: g.order()
+    2
+
+    """
     p = PantsDecomposition.humphries(g)
     A, B, c = humphries_generators(g)
     A.append(PantsMappingClass(p, [PantsTwist([], 3*g-3)]))
