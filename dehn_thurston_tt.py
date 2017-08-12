@@ -98,6 +98,33 @@ class DehnThurstonTT(TrainTrack):
         #         return side
         # assert(False)
 
+    def pants_branch_on_switch(self, switch):
+        """
+        TESTS:
+
+            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
+            sage: tt = DehnThurstonTT([[10, 6, 5], [-10, 4, -6], [-5, -4, 2],
+            ....: [-8, -7, -2], [7, 9, 13], [-9, 8, -13]])
+            sage: tt.pants_branch_on_switch(1)
+            10
+            sage: tt.pants_branch_on_switch(-1)
+            10
+            sage: tt.pants_branch_on_switch(2)
+            2
+            sage: tt.pants_branch_on_switch(-2)
+            2
+            sage: tt.pants_branch_on_switch(3)
+            13
+            sage: tt.pants_branch_on_switch(-3)
+            13
+
+        """
+        return self._pants_branches[abs(switch)-1]
+
+    def transverse_measure(self, switch):
+        return self.measure_on_switch(switch) -\
+            self.branch_measure(self.pants_branch_on_switch(switch))
+
     def elem_move_type(self, switch):
         """
 
@@ -135,127 +162,9 @@ class DehnThurstonTT(TrainTrack):
                     return 1
         return 2
 
-    def standardize_neighboring_branches(self, switch):
-        """
-
-        TESTS:
-
-            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
-            sage: tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2],
-            ....: [-8, -7, -2], [7, 9, 3], [-9, 8, -3]])
-            sage: d = tt.standardize_neighboring_branches(2)
-            sage: sorted(d.items())
-            [(-9, -8), (-8, -9), (-7, 7), (-6, 2), (-5, -3), (-4, 1), (-2,
-            ....: -13), (2, 13), (4, -1), (5, 3), (6, -2), (7, -7), (8, 9), (9,
-            ....: 8)]
-
-            sage: tt2 = DehnThurstonTT([[1, 6], [-1, 4], [-8, -4, -5, 9, 5],
-            ....: [8, -7, -2, -6, 2], [7, 3], [-9, -3]])
-            sage: d = tt2.standardize_neighboring_branches(2)
-            sage: sorted(d.items())
-            [(-9, -7), (-8, 13), (-7, -3), (-6, 1), (-5, 10), (-4, -9), (-2,
-            ....: 4), (2, -4), (4, 9), (5, -10), (6, -1), (7, 3), (8, -13), (9,
-            ....: 7)]
-        """
-
-        assert(self.elem_move_type(switch) == 2)
-        branch_to_standard = {}
-        turning = self.get_turning(switch)
-
-        # naming the pants curve to 13
-        branch_to_standard[self.outgoing_branch(switch, 0, turning)] = 13
-
-        # changing the orientation of the switch so the left side can be
-        # accessed in the positive direction
-        or_switch = switch if turning == RIGHT else -switch
-
-        for side in [LEFT, RIGHT]:
-            if side == LEFT:
-                side_branches = self.outgoing_branches(or_switch)
-            else:
-                side_branches = self.outgoing_branches(-or_switch)
-            if turning == LEFT:
-                side_branches = side_branches[1:]
-            else:
-                side_branches = side_branches[:-1]
-
-            # print "--------------------------"
-            # print "pants branches", self._pants_branches
-            # print "side", side
-            # print "turning", turning
-            # print "or_switch", or_switch
-            # print "side_branches", side_branches
-            # print "--------------------------"
-            if len(side_branches) == 4:
-                # type 1
-                branch_to_standard[side_branches[0]] = -(3+6*side)
-                branch_to_standard[side_branches[1]] = 4+6*side
-                branch_to_standard[side_branches[2]] = 1+6*side
-            elif len(side_branches) == 2:
-                # type 0
-                branch_to_standard[side_branches[0]] = -(3+6*side)
-                branch_to_standard[side_branches[1]] = 1+6*side
-
-                # finding the third branch
-                sw = self.branch_endpoint(side_branches[1])
-                idx = self.outgoing_branches(sw).index(-side_branches[1])
-                b = self.outgoing_branch(sw, idx+1)
-                branch_to_standard[b] = 2+6*side
-            elif len(side_branches) == 1:
-                sw = self.branch_endpoint(side_branches[0])
-                branches = self.outgoing_branches(sw)
-                idx = branches.index(-side_branches[0])
-                if idx in [0, 1]:
-                    # type 2
-                    branch_to_standard[branches[idx]] = -(1+6*side)
-                    branch_to_standard[branches[idx+1]] = 5+6*side
-                    branch_to_standard[branches[idx+2]] = 2+6*side
-                elif idx in [2, 3]:
-                    # type 3
-                    branch_to_standard[branches[idx-2]] = -(2+6*side)
-                    branch_to_standard[branches[idx-1]] = 6+6*side
-                    branch_to_standard[branches[idx]] = 3+6*side
-                else:
-                    assert(False)
-            else:
-                assert(False)
-
-        # extend with negatives
-        for b in branch_to_standard.keys():
-            branch_to_standard[-b] = -branch_to_standard[b]
-        return branch_to_standard
-
-    def torus_boundary_switch(self, switch):
-        """
-        Return the switch on the boundary of the torus containing ``switch``.
-
-        The returned switch is oriented so that the torus is on its left side.
-        """
-        assert(self.elem_move_type(switch) == 1)
-        for b in self.outgoing_branches(switch):
-            new_switch = self.branch_endpoint(b)
-            if abs(new_switch) != abs(switch):
-                break
-        if self.get_turning(new_switch) == LEFT:
-            return -new_switch
-        return new_switch
-
-    def orientation_of_switch_first_move(self, switch):
-        """
-        Return the standard orientation of the switch for the first elementary
-        move.
-        """
-        assert(self.elem_move_type(switch) == 1)
-        bdy_switch = self.torus_boundary_switch(switch)
-        turning = self.get_turning(bdy_switch)
-        if turning == RIGHT:
-            b = self.outgoing_branch(bdy_switch, 0)
-        else:
-            b = self.outgoing_branch(-bdy_switch, 1)
-        sw = self.branch_endpoint(b)
-        if self.get_turning(switch) == LEFT:
-            return sw
-        return -sw
+    # --------------------------------------
+    # TWISTING
+    # --------------------------------------
 
     def num_curves_on_sides(self, pants_curve):
         switch = pants_curve
@@ -267,10 +176,6 @@ class DehnThurstonTT(TrainTrack):
         turning = self.get_turning(pants_curve)
         return (nbottom-1, ntop-1) if turning == LEFT else (ntop-1, nbottom-1)
 
-    def transverse_measure(self, switch):
-        return self.measure_on_switch(switch) -\
-            self.branch_measure(self.pants_branch_on_switch(switch))
-
     def unzip_fold_general_twist(self, pants_curve, twists_on_left,
                                  twists_on_right, debug=False):
         """
@@ -279,74 +184,76 @@ class DehnThurstonTT(TrainTrack):
         We only twist in the good direction::
 
             sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
-            sage: tt = DehnThurstonTT([[1, 2, 3, 4], [-1, -5, -6, -7], [5],
-            ....: [-4], [6], [-3], [7], [-2]], [1, 2, 3, 4, 4, 3, 2], [1, None,
-            ....: None, None])
-            sage: tt.unzip_fold_general_twist(1, -2, -1)
+            sage: tt = DehnThurstonTT([[4, 1], [6, -1], [-2, -6, 7, -4, -7],
+            ....: [2, 9, -5, 8, 5], [-8, 3], [-9, -3]], [1, 2, 8, 11, 7, 11, 5,
+            ....: 9, 9])
+            sage: tt.unzip_fold_general_twist(2, -2, -1)
             sage: tt._gluing_list
-            [[1, 3, 4, 2], [-1, -7, -5, -6], [5], [-4], [6], [-3], [7], [-2]]
+            [[4, 1], [6, -1], [-2, 7, -4, -7, -6], [2, 8, 5, 9, -5], [-8, 3], [-9, -3]]
             sage: tt._branch_endpoint
-            [[1, 1, 1, 1, 2, 3, 4], [-1, -4, -3, -2, -1, -1, -1]]
+            [[1, -2, 3, 1, -2, -1, 2, -2, -2], [-1, 2, -3, 2, -2, 2, 2, 3, -3]]
             sage: tt._measure
-            [10, 2, 3, 4, 4, 3, 2]
+            [1, 29, 8, 11, 7, 11, 5, 9, 9]
 
         There is twist in the good direction on the left side and in the wrong
         direction on the right side. The unzip on the right goes into the pants
         branch.
 
-            sage: tt = DehnThurstonTT([[1, 2, 3, 4], [-1, -5, -6, -7], [5],
-            ....: [-4], [6], [-3], [7], [-2]], [10, 2, 3, 4, 4, 3, 2], [1,
-            ....: None, None, None])
-            sage: tt.unzip_fold_general_twist(1, -2, 1)
+            sage: tt = DehnThurstonTT([[4, 1], [6, -1], [-2, -6, 7, -4, -7],
+            ....: [2, 9, -5, 8, 5], [-8, 3], [-9, -3]], [1, 100, 8, 11, 7, 11,
+            ....: 5, 9, 9])
+            sage: tt.unzip_fold_general_twist(2, -2, 1)
             sage: tt._gluing_list
-            [[1, 4, 2, 3], [-1, -7, -5, -6], [5], [-4], [6], [-3], [7], [-2]]
+            [[4, 1], [6, -1], [-2, -7, -6, 7, -4], [2, 8, 5, 9, -5], [-8, 3], [-9, -3]]
             sage: tt._branch_endpoint
-            [[1, 1, 1, 1, 2, 3, 4], [-1, -4, -3, -2, -1, -1, -1]]
+            [[1, -2, 3, 1, -2, -1, 2, -2, -2], [-1, 2, -3, 2, -2, 2, 2, 3, -3]]
             sage: tt._measure
-            [13, 2, 3, 4, 4, 3, 2]
+            [1, 111, 8, 11, 7, 11, 5, 9, 9]
 
-        # There is bad twist on both sides, but both unzips go into the pants
-        # curve.
+        There is bad twist on both sides, but both unzips go into the pants
+        curve.
 
-        #     sage: tt = DehnThurstonTT([[1, 2, 3, 4], [-1, -5, -6, -7], [5],
-            ....: [-2], [6], [-3], [7], [-4]], [100, 2, 3, 13, 5, 6, 7], [1,
-            ....: None, None, None])
-        #     sage: tt.unzip_fold_general_twist(1, 2, 1)
-        #     sage: tt._gluing_list
-        #     [[1, 4, 2, 3], [-1, -6, -7, -5], [5], [-2], [6], [-3], [7], [-4]]
-        #     sage: tt._branch_endpoint
-        #     [[1, 1, 1, 1, 2, 3, 4], [-1, -2, -3, -4, -1, -1, -1]]
-        #     sage: tt._measure
-        #     [74, 2, 3, 13, 5, 6, 7]
+            sage: tt = DehnThurstonTT([[4, 1], [6, -1], [-2, -6, 7, -4, -7],
+            ....: [2, 9, -5, 8, 5], [-8, 3], [-9, -3]], [1, 100, 8, 11, 7, 11,
+            ....: 5, 9, 9])
+            sage: tt.unzip_fold_general_twist(2, 2, 1)
+            sage: tt._gluing_list
+            [[4, 1], [6, -1], [-2, -7, -6, 7, -4], [2, 8, 5, 9, -5], [-8, 3], [-9, -3]]
+            sage: tt._branch_endpoint
+            [[1, -2, 3, 1, -2, -1, 2, -2, -2], [-1, 2, -3, 2, -2, 2, 2, 3, -3]]
+            sage: tt._measure
+            [1, 79, 8, 11, 7, 11, 5, 9, 9]
 
-        # (We peel of a 6, 7 and 13 from the pants branch.)
+        Now we consider a right-turning train track, with good twist on the
+        left but more bad twist on the right. Now the unzip goes across and the
+        orientation of the switch changes.
 
-        # Now we we consider a right-turning train track, with bad twist on the
-        # right, where the unzip goes across.
+            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
+            sage: tt = DehnThurstonTT([[4, 1], [6, -1], [-6, 7, -4, -7, -2],
+            ....: [9, -5, 8, 5, 2], [-8, 3], [-9, -3]], [1, 2, 8, 11, 7, 11,
+            ....: 5, 9, 9])
+            sage: tt.unzip_fold_general_twist(2, 1, -3)
+            sage: tt._gluing_list
+            [[4, 1], [6, -1], [2, 5, 9, -5, 8], [-2, -7, -6, 7, -4], [-8, 3], [-9, -3]]
+            sage: tt._branch_endpoint
+            [[1, 2, 3, 1, 2, -1, -2, 2, 2], [-1, -2, -3, -2, 2, -2, -2, 3, -3]]
+            sage: tt._measure
+            [1, 18, 8, 11, 7, 11, 5, 9, 9]
 
-        #     sage: tt = DehnThurstonTT([[2, 3, 4, 1], [-5, -6, -7, -1], [5],
-            ....: [-2], [6], [-3], [7], [-4]], [1, 2, 3, 13, 5, 6, 7], [1,
-            ....: None, None, None])
-        #     sage: tt.unzip_fold_general_twist(1, 0, -1)
-        #     sage: tt._gluing_list
-        #     [[1, -6, -7, -5], [-1, 2, 3, 4], [5], [-2], [6], [-3], [7], [-4]]
-        #     sage: tt._branch_endpoint
-        #     [[1, -1, -1, -1, 2, 3, 4], [-1, -2, -3, -4, 1, 1, 1]]
-        #     sage: tt._measure
-        #     [4, 2, 3, 13, 5, 6, 7]
+        The next one is a right-turning train track which has a bad twist on
+        both sides. The unzips also go across.
 
-        # The next one is a right-turning train track which has a bad twist on
-        # both sides. The unzips also go across.
-
-        #     sage: tt = DehnThurstonTT([[2, 3, 4, 1], [-5, -6, -7, -1], [5],
-            ....: [-2], [6], [-3], [7], [-4]], [1, 2, 3, 13, 5, 6, 7], [1,
-            ....: None, None, None])
-        #     sage: tt.unzip_fold_general_twist(1, -1, -1)
-        #     sage: tt._gluing_list
-        #     [[1, -6, -7, -5], [-1, 3, 4, 2], [5], [-2], [6], [-3], [7], [-4]]
-        #     sage: tt._measure
-        #     [6, 2, 3, 13, 5, 6, 7]
-
+            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
+            sage: tt = DehnThurstonTT([[4, 1], [6, -1], [-6, 7, -4, -7, -2],
+            ....: [9, -5, 8, 5, 2], [-8, 3], [-9, -3]], [1, 2, 8, 11, 7, 11,
+            ....: 5, 9, 9])
+            sage: tt.unzip_fold_general_twist(2, -2, -3)
+            sage: tt._gluing_list
+            [[4, 1], [6, -1], [2, 5, 9, -5, 8], [-2, -4, -7, -6, 7], [-8, 3], [-9, -3]]
+            sage: tt._branch_endpoint
+            [[1, 2, 3, 1, 2, -1, -2, 2, 2], [-1, -2, -3, -2, 2, -2, -2, 3, -3]]
+            sage: tt._measure
+            [1, 39, 8, 11, 7, 11, 5, 9, 9]
 
         """
 
@@ -478,63 +385,397 @@ class DehnThurstonTT(TrainTrack):
         Twisting in the good direction:
 
             sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
-            sage: tt = DehnThurstonTT([[1, 2, 3, 4], [-1, -5, -6, -7], [5],
-            ....: [-4], [6], [-3], [7], [-2]], [1, 5, 11, 8, 8, 11, 5], [1,
-            ....: None, None, None])
-            sage: tt.unzip_fold_pants_twist(1, -1)
+            sage: tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4,
+            ....: -2, 3, 9, -3], [-8, -5], [-6, 5]], [1, 2, 8, 8, 14, 6, 4, 6,
+            ....: 2])
+            sage: tt.unzip_fold_pants_twist(2, -1)
             sage: tt._gluing_list
-            [[1, 2, 3, 4], [-1, -5, -6, -7], [5], [-4], [6], [-3], [7], [-2]]
+            [[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4, -2, 3, 9, -3], [-8, -5], [-6, 5]]
+            sage: tt._branch_endpoint
+            [[1, -1, -2, 2, -3, 2, 2, 2, -2], [-1, -2, -2, -2, 3, -3, 2, 3, 1]]
             sage: tt._measure
-            [25, 5, 11, 8, 8, 11, 5]
+            [1, 2, 8, 28, 14, 6, 4, 6, 2]
 
         Twisting in the bad direction, train track remains left-turning:
 
-            sage: tt = DehnThurstonTT([[1, 2, 3, 4], [-1, -5, -6, -7], [5],
-            ....: [-4], [6], [-3], [7], [-2]], [100, 5, 11, 8, 8, 11, 5], [1,
-            ....: None, None, None])
-            sage: tt.unzip_fold_pants_twist(1, 1)
+            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
+            sage: tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4,
+            ....: -2, 3, 9, -3], [-8, -5], [-6, 5]], [1, 2, 8, 100, 14, 6, 4,
+            ....: 6, 2])
+            sage: tt.unzip_fold_pants_twist(2, 1)
             sage: tt._gluing_list
-            [[1, 2, 3, 4], [-1, -5, -6, -7], [5], [-4], [6], [-3], [7], [-2]]
+            [[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4, -2, 3, 9, -3], [-8, -5], [-6, 5]]
+            sage: tt._branch_endpoint
+            [[1, -1, -2, 2, -3, 2, 2, 2, -2], [-1, -2, -2, -2, 3, -3, 2, 3, 1]]
             sage: tt._measure
-            [76, 5, 11, 8, 8, 11, 5]
+            [1, 2, 8, 80, 14, 6, 4, 6, 2]
 
-        # Twisting in the bad direction, train track becomes right-turning:
 
-        #     sage: tt = DehnThurstonTT([[1, 2, 3, 4], [-1, -5, -6, -7], [5],
-            ....: [-2], [6], [-3], [7], [-4]], [1, 2, 3, 13, 5, 6, 7], [1,
-            ....: None, None, None])
-        #     sage: tt.unzip_fold_pants_twist(1, 1)
-        #     sage: tt._gluing_list
-        #     [[-5, -6, -7, 1], [2, 3, 4, -1], [5], [-2], [6], [-3], [7], [-4]]
-        #     sage: tt._measure
-        #     [17, 2, 3, 13, 5, 6, 7]
+        Twisting in the bad direction, train track becomes right-turning:
 
-        # A right-turning example:
-
-        #     sage: tt = DehnThurstonTT([[2, 3, 4, 1], [-5, -6, -7, -1], [5],
-            ....: [-2], [6], [-3], [7], [-4]], [1, 2, 3, 13, 5, 6, 7], [1,
-            ....: None, None, None])
-        #     sage: tt.unzip_fold_pants_twist(1, -1)
-        #     sage: tt._gluing_list
-        #     [[1, -5, -6, -7], [-1, 2, 3, 4], [5], [-2], [6], [-3], [7], [-4]]
-        #     sage: tt._measure
-        #     [17, 2, 3, 13, 5, 6, 7]
-
-        # Direction of input switch does not matter:
-
-        #     sage: tt = DehnThurstonTT([[2, 3, 4, 1], [-5, -6, -7, -1], [5],
-            ....: [-2], [6], [-3], [7], [-4]], [1, 2, 3, 13, 5, 6, 7], [1,
-            ....: None, None, None])
-        #     sage: tt.unzip_fold_pants_twist(-1, -1)
-        #     sage: tt._gluing_list
-        #     [[1, -5, -6, -7], [-1, 2, 3, 4], [5], [-2], [6], [-3], [7], [-4]]
-        #     sage: tt._measure
-        #     [17, 2, 3, 13, 5, 6, 7]
+            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
+            sage: tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4,
+            ....: -2, 3, 9, -3], [-8, -5], [-6, 5]], [1, 2, 8, 1, 14, 6, 4,
+            ....: 6, 2])
+            sage: tt.unzip_fold_pants_twist(2, 1)
+            sage: tt._gluing_list
+            [[-9, 1], [2, -1], [-2, 3, 9, -3, -4], [8, 7, 6, -7, 4], [-8, -5], [-6, 5]]
+            sage: tt._branch_endpoint
+            [[1, -1, 2, -2, -3, -2, -2, -2, 2], [-1, 2, 2, 2, 3, -3, -2, 3, 1]]
+            sage: tt._measure
+            [1, 2, 8, 19, 14, 6, 4, 6, 2]
 
 
         """
         nright = self.num_curves_on_sides(pants_curve)[RIGHT]
         self.unzip_fold_general_twist(pants_curve, 0, power * nright)
+
+    # --------------------------------------
+    # FIRST MOVE
+    # --------------------------------------
+
+    def torus_boundary_switch(self, switch):
+        """
+        Return the switch on the boundary of the torus containing ``switch``.
+
+        The returned switch is oriented so that the torus is on its left side.
+        """
+        assert(self.elem_move_type(switch) == 1)
+        for b in self.outgoing_branches(switch):
+            new_switch = self.branch_endpoint(b)
+            if abs(new_switch) != abs(switch):
+                break
+        if self.get_turning(new_switch) == LEFT:
+            return -new_switch
+        return new_switch
+
+    def orientation_of_switch_first_move(self, switch):
+        """
+        Return the standard orientation of the switch for the first elementary
+        move.
+        """
+        assert(self.elem_move_type(switch) == 1)
+        bdy_switch = self.torus_boundary_switch(switch)
+        turning = self.get_turning(bdy_switch)
+        if turning == RIGHT:
+            b = self.outgoing_branch(bdy_switch, 0)
+        else:
+            b = self.outgoing_branch(-bdy_switch, 1)
+        sw = self.branch_endpoint(b)
+        if self.get_turning(switch) == LEFT:
+            return sw
+        return -sw
+
+    def unzip_fold_first_move(self, switch, inverse=False, debug=False):
+        r"""
+        TESTS::
+
+        The following is a Dehn-Thurston train track on the genus 2 surface.
+        The pants decomposition has a separating curve (2), and switch 1 is
+        left-turning, switches 2 and 3 are right-turning. Pants curves 1 and 3
+        give first elementary moves.
+
+        First we test the case with lambda11 (self-connecting branch to the
+        boundary of the torus. At switch 3, unzipping goes into the pants
+        curves, at switch 1 it goes across.
+
+            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
+            sage: tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4,
+            ....: -2, 3, 9, -3], [-8, -5], [-6, 5]], [1, 2, 8, 1, 14, 6, 4,
+            ....: 6, 2])
+            sage: tt.unzip_fold_first_move(1)
+            sage: tt._gluing_list
+            [[1, 3], [-1, 2], [-3, -9, -2, 9, -4], [8, 7, 6, -7, 4], [-8, -5], [-6, 5]]
+            sage: tt._measure
+            [1, 9, 9, 8, 14, 6, 4, 6, 1]
+            sage: tt.unzip_fold_first_move(-3)
+            sage: tt._gluing_list
+            [[1, 3], [-1, 2], [-3, -9, -2, 9, -4], [-7, 8, 4], [6, -8, -5], [-6, 5, 7]]
+            sage: tt._measure
+            [1, 9, 9, 18, 8, 6, 10, 10, 1]
+            sage: tt.unzip_fold_first_move(-3, inverse=True)
+            sage: tt._gluing_list
+            [[1, 3], [-1, 2], [-3, -9, -2, 9, -4], [8, 7, 6, -7, 4], [-8, -5], [-6, 5]]
+            sage: tt._measure
+            [1, 9, 9, 8, 14, 6, 4, 6, 1]
+            sage: tt.unzip_fold_first_move(1, inverse=True)
+            sage: tt._gluing_list
+            [[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4, -2, 3, 9, -3], [-8, -5], [-6, 5]]
+            sage: tt._measure
+            [1, 2, 8, 1, 14, 6, 4, 6, 2]
+
+        Now testing the cases when lambda23 is present:
+
+            sage: tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2],
+            ....: [-8, -7, -2], [7, 9, 3], [-9, 8, -3]], [100, 20, 2, 7, 7, 4,
+            ....: 7, 7, 1])
+            sage: tt.unzip_fold_first_move(-1)
+            sage: tt._gluing_list
+            [[1, 5, 6], [4, -1, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]]
+            sage: tt._measure
+            [93, 20, 2, 7, 7, 11, 7, 7, 1]
+            sage: tt.unzip_fold_first_move(3)
+            sage: tt._gluing_list
+            [[1, 5, 6], [4, -1, -6], [-5, -4, 2], [-3, 7, -8, -7, -2], [9, 3], [-9, 8]]
+            sage: tt._measure
+            [93, 22, 2, 7, 7, 11, 5, 2, 3]
+            sage: tt.unzip_fold_first_move(-1, inverse=True)
+            sage: tt._gluing_list
+            [[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-3, 7, -8, -7, -2], [9, 3], [-9, 8]]
+            sage: tt._measure
+            [100, 22, 2, 7, 7, 4, 5, 2, 3]
+            sage: tt.unzip_fold_first_move(3, inverse=True)
+            sage: tt._gluing_list
+            [[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]]
+            sage: tt._measure
+            [100, 20, 2, 7, 7, 4, 7, 7, 1]
+
+        Another test for the inverse:
+
+            sage: tt = DehnThurstonTT([[1, 5], [-1, 4], [2, -8, 9, -7, -9],
+            ....: [-2, -5, 6, -4, -6], [7, 3], [8, -3]], [3, 20, 3, 10, 10, 13,
+            ....: 15, 15, 8])
+            sage: tt.unzip_fold_first_move(1)
+            sage: tt.unzip_fold_first_move(1, inverse=True)
+            sage: tt._gluing_list
+            [[1, 5], [-1, 4], [2, -8, 9, -7, -9], [-2, -5, 6, -4, -6], [7, 3], [8, -3]]
+            sage: tt._branch_endpoint
+            [[1, 2, 3, -1, 1, -2, 3, -3, 2], [-1, -2, -3, -2, -2, -2, 2, 2, 2]]
+            sage: tt._measure
+            [3, 20, 3, 10, 10, 13, 15, 15, 8]
+
+        """
+        if inverse:
+            # TODO; for now, we do the inverse move by repeating the move three
+            # times and applying a twist. It would be good to have a direct
+            # implementation of the inverse move at some point as attempted
+            # below.
+            for i in range(3):
+                self.unzip_fold_first_move(switch, debug=debug)
+            bdy_switch = self.torus_boundary_switch(switch)
+            self.unzip_fold_pants_twist(bdy_switch, -1)
+            return
+
+        assert(self.elem_move_type(switch) == 1)
+        switch = self.orientation_of_switch_first_move(switch)
+        # debug = True
+        if debug:
+            print "--------------------------------"
+            print "BEGIN: unzip_fold_first_move()"
+            print "--------------------------------"
+            print "Initial gluing list:", self._gluing_list
+            print "Measure:", self._measure
+            print "Switch:", switch
+            print "Inverse:", inverse
+        turning = self.get_turning(switch)
+        twist_sign = -1 if inverse else 1
+        bdy_switch = self.torus_boundary_switch(switch)
+
+        lamb23 = len(self.outgoing_branches(switch)) == 3
+
+        if debug:
+            print "Turning:", "LEFT" if turning == LEFT else "RIGHT"
+            print "Lambda_23" if lamb23 else "Lambda_11"
+            print "bdy_switch", bdy_switch
+
+        peeled_side = self.peel(switch, side=(turning+1) % 2, debug=debug)
+        if debug:
+            print "Peeled side:", "LEFT" if peeled_side == LEFT else "RIGHT"
+        if peeled_side == (turning+1) % 2:
+            self.peel(switch, side=(turning+1) % 2, debug=debug,
+                      preferred_peeled_side=turning)
+
+        if debug:
+            print "Gluing list:", self._gluing_list
+            print "Measure:", self._measure
+            print "Outgoing branches in positive direction:", \
+                self.outgoing_branches(switch)
+            print "Outgoing branches in negative direction:", \
+                self.outgoing_branches(-switch)
+
+        # The inverse works in cases A, B, E
+        # Doesn't work for C, D, F, G, and probably H
+
+        if peeled_side == turning:
+            if lamb23:
+                if (turning == LEFT) == (not inverse):
+                    if debug:
+                        print "A"
+                    self.fold(-switch, 1, 2, start_side=turning)
+                else:
+                    if debug:
+                        print "B"
+                    self.fold(switch, 1, 0, (turning+1) % 2)
+                    self.unzip_fold_general_twist(bdy_switch, twist_sign, 0)
+            else:
+                if (turning == LEFT) == (not inverse):
+                    if debug:
+                        print "C"
+                        print "Gluing list:", self._gluing_list
+                        print "Measure:", self._measure
+                    self.unzip_fold_general_twist(bdy_switch, twist_sign, 0)
+                    if debug:
+                        print "Gluing list:", self._gluing_list
+                        print "Measure:", self._measure
+                    self.fold_left_of_pants_curve(bdy_switch, 0, 1, inverse)
+                    self.fold_left_of_pants_curve(bdy_switch, 2, 1, inverse)
+                else:
+                    if debug:
+                        print "D"
+                    self.unzip_fold_general_twist(bdy_switch, 2*twist_sign, 0)
+                    if debug:
+                        print self._gluing_list
+                    self.fold_left_of_pants_curve(bdy_switch, 3, 2, inverse)
+                    if debug:
+                        print self._gluing_list
+                    self.fold_left_of_pants_curve(bdy_switch, 0, 1, inverse)
+                    if debug:
+                        print self._gluing_list
+
+        else:
+            if lamb23:
+                if (turning == LEFT) == (not inverse):
+                    if debug:
+                        print "E"
+                    self.fold(-switch, 0, 1, turning)
+                else:
+                    if debug:
+                        print "F"
+                    self.fold(switch, 1, 0, (turning+1) % 2)
+                    self.unzip_fold_general_twist(bdy_switch, twist_sign, 0)
+            else:
+                if (turning == LEFT) == (not inverse):
+                    if debug:
+                        print "G"
+                    self.unzip_fold_general_twist(bdy_switch, twist_sign, 0)
+                    self.fold_left_of_pants_curve(bdy_switch, 0, 1, inverse)
+                    self.fold_left_of_pants_curve(bdy_switch, 3, 2, inverse)
+                else:
+                    if debug:
+                        print "H"
+                    self.unzip_fold_general_twist(bdy_switch, 2*twist_sign, 0)
+                    if debug:
+                        print "Gluing list:", self._gluing_list
+                        print "Measure:", self._measure
+
+                    self.fold_left_of_pants_curve(bdy_switch, 4, 3, inverse)
+                    self.fold_left_of_pants_curve(bdy_switch, 0, 1, inverse)
+
+        # if the switch was initually left turning, then it become
+        # right-turning and vica versa. This makes updating the pants branch
+        # easy.
+        self._pants_branches[abs(switch)-1] = \
+            abs(self.outgoing_branch(switch, 0, (turning+1) % 2))
+
+    def fold_left_of_pants_curve(self, bdy_switch, folded_branch_index,
+                                 fold_onto_index, inverse=False):
+        """
+        Fold on the left of a pants curve.
+
+        The input indices are the indices among only the outgoing branches on
+        the left. In other words, the pants curve itself is not indexed. The
+        indexing goes from bottom to top.
+        """
+        start_side = RIGHT if inverse else LEFT
+        if self.get_turning(bdy_switch) == RIGHT:
+            self.fold(bdy_switch, folded_branch_index, fold_onto_index,
+                      start_side)
+        else:
+            # print self.outgoing_branches(-bdy_switch)
+            # print self.outgoing_branch(-bdy_switch, folded_branch_index+1)
+            # print self.outgoing_branch(-bdy_switch, fold_onto_index+1)
+            self.fold(-bdy_switch, folded_branch_index+1, fold_onto_index+1,
+                      start_side)
+
+    # --------------------------------------
+    # SECOND MOVE
+    # --------------------------------------
+    
+    def standardize_neighboring_branches(self, switch):
+        """
+
+        TESTS:
+
+            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
+            sage: tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2],
+            ....: [-8, -7, -2], [7, 9, 3], [-9, 8, -3]])
+            sage: d = tt.standardize_neighboring_branches(2)
+            sage: sorted(d.items())
+            [(-9, -8), (-8, -9), (-7, 7), (-6, 2), (-5, -3), (-4, 1), (-2, -13), (2, 13), (4, -1), (5, 3), (6, -2), (7, -7), (8, 9), (9, 8)]
+
+            sage: tt2 = DehnThurstonTT([[1, 6], [-1, 4], [-8, -4, -5, 9, 5],
+            ....: [8, -7, -2, -6, 2], [7, 3], [-9, -3]])
+            sage: d = tt2.standardize_neighboring_branches(2)
+            sage: sorted(d.items())
+            [(-9, -7), (-8, 13), (-7, -3), (-6, 1), (-5, 10), (-4, -9), (-2, 4), (2, -4), (4, 9), (5, -10), (6, -1), (7, 3), (8, -13), (9, 7)]
+        """
+
+        assert(self.elem_move_type(switch) == 2)
+        branch_to_standard = {}
+        turning = self.get_turning(switch)
+
+        # naming the pants curve to 13
+        branch_to_standard[self.outgoing_branch(switch, 0, turning)] = 13
+
+        # changing the orientation of the switch so the left side can be
+        # accessed in the positive direction
+        or_switch = switch if turning == RIGHT else -switch
+
+        for side in [LEFT, RIGHT]:
+            if side == LEFT:
+                side_branches = self.outgoing_branches(or_switch)
+            else:
+                side_branches = self.outgoing_branches(-or_switch)
+            if turning == LEFT:
+                side_branches = side_branches[1:]
+            else:
+                side_branches = side_branches[:-1]
+
+            # print "--------------------------"
+            # print "pants branches", self._pants_branches
+            # print "side", side
+            # print "turning", turning
+            # print "or_switch", or_switch
+            # print "side_branches", side_branches
+            # print "--------------------------"
+            if len(side_branches) == 4:
+                # type 1
+                branch_to_standard[side_branches[0]] = -(3+6*side)
+                branch_to_standard[side_branches[1]] = 4+6*side
+                branch_to_standard[side_branches[2]] = 1+6*side
+            elif len(side_branches) == 2:
+                # type 0
+                branch_to_standard[side_branches[0]] = -(3+6*side)
+                branch_to_standard[side_branches[1]] = 1+6*side
+
+                # finding the third branch
+                sw = self.branch_endpoint(side_branches[1])
+                idx = self.outgoing_branches(sw).index(-side_branches[1])
+                b = self.outgoing_branch(sw, idx+1)
+                branch_to_standard[b] = 2+6*side
+            elif len(side_branches) == 1:
+                sw = self.branch_endpoint(side_branches[0])
+                branches = self.outgoing_branches(sw)
+                idx = branches.index(-side_branches[0])
+                if idx in [0, 1]:
+                    # type 2
+                    branch_to_standard[branches[idx]] = -(1+6*side)
+                    branch_to_standard[branches[idx+1]] = 5+6*side
+                    branch_to_standard[branches[idx+2]] = 2+6*side
+                elif idx in [2, 3]:
+                    # type 3
+                    branch_to_standard[branches[idx-2]] = -(2+6*side)
+                    branch_to_standard[branches[idx-1]] = 6+6*side
+                    branch_to_standard[branches[idx]] = 3+6*side
+                else:
+                    assert(False)
+            else:
+                assert(False)
+
+        # extend with negatives
+        for b in branch_to_standard.keys():
+            branch_to_standard[-b] = -branch_to_standard[b]
+        return branch_to_standard
 
     def construct_general_twist_data(self, boundary_folds, debug=False):
         """
@@ -584,72 +825,51 @@ class DehnThurstonTT(TrainTrack):
         A right-turning example and its inverse which is left-turning:
 
             sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
-            # sage: tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2],
-            ....: [-8, -7, -2], [7, 9, 3], [-9, 8, -3]], [100, 20, 30, 1, 1, 4,
-            ....: 2, 2, 1])
-            # sage: tt.unzip_fold_second_move(2)
-            # sage: tt._gluing_list
-            # [[1, 6], [-1, 4], [-8, -4, -5, 9, 5], [8, -7, -2, -6, 2], [7, 3],
-            [-9, -3]]
-            # sage: tt._measure
-            # [99, 19, 32, 5, 18, 5, 3, 20, 3]
-            # sage: tt.unzip_fold_second_move(2)
-            # sage: tt._gluing_list
-            # [[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3],
-            [-9, 8, -3]]
-            # sage: tt._measure
-            # [100, 20, 30, 1, 1, 4, 2, 2, 1]
-
-
-        # Switch condition isn't satisfied!!!!!!!!!!!!!!!!!!!!!1
-
-        #     sage: tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]], [3, 20, 3, 10, 10, 4, 15, 15, 1])
-        #     sage: tt.unzip_fold_second_move(2)
-        #     sage: tt._gluing_list
-        #     [[4, 1], [6, -1], [-8, -4, -5, 9, 5], [8, -7, -2, -6, 2], [7, 3], [-9, -3]]
-        #     sage: tt._measure
-        #     [7, 10, 18, 14, 5, 14, 16, 20, 16]
-        #     sage: tt.unzip_fold_second_move(2)
-        #     sage: tt._gluing_list
-        #     [[1, 6, -8], [-1, 4, -6], [8, -4, -5], [-2, -7, 5], [7, 9, 3], [-9, 2, -3]]
-        #     sage: tt._measure
-        #     [3, 15, 3, 10, 20, 4, 15, 10, 1]
-
-
-
-
-
-            sage: tt = DehnThurstonTT([[1, 5], [-1, 4], [2, -8, 9, -7, -9], [-2, -5, 6, -4, -6], [7, 3], [8, -3]], [100, 20, 30, 1, 1, 4, 4, 4, 1])
+            sage: tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2],
+            ....: [-8, -7, -2], [7, 9, 3], [-9, 8, -3]], [100, 20, 30, 7, 7, 4,
+            ....: 7, 7, 1])
             sage: tt.unzip_fold_second_move(2)
             sage: tt._gluing_list
-            [[1, 5], [-1, 4], [-2, -4, -9, -8, 9], [2, -7, -6, -5, 6], [7, 3], [8, -3]]
+            [[1, 6], [-1, 4], [-8, -4, -5, 9, 5], [8, -7, -2, -6, 2], [7, 3], [-9, -3]]
             sage: tt._measure
-            [101, 10, 26, 1, 1, 15, 4, 4, 15]
+            [93, 13, 37, 11, 13, 11, 8, 20, 8]
             sage: tt.unzip_fold_second_move(2)
             sage: tt._gluing_list
-            [[1, -7], [-1, 4], [-9, -8, -5, -6, 5], [9, 7, -2, -4, 2], [6, 3], [8, -3]]
+            [[1, 6, -8], [-1, 4, -6], [8, -4, -5], [-2, -7, 5], [7, 9, 3], [-9, 2, -3]]
             sage: tt._measure
-            [100, 4, 30, 1, 1, 4, 1, 4, 20]
+            [100, 7, 30, 7, 20, 4, 7, 7, 1]
 
+        Now we start with a right-turning switch with five branches on each side.
 
+            sage: tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4,
+            ....: -2, 3, 9, -3], [-8, -5], [-6, 5]], [1, 2, 8, 1, 14, 6, 4,
+            ....: 6, 2])
+            sage: tt.unzip_fold_second_move(2)
+            sage: tt._gluing_list
+            [[-9, 1], [2, -1], [-4, 6, -7, -2, 7], [4, 9, -3, 8, 3], [-8, -5], [-6, 5]]
+            sage: tt._measure
+            [3, 2, 1, 11, 20, 6, 1, 6, 2]
+            sage: tt.unzip_fold_second_move(2)
+            sage: tt._gluing_list
+            [[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4, -2, 3, 9, -3], [-8, -5], [-6, 5]]
+            sage: tt._measure
+            [1, 2, 8, 1, 14, 6, 4, 6, 2]
 
+        Here we start with a switch with only two branches on each side.
 
-
-            # sage: tt = DehnThurstonTT([[1, 5], [-1, 4], [2, -8, 9, -7, -9], [-2, -5, 6, -4, -6], [7, 3], [8, -3]], [3, 20, 3, 10, 10, 13, 15, 15, 8])
-            # sage: tt.unzip_fold_second_move(2)
-            # sage: tt._gluing_list
-            # [[1, 5, -7], [-1, 4, -9], [9, -8, -6], [2, -5, 6], [3, 8, -4], [-3, 7, -2]]
-            # sage: tt._measure
-            # [10, 12, 9, 3, 7, 20, 3, 12, 7]
-            # sage: tt.unzip_fold_second_move(2)
-            # sage: tt._gluing_list
-            # [[1, 5], [-1, 4], [-9, -8, -6, -7, 6], [9, -5, 2, -4, -2], [7, 3], [8, -3]]
-            # sage: tt._measure
-            # [3, 13, 3, 10, 10, 8, 15, 15, 20]
-
-
-
-
+            sage: tt = DehnThurstonTT([[-9, 1], [2, -1], [-4, 6, -7, -2, 7],
+            ....: [4, 9, -3, 8, 3], [-8, -5], [-6, 5]], [3, 2, 1, 11, 20, 6, 1,
+            ....: 6, 2])
+            sage: tt.unzip_fold_second_move(3)
+            sage: tt._gluing_list
+            [[-9, 1], [2, -1], [-4, 6], [4, -3], [8, 9, -7, -2, 7], [-8, -6, 5, 3, -5]]
+            sage: tt._measure
+            [3, 2, 10, 4, 14, 10, 22, 21, 2]
+            sage: tt.unzip_fold_second_move(3)
+            sage: tt._gluing_list
+            [[-9, 1], [2, -1], [-4, 6, -7, -2, 7], [4, 9, -3, 8, 3], [-8, -5], [-6, 5]]
+            sage: tt._measure
+            [3, 2, 1, 11, 20, 6, 1, 6, 2]
 
 
         """
@@ -766,332 +986,6 @@ class DehnThurstonTT(TrainTrack):
                 break
         else:
             assert(False)
-
-    def unzip_fold_first_move_inverse(self, switch, debug=False):
-        """
-        TESTS:
-
-            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
-            sage: tt = DehnThurstonTT([[1, 5], [-1, 4], [2, -8, 9, -7, -9], [-2, -5, 6, -4, -6], [7, 3], [8, -3]], [3, 20, 3, 10, 10, 13, 15, 15, 8])
-            sage: tt.unzip_fold_first_move(1)
-            sage: tt.unzip_fold_first_move_inverse(1)
-            sage: tt._gluing_list
-            [[1, 5], [-1, 4], [2, -8, 9, -7, -9], [-2, -5, 6, -4, -6], [7, 3], [8, -3]]
-            sage: tt._branch_endpoint
-            [[1, 2, 3, -1, 1, -2, 3, -3, 2], [-1, -2, -3, -2, -2, -2, 2, 2, 2]]
-            sage: tt._measure
-            [3, 20, 3, 10, 10, 13, 15, 15, 8]
-
-
-            sage: tt = DehnThurstonTT([[1, 5], [-1, 4], [2, -8, 9, -7, -9], [-2, -5, 6, -4, -6], [7, 3], [8, -3]], [3, 20, 3, 10, 10, 13, 15, 15, 8])
-            sage: tt.unzip_fold_first_move(1)
-            sage: tt.unzip_fold_first_move_inverse(1)
-            sage: tt._gluing_list
-            [[1, 5], [-1, 4], [2, -8, 9, -7, -9], [-2, -5, 6, -4, -6], [7, 3], [8, -3]]
-            sage: tt._branch_endpoint
-            [[1, 2, 3, -1, 1, -2, 3, -3, 2], [-1, -2, -3, -2, -2, -2, 2, 2, 2]]
-            sage: tt._measure
-            [3, 20, 3, 10, 10, 13, 15, 15, 8]
-
-
-
-        """
-        for i in range(3):
-            self.unzip_fold_first_move(switch, debug=debug)
-        bdy_switch = self.torus_boundary_switch(switch)
-        self.unzip_fold_pants_twist(bdy_switch, -1)
-
-    def pants_branch_on_switch(self, switch):
-        """
-        TESTS:
-
-            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
-            sage: tt = DehnThurstonTT([[10, 6, 5], [-10, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 13], [-9, 8, -13]])
-            sage: tt.pants_branch_on_switch(1)
-            10
-            sage: tt.pants_branch_on_switch(-1)
-            10
-            sage: tt.pants_branch_on_switch(2)
-            2
-            sage: tt.pants_branch_on_switch(-2)
-            2
-            sage: tt.pants_branch_on_switch(3)
-            13
-            sage: tt.pants_branch_on_switch(-3)
-            13
-
-        """
-        return self._pants_branches[abs(switch)-1]
-        # for side in [LEFT, RIGHT]:
-        #     b1 = self.outgoing_branch(switch, 0, side)
-        #     b2 = self.outgoing_branch(-switch, 0, side)
-        #     if b1 == -b2:
-        #         return abs(b1)
-        # assert(False)
-
-
-    def unzip_fold_first_move(self, switch, inverse=False, debug=False):
-        r"""
-        TESTS::
-
-        The following is a Dehn-Thurston train track on the genus 2 surface.
-        The pants decomposition has a separating curve (2), and switch 1 is
-        left-turning, switches 2 and 3 are right-turning. Pants curves 1 and 3
-        give first elementary moves.
-
-        First we test the cases where unzipping goes into the pants curve.
-        Testing the inverse elementary moves as well.
-
-            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
-            sage: tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]], [100, 20, 30, 1, 1, 4, 2, 2, 1])
-            sage: tt.unzip_fold_first_move(1)
-            sage: tt._gluing_list
-            [[1, 5, 6], [4, -1, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]]
-            sage: tt._measure
-            [99, 20, 30, 1, 1, 5, 2, 2, 1]
-            sage: tt.unzip_fold_first_move(-3)
-            sage: tt._gluing_list
-            [[1, 5, 6], [4, -1, -6], [-5, -4, 2], [-7, -8, -2], [9, 3, 7], [-9, 8, -3]]
-            sage: tt._measure
-            [99, 22, 28, 1, 1, 5, 2, 2, 3]
-            sage: tt.unzip_fold_first_move(-3, inverse=True)
-            sage: tt._gluing_list
-            [[1, 5, 6], [4, -1, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]]
-            sage: tt._measure
-            [99, 20, 30, 1, 1, 5, 2, 2, 1]
-            sage: tt.unzip_fold_first_move(1, inverse=True)
-            sage: tt._gluing_list
-            [[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]]
-            sage: tt._measure
-            [100, 20, 30, 1, 1, 4, 2, 2, 1]
-
-
-        Next we test the cases where the unzippings don't go into the pants
-        curve.
-
-            sage: tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]], [3, 20, 3, 10, 10, 4, 15, 15, 1])
-            sage: tt.unzip_fold_first_move(1)
-            sage: tt._gluing_list
-            [[1, 6], [4, -6], [-1, -5, -4, 5, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]]
-            sage: tt._measure
-            [3, 20, 3, 3, 7, 7, 15, 15, 1]
-            sage: tt._pants_branches
-            [6, 2, 3]
-            sage: tt.unzip_fold_first_move(-3)
-            sage: tt._gluing_list
-            [[1, 6], [4, -6], [-1, -5, -4, 5, 2], [-3, 7, -8, -7, -2], [9, 3], [-9, 8]]
-            sage: tt._measure
-            [3, 23, 3, 3, 7, 7, 12, 3, 4]
-            sage: tt._pants_branches
-            [6, 2, 9]
-
-        Now we choose a train track with lamda_11s instead of lambda23s and
-        first test the unzippings into the pants curve.
-
-            sage: tt = DehnThurstonTT([[1, 5], [-1, 4], [2, -8, 9, -7, -9], [-2, -5, 6, -4, -6], [7, 3], [8, -3]], [100, 20, 30, 1, 1, 4, 4, 4, 1])
-            sage: tt.unzip_fold_first_move(1)
-            sage: tt._gluing_list
-            [[1, 5, -4], [-6, -1, 4], [2, -8, 9, -7, -9], [-2, -5, 6], [7, 3], [8, -3]]
-            sage: tt._measure
-            [99, 16, 30, 1, 5, 5, 4, 4, 1]
-            sage: tt.unzip_fold_first_move(-3)
-            sage: tt._gluing_list
-            [[1, 5, -4], [-6, -1, 4], [2, -9, -8], [-2, -5, 6], [7, 3, 9], [-7, 8, -3]]
-            sage: tt._measure
-            [99, 11, 26, 1, 5, 5, 4, 5, 5]
-
-        Finally, the same train track with a different measure so that the
-        unzippings do not go into the pants curves.
-
-            sage: tt = DehnThurstonTT([[1, 5], [-1, 4], [2, -8, 9, -7, -9], [-2, -5, 6, -4, -6], [7, 3], [8, -3]], [3, 20, 3, 10, 10, 13, 15, 15, 8])
-            sage: tt.unzip_fold_first_move(1)
-            sage: tt._gluing_list
-            [[1, -4], [-6, 4], [2, -8, 9, -7, -9], [-2, -1, -5, 6, 5], [7, 3], [8, -3]]
-            sage: tt._measure
-            [16, 7, 3, 3, 7, 16, 15, 15, 8]
-            sage: tt.unzip_fold_first_move(-3)
-            sage: tt._gluing_list
-            [[1, -4], [-6, 4], [-1, -5, 6, 5, 2], [-9, 7, -8, -7, -2], [3, 9], [-3, 8]]
-            sage: tt._measure
-            [16, 4, 3, 3, 7, 16, 12, 11, 11]
-
-        # Test the if branch_map is correctly updated. Here the unzipping goes
-        # into the pants branch.
-
-        #     sage: tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]], [100, 20, 30, 1, 1, 4, 2, 2, 1])
-        #     sage: from sage.topology.dehn_thurston_tt import BranchMap
-        #     sage: bm = BranchMap(range(1, 10))
-        #     sage: tt.unzip_fold_first_move(1, bm)
-        #     sage: bm.branch_list(5)
-        #     [1, 5]
-        #     sage: bm.branch_list(-1)
-        #     [-1]
-        #     sage: tt.unzip_fold_first_move(3, bm)
-        #     sage: bm.branch_list(7)
-        #     [3, 7]
-        #     sage: bm.branch_list(-9)
-        #     [-9]
-
-        # Now the unzippings go across.
-
-        #     sage: tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]], [3, 20, 3, 10, 10, 4, 15, 15, 1])
-        #     sage: bm = BranchMap(range(1, 10))
-        #     sage: tt.unzip_fold_first_move(1, bm)
-        #     sage: bm.branch_list(5)
-        #     [-4, 5]
-        #     sage: bm.branch_list(4)
-        #     [4]
-        #     sage: bm.branch_list(-1)
-        #     [-5, -1]
-
-        """
-        # p = pants_decomposition
-
-        # # choosing the appropriate orientation of the switch (right side should
-        # # have index 1 greater than the left side in the pants decomposition)
-        # left = p.bdy_index_left_of_pants_curve(pants_curve)
-        # right = p.bdy_index_left_of_pants_curve(-pants_curve)
-
-        # if right == (left+1)%3:
-        #     switch = pants_curve
-        # else:
-        #     switch = -pants_curve
-        assert(self.elem_move_type(switch) == 1)
-        switch = self.orientation_of_switch_first_move(switch)
-        # debug = True
-        if debug:
-            print "--------------------------------"
-            print "BEGIN: unzip_fold_first_move()"
-            print "--------------------------------"
-            print "Initial gluing list:", self._gluing_list
-            print "Measure:", self._measure
-            print "Switch:", switch
-            print "Inverse:", inverse
-        turning = self.get_turning(switch)
-        twist_sign = -1 if inverse else 1
-        bdy_switch = self.torus_boundary_switch(switch)
-        # bdy_curve = p._torus_boundary_curve(switch)[0]
-        # TODO: all this so far can be done intrinsically, without
-        # pants_decomposition!
-
-        # bdy_turning = self.get_turning(bdy_curve)
-        lamb23 = len(self.outgoing_branches(switch)) == 3
-
-        if debug:
-            print "Turning:", "LEFT" if turning == LEFT else "RIGHT"
-            print "Lambda_23" if lamb23 else "Lambda_11"
-            print "bdy_switch", bdy_switch
-        # unzip_pos = self.unzip_with_collapse(switch, 0, UP, branch_map=None,
-        #                                      start_side=(turning+1)%2)
-        peeled_side = self.peel(switch, side=(turning+1) % 2, debug=debug)
-        if debug:
-            print "Peeled side:", "LEFT" if peeled_side == LEFT else "RIGHT"
-        if peeled_side == (turning+1) % 2:
-            self.peel(switch, side=(turning+1) % 2, debug=debug,
-                      preferred_peeled_side=turning)
-
-        if debug:
-            # print "Unzip pos:", unzip_pos
-            print "Gluing list:", self._gluing_list
-            print "Measure:", self._measure
-            print "Outgoing branches in positive direction:", \
-                self.outgoing_branches(switch)
-            print "Outgoing branches in negative direction:", \
-                self.outgoing_branches(-switch)
-
-        # The inverse works in cases A, B, E
-        # Doesn't work for C, D, F, G, and probably H
-
-        if peeled_side == turning:
-            if lamb23:
-                if (turning == LEFT) == (not inverse):
-                    if debug:
-                        print "A"
-                    self.fold(-switch, 1, 2, start_side=turning)
-                else:
-                    if debug:
-                        print "B"
-                    self.fold(switch, 1, 0, (turning+1) % 2)
-                    self.unzip_fold_general_twist(bdy_switch, twist_sign, 0)
-            else:
-                if (turning == LEFT) == (not inverse):
-                    if debug:
-                        print "C"
-                        print "Gluing list:", self._gluing_list
-                        print "Measure:", self._measure
-                    self.unzip_fold_general_twist(bdy_switch, twist_sign, 0)
-                    if debug:
-                        print "Gluing list:", self._gluing_list
-                        print "Measure:", self._measure
-                    self.fold_left_of_pants_curve(bdy_switch, 0, 1, inverse)
-                    self.fold_left_of_pants_curve(bdy_switch, 2, 1, inverse)
-                else:
-                    if debug:
-                        print "D"
-                    self.unzip_fold_general_twist(bdy_switch, 2*twist_sign, 0)
-                    if debug:
-                        print self._gluing_list
-                    self.fold_left_of_pants_curve(bdy_switch, 3, 2, inverse)
-                    if debug:
-                        print self._gluing_list
-                    self.fold_left_of_pants_curve(bdy_switch, 0, 1, inverse)
-                    if debug:
-                        print self._gluing_list
-
-        else:
-            if lamb23:
-                if (turning == LEFT) == (not inverse):
-                    if debug:
-                        print "E"
-                    self.fold(-switch, 0, 1, turning)
-                else:
-                    if debug:
-                        print "F"
-                    self.fold(switch, 1, 0, (turning+1) % 2)
-                    self.unzip_fold_general_twist(bdy_switch, twist_sign, 0)
-            else:
-                if (turning == LEFT) == (not inverse):
-                    if debug:
-                        print "G"
-                    self.unzip_fold_general_twist(bdy_switch, twist_sign, 0)
-                    self.fold_left_of_pants_curve(bdy_switch, 0, 1, inverse)
-                    self.fold_left_of_pants_curve(bdy_switch, 3, 2, inverse)
-                else:
-                    if debug:
-                        print "H"
-                    self.unzip_fold_general_twist(bdy_switch, 2*twist_sign, 0)
-                    if debug:
-                        print "Gluing list:", self._gluing_list
-                        print "Measure:", self._measure
-
-                    self.fold_left_of_pants_curve(bdy_switch, 4, 3, inverse)
-                    self.fold_left_of_pants_curve(bdy_switch, 0, 1, inverse)
-
-        # if the switch was initually left turning, then it become
-        # right-turning and vica versa. This makes updating the pants branch
-        # easy.
-        self._pants_branches[abs(switch)-1] = \
-            abs(self.outgoing_branch(switch, 0, (turning+1) % 2))
-
-    def fold_left_of_pants_curve(self, bdy_switch, folded_branch_index,
-                                 fold_onto_index, inverse=False):
-        """
-        Fold on the left of a pants curve.
-
-        The input indices are the indices among only the outgoing branches on
-        the left. In other words, the pants curve itself is not indexed. The
-        indexing goes from bottom to top.
-        """
-        start_side = RIGHT if inverse else LEFT
-        if self.get_turning(bdy_switch) == RIGHT:
-            self.fold(bdy_switch, folded_branch_index, fold_onto_index,
-                      start_side)
-        else:
-            # print self.outgoing_branches(-bdy_switch)
-            # print self.outgoing_branch(-bdy_switch, folded_branch_index+1)
-            # print self.outgoing_branch(-bdy_switch, fold_onto_index+1)
-            self.fold(-bdy_switch, folded_branch_index+1, fold_onto_index+1,
-                      start_side)
 
 
 def pop_fold(train_track, branch_map, debug=False):

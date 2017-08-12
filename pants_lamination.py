@@ -42,11 +42,12 @@ class PantsLamination(SageObject):
 
         Specifying the coordinates in a list:
 
+            sage: from sage.topology.pants_decomposition import PantsDecomposition
+            sage: from sage.topology.pants_lamination import PantsLamination
             sage: p = PantsDecomposition([[-1, 1, 2], [-2, 3, -3]])
             sage: lam = PantsLamination(p, [2, -2, 7, 1, 1, 1])
             sage: lam._tt.gluing_list()
-            [[1, -5], [-1, 4], [-4, 6, 5, -6, 2], [-8, 9, 7, -9, -2], [-7, 3],\
-            [8, -3]]
+            [[1, -5], [-1, 4], [-4, 6, 5, -6, 2], [-8, 9, 7, -9, -2], [-7, 3], [8, -3]]
             sage: lam._tt.measure()
             [2, 1, 1, 2, 2, 3/2, 1, 1, 5/2]
 
@@ -54,8 +55,7 @@ class PantsLamination(SageObject):
 
             sage: lam = PantsLamination(p, {1: [2, -2], 2: [7, 1], 3:[1, 1]})
             sage: lam._tt.gluing_list()
-            [[1, -5], [-1, 4], [-4, 6, 5, -6, 2], [-8, 9, 7, -9, -2], [-7, 3],\
-            [8, -3]]
+            [[1, -5], [-1, 4], [-4, 6, 5, -6, 2], [-8, 9, 7, -9, -2], [-7, 3], [8, -3]]
             sage: lam._tt.measure()
             [2, 1, 1, 2, 2, 3/2, 1, 1, 5/2]
 
@@ -78,10 +78,10 @@ class PantsLamination(SageObject):
 
         If some coordinates are zero, we still get a complete train track.
 
-            sage:  lam = PantsLamination(p, [1, 0, 0, 0, 0, 0])
+            sage: p = PantsDecomposition([[-1, 1, 2], [-2, 3, -3]])
+            sage: lam = PantsLamination(p, [1, 0, 0, 0, 0, 0])
             sage: lam._tt.gluing_list()
-            [[-4, 5, 1], [-6, 4, -1], [-5, 6, 2], [-8, 9, 7, -9, -2], [-7, 3],\
-            [8, -3]]
+            [[-4, 1], [-5, 6, 4, -6, -1], [5, 2], [-9, 7, -2], [-7, 8, 3], [-8, 9, -3]]
             sage: lam._tt.measure()
             [0, 0, 0, 1, 0, 0, 0, 0, 0]
 
@@ -371,15 +371,9 @@ class PantsLamination(SageObject):
         if debug:
             print "Type: ", typ
         if typ == 1:
-            if not inverse:
-                tt.unzip_fold_first_move(pants_curve, debug=debug)
-            else:
-                tt.unzip_fold_first_move_inverse(pants_curve, debug=debug)
+            tt.unzip_fold_first_move(pants_curve, inverse=inverse, debug=debug)
         elif typ == 2:
             tt.unzip_fold_second_move(pants_curve, debug=debug)
-
-    def apply_elementary_move_inverse(self, pants_curve):
-        self.apply_elementary_move(pants_curve, inverse=True, debug=False)
 
     def apply_twist(self, pants_curve, power=1):
         self._tt.unzip_fold_pants_twist(pants_curve, power)
