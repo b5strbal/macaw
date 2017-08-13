@@ -21,8 +21,9 @@ AUTHORS:
 # *****************************************************************************
 
 
-from train_track0 import TrainTrack0
+from train_track0 import TrainTrack0, DeleteSwitchError
 from constants import LEFT, RIGHT
+
 
 LARGE = 0
 MIXED = 1
@@ -42,47 +43,10 @@ class FoldError(Exception):
 
 
 class TrainTrack(TrainTrack0):
-    def perform_operation(self, branch, operation, create_copy=False):
-        """Perform a split, shift or fold.
 
-        INPUT:
-
-        - ``branch`` -- index of the branch, and integer between
-          1 and the number of branches. For a split, the branch has to
-          be large. For a shift, it has to be mixed. For a fold, it
-          has to be small with opposite sides.
-
-        - ``operation`` -- possible values:
-
-            * ``SPLIT`` -- the train train must have a measure or
-        carry another train track, otherwise an error is raised. The
-        splitting is performed so that the resulting train track still
-        retains a positive measure or carries the train track.
-
-            * ``LEFT_SPLIT`` -- left split.
-
-            * ``RIGHT_SPLIT`` -- right split.
-
-            * ``CENTRAL_SPLIT`` -- central split.
-
-            * ``SHIFT`` -- a shift.
-
-            * ``FOLD`` -- a fold.
-
-        - ``create_copy`` -- if ``False``, the train track is changed
-          internally and no copy is made. If ``True``, the train track
-          is not changed and the new train track is created as a
-          separate object.
-
-        OUTPUT:
-
-        A CarryingData object describing the carrying if
-        ``create_copy`` is set to ``False``. Otherwise a TrainTrack
-        map is returned with domain and codomain the old and new train
-        tracks.
-
-        """
-        pass
+    # --------------------------------------------
+    # Peeling and folding for general train tracks
+    # --------------------------------------------
 
     def peel(self, switch, side, branch_map=None, debug=False,
              preferred_peeled_side=RIGHT):
@@ -402,9 +366,9 @@ class TrainTrack(TrainTrack0):
 
         # TODO: return carrying data
 
-    # ------------------------------------------------------------
-    # UNZIPPING AND RELATED OPERATIONS
-    # ------------------------------------------------------------
+    # -----------------------------------------------------------
+    # SPLITTING AND RELATED OPERATIONS FOR TRIVALENT TRAIN TRACKS
+    # -----------------------------------------------------------
 
     def branch_type(self, branch):
         """
@@ -414,17 +378,30 @@ class TrainTrack(TrainTrack0):
 
         - LARGE
         - MIXED
-        - SMALL_SAME_SIDE
-        - SMALL_OPPOSITE_SIDE
+        - SMALL_COLLAPSIBLE
+        - SMALL_NON_COLLAPSIBLE
 
         """
         # TODO: Change this.
-        pos_side = self.branch_endpoint(branch)
-        neg_side = self.branch_endpoint(-branch)
-        if len(self.outgoing_branches(pos_side[0], pos_side[1])) +\
-           len(self.outgoing_branches(neg_side[0], neg_side[1])) > 2:
-            return False
-        return True
+        top_sw = self.branch_endpoint(branch)
+        bottom_sw = self.branch_endpoint(-branch)
+        top_count = self.num_outgoing_branches(top_sw)
+        bottom_count = self.num_outgoing_branches(bottom_sw)
+        if top_count == 1:
+            if bottom_count == 1:
+                return LARGE
+            else:
+                return MIXED
+        else:
+            if bottom_count == 1:
+                return MIXED
+
+        if self.outgoing_branch(top_sw, 0) == -branch and\
+           self.outgoing_branch(bottom_sw, 0) == branch or\
+           self.outgoing_branch(top_sw, 0, RIGHT) == -branch and\
+           self.outgoing_branch(bottom_sw, 0, RIGHT) == branch:
+            return SMALL_COLLAPSIBLE
+        return SMALL_NON_COLLAPSIBLE
 
     def is_branch_large(self, branch):
         """
@@ -438,18 +415,163 @@ class TrainTrack(TrainTrack0):
         """
         return self.branch_type(branch) == MIXED
 
-    # def is_branch_small(self, branch):
-    #     """
-    #     Decide if a branch is small.
-    #     """
-    #     return self.branch_type(branch) in {SMALL_SAME_SIDE,
-    #     SMALL_OPPOSITE_SIDE}
+    def is_branch_small(self, branch):
+        """
+        Decide if a branch is small.
+        """
+        return self.branch_type(branch) in {SMALL_COLLAPSIBLE,
+                                            SMALL_NON_COLLAPSIBLE}
 
-    def unzipped(self, branch):
+    # def perform_operation(self, branch, operation, create_copy=False):
+    #     """Perform a split, shift or fold.
+
+    #     INPUT:
+
+    #     - ``branch`` -- index of the branch, and integer between
+    #       1 and the number of branches. For a split, the branch has to
+    #       be large. For a shift, it has to be mixed. For a fold, it
+    #       has to be small with opposite sides.
+
+    #     - ``operation`` -- possible values:
+
+    #         * ``SPLIT`` -- the train train must have a measure or
+    #     carry another train track, otherwise an error is raised. The
+    #     splitting is performed so that the resulting train track still
+    #     retains a positive measure or carries the train track.
+
+    #         * ``LEFT_SPLIT`` -- left split.
+
+    #         * ``RIGHT_SPLIT`` -- right split.
+
+    #         * ``CENTRAL_SPLIT`` -- central split.
+
+    #         * ``SHIFT`` -- a shift.
+
+    #         * ``FOLD`` -- a fold.
+
+    #     - ``create_copy`` -- if ``False``, the train track is changed
+    #       internally and no copy is made. If ``True``, the train track
+    #       is not changed and the new train track is created as a
+    #       separate object.
+
+    #     OUTPUT:
+
+    #     A CarryingData object describing the carrying if
+    #     ``create_copy`` is set to ``False``. Otherwise a TrainTrack
+    #     map is returned with domain and codomain the old and new train
+    #     tracks.
+
+    #     """
+    #     pass
+
+    def split(self, branch):
         """
-        Returns a copy of the Train Track, unzipped along the left side of the
-        given branch.
+        Split the train track at a large branch according to the measure.
+
+        EXAMPLES:
+
+        sage: tt = TrainTrack([[1, 2], [-3], [3], [-1, -2]], [3, 5, 8])
+        sage: tt.split(3)
+        sage: tt._gluing_list
+        [[2], [-1, -3], [1, 3], [-2]]
+        sage: tt._measure
+        [3, 5, 2]
+
+        sage: tt = TrainTrack([[1, 2], [-3], [3], [-1, -2]], [5, 3, 8])
+        sage: tt.split(3)
+        sage: tt._gluing_list
+        [[1], [-3, -2], [3, 2], [-1]]
+        sage: tt._measure
+        [5, 3, 2]
+
+        sage: tt = TrainTrack([[1, 2], [-3], [3], [-1, -2]], [5, 5, 10])
+        sage: tt.split(3)
+        sage: tt._gluing_list
+        [[], [], [1], [-1]]
+        sage: tt._measure
+        [5, 0, 0]
         """
-        tt_copy = TrainTrack(list(self.gluing_list()), list(self._measure))
-        tt_copy.unzip_create_new_switch(branch)
-        return tt_copy
+        assert(self.is_branch_large(branch))
+        assert(self.is_trivalent())
+        top_switch = self.branch_endpoint(branch)
+        bottom_switch = self.branch_endpoint(-branch)
+        assert(abs(top_switch) != abs(bottom_switch))
+        top_left = self.outgoing_branch(-top_switch, 0)
+        top_right = self.outgoing_branch(-top_switch, 1)
+        bottom_left = self.outgoing_branch(-bottom_switch, 0)
+        bottom_right = self.outgoing_branch(-bottom_switch, 1)
+
+        m_top_left = self.branch_measure(top_left)
+        m_bottom_right = self.branch_measure(bottom_right)
+        diff = m_bottom_right - m_top_left
+
+        if diff > 0:
+            typ = RIGHT_SPLIT
+        elif diff < 0:
+            typ = LEFT_SPLIT
+        else:
+            typ = CENTRAL_SPLIT
+
+        if typ == RIGHT_SPLIT or typ == CENTRAL_SPLIT:
+            self.reglue_endpoint(-top_left, bottom_switch, 0)
+            self.reglue_endpoint(-bottom_left, top_switch, 0)
+            self._set_measure(branch, abs(diff))
+
+        elif typ == LEFT_SPLIT:
+            self.reglue_endpoint(-top_right, bottom_switch, 1)
+            self.reglue_endpoint(-bottom_right, top_switch, 1)
+            self._set_measure(branch, abs(diff))
+
+        if typ == CENTRAL_SPLIT:
+            self._delete_branch(branch)
+            try:
+                self.delete_switch(top_switch)
+            except DeleteSwitchError:
+                pass
+            try:
+                self.delete_switch(bottom_switch)
+            except DeleteSwitchError:
+                pass
+
+    def fold_trivalent(self, branch):
+        """
+        Folds a small branch of a trivalent train track.
+
+        sage: tt = TrainTrack([[2], [-1, -3], [1, 3], [-2]], [3, 5, 2])
+        sage: tt.fold_trivalent(3)
+        sage: tt._gluing_list
+        [[1, 2], [-3], [3], [-1, -2]]
+        sage: tt._measure
+        [3, 5, 8]
+
+        sage: tt = TrainTrack([[1], [-3, -2], [3, 2], [-1]], [5, 3, 2])
+        sage: tt.fold_trivalent(3)
+        sage: tt._gluing_list
+        [[1, 2], [-3], [3], [-1, -2]]
+        sage: tt._measure
+        [5, 3, 8]
+
+
+        """
+        assert(self.branch_type(branch) == SMALL_COLLAPSIBLE)
+        assert(self.is_trivalent())
+        top_switch = self.branch_endpoint(branch)
+        bottom_switch = self.branch_endpoint(-branch)
+        assert(abs(top_switch) != abs(bottom_switch))
+        if self.outgoing_branch(top_switch, 0, LEFT) == -branch:
+            branch_turning = LEFT
+        else:
+            branch_turning = RIGHT
+        top = self.outgoing_branch(top_switch, 1, branch_turning)
+        bottom = self.outgoing_branch(bottom_switch, 1, branch_turning)
+        top_measure = self.branch_measure(top)
+        bottom_measure = self.branch_measure(bottom)
+
+        self.reglue_endpoint(-top, -bottom_switch, 1,
+                             start_side=branch_turning)
+
+        self.reglue_endpoint(-bottom, -top_switch, 1,
+                             start_side=branch_turning)
+
+        self._set_measure(branch, self.branch_measure(branch) +
+                          top_measure + bottom_measure)

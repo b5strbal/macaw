@@ -34,6 +34,10 @@ from sage.graphs.digraph import DiGraph
 from constants import LEFT, START, END
 
 
+class DeleteSwitchError(Exception):
+    pass
+
+
 class TrainTrack0(SageObject):
     r"""A train track on a surface.
 
@@ -239,6 +243,12 @@ class TrainTrack0(SageObject):
         idx = branches.index(branch)
         return idx if start_side == LEFT else len(branches)-idx-1
 
+    def num_outgoing_branches(self, switch):
+        """
+        Return the number of outgoing branches from a switch.
+        """
+        return len(self.outgoing_branches(switch))
+
     @staticmethod
     def _a(switch):
         """
@@ -307,6 +317,42 @@ class TrainTrack0(SageObject):
 
     def _set_measure(self, branch, new_measure):
         self._measure[abs(branch)-1] = new_measure
+
+    def reglue_endpoint(self, branch, new_switch, position,
+                        start_side=LEFT):
+        """
+        Set the endpoint of a branch to a new switch, at a specified position.
+
+        It updates both the gluing_list and branch_endpoint.
+        """
+        old_sw = self.branch_endpoint(branch)
+        old_pos = self.outgoing_branch_index(old_sw, -branch,
+                                             start_side=start_side)
+        if old_sw == new_switch:
+            # if the new switch is the same as the old switch, removing the
+            # branch shifts the indices, so we also shift the position of the
+            # insertion
+            if old_pos <= position:
+                position -= 1
+        self.pop_outgoing_branch(old_sw, old_pos, start_side=start_side)
+        self.insert_branch(new_switch, position, -branch,
+                           start_side=start_side)
+        self._set_endpoint(branch, new_switch)
+
+    def _delete_branch(self, branch):
+        """Deletes a branch from the train track.
+
+        WANRING: Does not check if the switch conditions continue to hold or
+        that we don't end up with valence 1 vertices.
+        """
+        for b in [branch, -branch]:
+            sw = self.branch_endpoint(b)
+            pos = self.outgoing_branch_index(sw, -b)
+            self.pop_outgoing_branch(sw, pos)
+        self._set_endpoint(branch, 0)
+        self._set_endpoint(-branch, 0)
+        self._num_branches -= 1
+        self._set_measure(branch, 0)
 
     def change_switch_orientation(self, switch):
         for br in self.outgoing_branches(switch):
@@ -437,37 +483,26 @@ class TrainTrack0(SageObject):
 
     #         #     x = self._branch_endpoint[side][i]
 
-    # def delete_switch(self, switch):
-    #     """
+    def delete_switch(self, switch):
+        """
 
-    #     Keep the branch on the positive side, delete the one on the negative
-    #     side.
-    #     """
-    #     if self.degree(switch) != 2:
-    #         raise ValueError("Only switches of valence two can be deleted")
-    #     if abs(switch) != self.num_switches():
-    #         raise ValueError("For now, only the switch with the largest
-    #     number can be deleted")
-    #     pos_branch = self.outgoing_branch(switch, 0)
-    #     neg_branch = self.outgoing_branch(-switch, 0)
-    #     end = self.branch_endpoint(pos_branch)
-    #     start = self.branch_endpoint(neg_branch)
-    #     self._gluing_list.pop()
-    #     self._gluing_list.pop()
+        Keep the branch on the positive side, delete the one on the negative
+        side.
 
-    #     # self._set_endpoint(pos_branch, 0)
-    #     # self._set_endpoint(-pos_branch, 0)
-    #     # self._set_endpoint(-neg_branch, end)
-
-    #     # self._set_measure(pos_branch, 0)
-
-    #     self._set_endpoint(neg_branch, 0)
-    #     self._set_endpoint(-neg_branch, 0)
-    #     self._set_endpoint(-pos_branch, start)
-
-    #     self._set_measure(neg_branch, 0)
-
-    #     self._num_branches -= 1
+        The switch will continue to persist in gluing_list as two empty lists
+        at the usual position.
+        """
+        if self.switch_valence(switch) != 2:
+            raise ValueError("Only switches of valence two can be deleted")
+        pos_branch = self.outgoing_branch(switch, 0)
+        neg_branch = self.outgoing_branch(-switch, 0)
+        if pos_branch == -neg_branch:
+            raise DeleteSwitchError("A switch cannot be deleted it is the only"
+                                    "switch on a curve")
+        sw = self.branch_endpoint(neg_branch)
+        pos = self.outgoing_branch_index(sw, -neg_branch)
+        self._delete_branch(neg_branch)
+        self.reglue_endpoint(-pos_branch, sw, pos)
 
     # ----------------------------------------------------------------
     # GENERAL METHODS
@@ -497,7 +532,7 @@ class TrainTrack0(SageObject):
     # BASIC PROPERTIES OF TRAIN TRACKS
     # ----------------------------------------------------------------
 
-    def degree(self, switch):
+    def switch_valence(self, switch):
         """
         Return the number of branches meeting at a switch.
 
@@ -508,20 +543,20 @@ class TrainTrack0(SageObject):
         EXAMPLES::
 
             sage: tt = TrainTrack0([[1, 2], [-1, -2]])
-            sage: tt.degree(1)
+            sage: tt.switch_valence(1)
             4
-            sage: tt.degree(-1)
+            sage: tt.switch_valence(-1)
             4
 
             sage: tt = TrainTrack0([[1, -1], [2], [-2, -3], [5], [6, -6], [-5],
             ....: [4, -4], [3]])
-            sage: tt.degree(2)
+            sage: tt.switch_valence(2)
             3
-            sage: tt.degree(-3)
+            sage: tt.switch_valence(-3)
             3
         """
-        return len(self.outgoing_branches(switch)) +\
-            len(self.outgoing_branches(-switch))
+        return self.num_outgoing_branches(switch) +\
+            self.num_outgoing_branches(-switch)
 
     def is_trivalent(self):
         """
@@ -543,7 +578,7 @@ class TrainTrack0(SageObject):
             True
 
         """
-        return all(self.degree(sw) == 3
+        return all(self.switch_valence(sw) == 3
                    for sw in range(1, self.num_switches()+1))
 
     def is_connected(self):
