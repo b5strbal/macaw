@@ -62,6 +62,36 @@ class TrainTrack(TrainTrack0):
         LEFT if we peel the branch which is on the left when looking towards
         ``side`` and RIGHT otherwise.
 
+        TESTS::
+
+        sage: from sage.topology.constants import LEFT, RIGHT
+        sage: tt = TrainTrack([[1, 2, 3], [-1, -2, -3]], [2, 3, 4])
+        sage: peeled_side = tt.peel(1, LEFT)
+        sage: peeled_side == RIGHT
+        True
+        sage: tt._gluing_list
+        [[2, 1, 3], [-1, -2, -3]]
+        sage: tt._measure
+        [2, 3, 2]
+        sage: peeled_side = tt.peel(1, RIGHT, preferred_peeled_side=LEFT)
+        sage: peeled_side == LEFT
+        True
+        sage: tt._gluing_list
+        [[2, 1, 3], [-1, -2, -3]]
+        sage: tt._measure
+        [0, 3, 2]
+        sage: tt.fold_by_branch_labels(3, 1)
+        sage: tt._gluing_list
+        [[2, 1, 3], [-1, -2, -3]]
+        sage: tt._measure
+        [2, 3, 2]
+        sage: peeled_side = tt.peel(1, RIGHT, preferred_peeled_side=RIGHT)
+        sage: peeled_side == RIGHT
+        True
+        sage: tt._gluing_list
+        [[2, 1, 3], [-2, -1, -3]]
+        sage: tt._measure
+        [2, 3, 0]
         """
         assert(self.is_measured())
         if side == RIGHT:
@@ -106,7 +136,7 @@ class TrainTrack(TrainTrack0):
             print "Peeled side:", "LEFT" if sm_idx == LEFT else "RIGHT"
 
         lg_idx = (sm_idx+1) % 2
-        or_switch = -switch if sm_idx == LEFT else switch
+        # or_switch = -switch if sm_idx == LEFT else switch
 
         bottom_switch = self.branch_endpoint(branches[lg_idx])
         idx = self.outgoing_branch_index(bottom_switch,
@@ -116,10 +146,12 @@ class TrainTrack(TrainTrack0):
             print "Peeling branch", branches[sm_idx], "off of",\
                 branches[lg_idx]
 
-        self.insert_branch(bottom_switch, idx, branches[sm_idx],
-                           start_side=lg_idx)
-        self.pop_outgoing_branch(or_switch, 0, start_side=lg_idx)
-        self._set_endpoint(-branches[sm_idx], bottom_switch)
+        self.reglue_endpoint(-branches[sm_idx], bottom_switch, idx,
+                             start_side=lg_idx)
+        # self.insert_branch(bottom_switch, idx, branches[sm_idx],
+        #                    start_side=lg_idx)
+        # self.pop_outgoing_branch(or_switch, 0, start_side=lg_idx)
+        # self._set_endpoint(-branches[sm_idx], bottom_switch)
         self._set_measure(branches[lg_idx],
                           measures[lg_idx] - measures[sm_idx])
 

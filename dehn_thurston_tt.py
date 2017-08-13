@@ -750,7 +750,7 @@ class DehnThurstonTT(TrainTrack):
 
                 # finding the third branch
                 sw = self.branch_endpoint(side_branches[1])
-                idx = self.outgoing_branches(sw).index(-side_branches[1])
+                idx = self.outgoing_branch_index(sw, -side_branches[1])
                 b = self.outgoing_branch(sw, idx+1)
                 branch_to_standard[b] = 2+6*side
             elif len(side_branches) == 1:
