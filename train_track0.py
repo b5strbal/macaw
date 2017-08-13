@@ -38,7 +38,7 @@ class DeleteSwitchError(Exception):
     pass
 
 
-class TrainTrack0(SageObject):
+class TrainTrack(SageObject):
     r"""A train track on a surface.
 
     There are different versions of train tracks in math. Here we
@@ -98,17 +98,17 @@ class TrainTrack0(SageObject):
 
     1. A train track on the torus with one switch::
 
-        sage: TrainTrack0([ [1, 2], [-1, -2] ])
+        sage: TrainTrack([ [1, 2], [-1, -2] ])
         Train track on the torus with 1 puncture
 
     2. A train track on the torus with two switches:
 
-        sage: TrainTrack0([ [1], [-2, -3], [2, 3], [-1] ])
+        sage: TrainTrack([ [1], [-2, -3], [2, 3], [-1] ])
         Train track on the torus with 1 puncture
 
     3. A train track on the three times punctured disk:
 
-        sage: TrainTrack0([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3], [-5],
+        sage: TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3], [-5],
         ....: [6, -6]])
         Train track on the sphere with 4 punctures
 
@@ -192,7 +192,7 @@ class TrainTrack0(SageObject):
 
         EXAMPLES::
 
-            sage: tt = TrainTrack0([ [1, 2], [-2, -1] ])
+            sage: tt = TrainTrack([ [1, 2], [-2, -1] ])
             sage: tt.branch_endpoint(1)
             -1
             sage: tt.branch_endpoint(-1)
@@ -211,7 +211,7 @@ class TrainTrack0(SageObject):
 
         EXAMPLES::
 
-            sage: tt = TrainTrack0([ [1, 2], [-2, -1] ])
+            sage: tt = TrainTrack([ [1, 2], [-2, -1] ])
             sage: tt.num_branches()
             2
         """
@@ -223,11 +223,11 @@ class TrainTrack0(SageObject):
 
         EXAMPLES::
 
-        sage: tt = TrainTrack0([ [1, 2], [-2, -1] ])
+        sage: tt = TrainTrack([ [1, 2], [-2, -1] ])
         sage: tt.num_switches()
         1
 
-        sage: tt = TrainTrack0([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
+        sage: tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
         ....: [-5], [6, -6] ])
         sage: tt.num_switches()
         4
@@ -273,12 +273,12 @@ class TrainTrack0(SageObject):
 
         EXAMPLES::
 
-            sage: tt = TrainTrack0([[1, 2], [-1, -2]])
+            sage: tt = TrainTrack([[1, 2], [-1, -2]])
             sage: tt.outgoing_branches(1)
             [1, 2]
             sage: tt.outgoing_branches(-1)
             [-1, -2]
-            sage: tt = TrainTrack0([[1, -1], [2], [-2, -3], [5], [6, -6], [-5],
+            sage: tt = TrainTrack([[1, -1], [2], [-2, -3], [5], [6, -6], [-5],
             ....: [4, -4], [3]])
             sage: tt.outgoing_branches(3)
             [6, -6]
@@ -426,35 +426,77 @@ class TrainTrack0(SageObject):
             self._set_measure(branch1, m2)
             self._set_measure(branch2, m1)
 
-    # def new_branch_number(self):
-    #     """
-    #     Return a positive integer suitable for an additional branch.
-    #     """
-    #     return len(self._branch_endpoint[0])+1
+    def _create_switch(self):
+        """Create a new switch.
 
-    # def add_switch_on_branch(self, branch):
-    #     """
+        The new switch won't be connected to any branches just yet.
 
-    #     We add the new branch to the front.
-    #     """
-    #     new_branch = self.new_branch_number()
-    #     start_sw = self.branch_endpoint(-branch)
-    #     end_sw = self.branch_endpoint(branch)
-    #     end_index = self.outgoing_branch_index(end_sw, -branch)
-    #     self.pop_outgoing_branch(end_sw, end_index)
-    #     self.insert_branch(end_sw, end_index, -new_branch)
-    #     self._gluing_list.append([new_branch])
-    #     self._gluing_list.append([-branch])
-    #     self._num_branches += 1
+        OUTPUT:
 
-    #     new_switch = self.num_switches()
-    #     self._branch_endpoint[START].append(new_switch)
-    #     self._branch_endpoint[END].append(end_sw)
-    #     self._set_endpoint(branch, -new_switch)
+        a positive integer, the number of the switch created
+        """
+        self._gluing_list.extend([[], []])
+        return len(self._gluing_list)/2
 
-    #     if self.is_measured():
-    #         self._measure.append(self.branch_measure(branch))
-    #     return (new_switch, new_branch)
+    def _create_branch(self, start_switch, start_idx, end_switch, end_idx):
+        """Create a new branch with the specified start and end switches.
+
+        In case ``start_switch`` equals ``end_switch``, keep in mind for
+        specifying indices that the start is inserted first, and the end
+        second. So if ``start_idx == 0`` and ``end_idx == 0``, then the end
+        will be to the left of start. If ``end_idx == 1`` instead, then the end
+        will be on the right of start.
+        
+        OUTPUT:
+
+        the number of the branch
+        """
+        b = self._new_branch_number()
+        self.insert_branch(start_switch, start_idx, b)
+        self.insert_branch(end_switch, end_idx, -b)
+        self._set_endpoint(b, end_switch)
+        self._set_endpoint(-b, start_switch)
+        return b
+    
+    def _new_branch_number(self):
+        """
+        Return a positive integer suitable for an additional branch.
+        """
+        self._branch_endpoint[START].append([])
+        self._branch_endpoint[END].append([])
+        self._measure.append(0)
+        return len(self._branch_endpoint[0])
+
+    def add_switch_on_branch(self, branch):
+        """Create switch from the midpoint of a branch.
+
+        We add the new branch to the front.
+
+        TESTS::
+
+        sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
+        sage: new_switch = tt.add_switch_on_branch(1)
+        sage: new_switch
+        2
+        sage: tt._gluing_list
+        [[1, 2], [-3, -2], [3], [-1]]
+        sage: tt._measure
+        [3, 5, 3]
+
+        """
+        end_sw = self.branch_endpoint(branch)
+        end_index = self.outgoing_branch_index(end_sw, -branch)
+
+        sw = self._create_switch()
+
+        self.reglue_endpoint(branch, -sw, 0)
+
+        b = self._create_branch(sw, 0, end_sw, end_index)
+        self._num_branches += 1
+
+        if self.is_measured():
+            self._set_measure(b, self.branch_measure(branch))
+        return sw
 
     # def swap_switch_numbers(self, switch1, switch2):
     #     out1 = self.outgoing_branches(switch1)
@@ -514,7 +556,7 @@ class TrainTrack0(SageObject):
 
         EXAMPLES::
 
-        sage: tt = TrainTrack0([ [1], [-2, -3], [2, 3], [-1] ])
+        sage: tt = TrainTrack([ [1], [-2, -3], [2, 3], [-1] ])
         sage: tt._repr_()
         'Train track on the torus with 1 puncture'
 
@@ -524,9 +566,9 @@ class TrainTrack0(SageObject):
 
     def copy(self):
         if self.is_measured():
-            return TrainTrack0(self._gluing_list, self._measure)
+            return TrainTrack(self._gluing_list, self._measure)
         else:
-            return TrainTrack0(self._gluing_list)
+            return TrainTrack(self._gluing_list)
 
     # ----------------------------------------------------------------
     # BASIC PROPERTIES OF TRAIN TRACKS
@@ -542,13 +584,13 @@ class TrainTrack0(SageObject):
 
         EXAMPLES::
 
-            sage: tt = TrainTrack0([[1, 2], [-1, -2]])
+            sage: tt = TrainTrack([[1, 2], [-1, -2]])
             sage: tt.switch_valence(1)
             4
             sage: tt.switch_valence(-1)
             4
 
-            sage: tt = TrainTrack0([[1, -1], [2], [-2, -3], [5], [6, -6], [-5],
+            sage: tt = TrainTrack([[1, -1], [2], [-2, -3], [5], [6, -6], [-5],
             ....: [4, -4], [3]])
             sage: tt.switch_valence(2)
             3
@@ -564,15 +606,15 @@ class TrainTrack0(SageObject):
 
         EXAMPLES::
 
-            sage: tt = TrainTrack0([ [1, 2], [-2, -1] ])
+            sage: tt = TrainTrack([ [1, 2], [-2, -1] ])
             sage: tt.is_trivalent()
             False
 
-            sage: tt = TrainTrack0([ [1], [-2, -3], [2, 3], [-1] ])
+            sage: tt = TrainTrack([ [1], [-2, -3], [2, 3], [-1] ])
             sage: tt.is_trivalent()
             True
 
-            sage: tt = TrainTrack0([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
+            sage: tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
             ....: [-5], [6, -6] ])
             sage: tt.is_trivalent()
             True
@@ -613,14 +655,14 @@ class TrainTrack0(SageObject):
 
         EXAMPLES::
 
-            sage: tt = TrainTrack0([ [1, 2], [-1, -2] ])
+            sage: tt = TrainTrack([ [1, 2], [-1, -2] ])
             sage: G = tt._get_puncturefinder_graph()
             sage: set(G.neighbors(1)) == {2, -2}
             True
             sage: set(G.neighbors(-1)) == {2, -2}
             True
 
-            sage: tt = TrainTrack0([ [1, -1], [2], [3], [4, -4], [-2, -3], [5],
+            sage: tt = TrainTrack([ [1, -1], [2], [3], [4, -4], [-2, -3], [5],
             ....: [6, -6], [-5] ])
             sage: G = tt._get_puncturefinder_graph()
             sage: set(G.neighbors(1)) == {-2, 2}
@@ -659,10 +701,10 @@ class TrainTrack0(SageObject):
         Return number of complementary regions of train track.
 
         EXAMPLES::
-        sage: tt = TrainTrack0([[-2, 1], [2, -1]])
+        sage: tt = TrainTrack([[-2, 1], [2, -1]])
         sage: tt.num_complementary_regions()
         1
-        sage: tt = TrainTrack0([ [1, -1], [2], [3], [4, -4], [-2, -3], [5], [6,
+        sage: tt = TrainTrack([ [1, -1], [2], [3], [4, -4], [-2, -3], [5], [6,
         ....: -6], [-5] ])
         sage: tt.num_complementary_regions()
         4
@@ -679,21 +721,21 @@ class TrainTrack0(SageObject):
 
         EXAMPLES::
 
-            sage: tt = TrainTrack0([ [1, 2], [-1, -2] ])
+            sage: tt = TrainTrack([ [1, 2], [-1, -2] ])
             sage: c = tt.complementary_regions()
             sage: len(c)
             1
             sage: set(c[0]) == {-2, -1, 1, 2}
             True
 
-            sage: tt = TrainTrack0([ [1], [-2, -3], [2, 3], [-1] ])
+            sage: tt = TrainTrack([ [1], [-2, -3], [2, 3], [-1] ])
             sage: c = tt.complementary_regions()
             sage: len(c)
             1
             sage: set(c[0]) == {-3, -2, -1, 1, 2, 3}
             True
 
-            sage: tt = TrainTrack0([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
+            sage: tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
             ....: [-5], [6, -6] ])
             sage: tt.complementary_regions()
             [[-5, -3, -2, 1, 2, 3, 4, 5, 6], [-6], [-4], [-1]]
@@ -709,15 +751,15 @@ class TrainTrack0(SageObject):
 
         EXAMPLES::
 
-            sage: tt = TrainTrack0([ [1, 2], [-1, -2] ])
+            sage: tt = TrainTrack([ [1, 2], [-1, -2] ])
             sage: tt.regular_neighborhood()
             Torus with 1 puncture
 
-            sage: tt = TrainTrack0([ [1], [-2, -3], [2, 3], [-1] ])
+            sage: tt = TrainTrack([ [1], [-2, -3], [2, 3], [-1] ])
             sage: tt.regular_neighborhood()
             Torus with 1 puncture
 
-            sage: tt = TrainTrack0([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
+            sage: tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
             ....: [-5], [6, -6] ])
             sage: tt.regular_neighborhood()
             Sphere with 4 punctures
@@ -737,15 +779,15 @@ class TrainTrack0(SageObject):
 
         EXAMPLES::
 
-            sage: tt = TrainTrack0([[1, -1], [-2, 2]])
+            sage: tt = TrainTrack([[1, -1], [-2, 2]])
             sage: tt.num_cusps_of_regions()
             [0, 1, 1]
 
-            sage: tt = TrainTrack0([[1, 2], [-1, -2]])
+            sage: tt = TrainTrack([[1, 2], [-1, -2]])
             sage: tt.num_cusps_of_regions()
             [2]
 
-            sage: tt = TrainTrack0([ [1, -1], [2], [-2, -3], [5], [6, -6],
+            sage: tt = TrainTrack([ [1, -1], [2], [-2, -3], [5], [6, -6],
             ....: [-5], [4, -4], [3] ])
             sage: tt.num_cusps_of_regions()
             [1, 1, 1, 1]
@@ -767,7 +809,7 @@ class TrainTrack0(SageObject):
 
         EXAMPLES:
 
-            sage: tt = TrainTrack0([ [1, -1], [2, -2] ])
+            sage: tt = TrainTrack([ [1, -1], [2, -2] ])
             sage: G = tt._get_recurrence_graph()
             sage: G.edges()
             [(-2, -1, None),
@@ -781,20 +823,20 @@ class TrainTrack0(SageObject):
 
         TESTS::
 
-            sage: tt = TrainTrack0([ [1, -1], [2, -2] ])
+            sage: tt = TrainTrack([ [1, -1], [2, -2] ])
             sage: G = tt._get_recurrence_graph()
             sage: set(G.edges()) == {(-2, -1, None), (-2, 1, None), (-1, -2,
             ....: None), (-1, 2, None), (1, -2, None), (1, 2, None), (2, -1,
             ....: None), (2, 1, None)}
             True
 
-            sage: tt = TrainTrack0([ [1, 2], [-1, -2] ])
+            sage: tt = TrainTrack([ [1, 2], [-1, -2] ])
             sage: G = tt._get_recurrence_graph()
             sage: set(G.edges()) == {(-2, -1, None), (-1, -2, None), (1, 2,
             ....: None), (2, 1, None)}
             True
 
-            sage: tt = TrainTrack0([ [1, -1], [2], [-2, -3], [5], [6, -6],
+            sage: tt = TrainTrack([ [1, -1], [2], [-2, -3], [5], [6, -6],
             ....: [-5], [4, -4], [3] ])
             sage: G = tt._get_recurrence_graph()
             sage: set(G.edges()) == {(-6, 5, None), (-5, -6, None), (-5, 6,
@@ -828,20 +870,20 @@ class TrainTrack0(SageObject):
 
         EXAMPLES::
 
-            sage: tt = TrainTrack0([ [1, 2], [-1, -2] ])
+            sage: tt = TrainTrack([ [1, 2], [-1, -2] ])
             sage: tt.is_recurrent()
             True
 
-            sage: tt = TrainTrack0([ [1, -1], [2], [-2, -3], [5], [6, -6],
+            sage: tt = TrainTrack([ [1, -1], [2], [-2, -3], [5], [6, -6],
             ....: [-5], [4, -4], [3] ])
             sage: tt.is_recurrent()
             True
 
-            sage: tt = TrainTrack0([ [2, 1, -2], [-1] ])
+            sage: tt = TrainTrack([ [2, 1, -2], [-1] ])
             sage: tt.is_recurrent()
             False
 
-            sage: tt = TrainTrack0([ [1, 2, 3, -3], [-1, -2] ])
+            sage: tt = TrainTrack([ [1, 2, 3, -3], [-1, -2] ])
             sage: tt.is_recurrent()
             False
 

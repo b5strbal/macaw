@@ -21,7 +21,8 @@ AUTHORS:
 # *****************************************************************************
 
 
-from train_track0 import TrainTrack0, DeleteSwitchError
+from train_track0 import TrainTrack as TrainTrack0
+from train_track0 import DeleteSwitchError
 from constants import LEFT, RIGHT
 
 
@@ -607,3 +608,30 @@ class TrainTrack(TrainTrack0):
 
         self._set_measure(branch, self.branch_measure(branch) +
                           top_measure + bottom_measure)
+
+    def merge_branches(self, switch, pos):
+        """Merge the starting halves of two branches emanating from a switch.
+
+        INPUT:
+
+        - ``pos`` -- the branches merged are a positions ``pos`` and ``pos+1``
+
+        TESTS:
+
+        Merging branches 2 and 3:
+
+        sage: tt = TrainTrack([[1, 2, 3], [-1, -2, -3]], [2, 3, 4])
+        sage: tt.merge_branches(1, 1)
+        sage: tt._gluing_list
+        [[1, 2], [-1, -4, -3], [4, 3], [-2]]
+        sage: tt._measure
+        [2, 7, 4, 3]
+
+        """
+        b1 = self.outgoing_branch(switch, pos)
+        b2 = self.outgoing_branch(switch, pos+1)
+        sw = self.add_switch_on_branch(b1)
+        new_branch = self.outgoing_branch(-sw, 0)
+        self.reglue_endpoint(-b2, sw, 1)
+        self._set_measure(new_branch,
+                          self.branch_measure(b1) + self.branch_measure(b2))

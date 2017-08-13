@@ -9,7 +9,7 @@ AUTHORS:
 
 """
 
-#*****************************************************************************
+# *****************************************************************************
 #       Copyright (C) 2017 Balazs Strenner <strennerb@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -17,23 +17,24 @@ AUTHORS:
 # the Free Software Foundation, either version 2 of the License, or
 # (at your option) any later version.
 #                  http://www.gnu.org/licenses/
-#*****************************************************************************
+# *****************************************************************************
 
 
-from train_track import TrainTrack
+# from train_track import TrainTrack
 from sage.structure.sage_object import SageObject
-
+from constants import LEFT
+from sage.all import vector
 
 
 class CarryingData(SageObject):
     """
-    Class for storing the data of a carrying map. 
+    Class for storing the data of a carrying map.
 
     Eventually there should be two versions: a dense and a sparse one.
     The sparse one would only list what *really* changes in the data.
 
     INPUT:
-    
+
         -edge_matrix: A matrix
 
         -half_branch_map: A dictionary
@@ -45,31 +46,31 @@ class CarryingData(SageObject):
 
         -hb_between_branches: A dictionary
     """
-    def __init__(self,branch_matrix,half_branch_map,
-                 hb_between_branches,sparse=False):
+    def __init__(self, branch_matrix, half_branch_map,
+                 hb_between_branches, sparse=False):
         """
-        
+
 
         EXAMPLES:
 
         The carrying data for splitting of the train track on the
         torus with two branches::
 
-            sage: branch_matrix = matrix([[1,1],[0,1]])
-            sage: half_branch_map = {1:1,2:1,-1:-1,-2:-2}
-            sage: hb_between_branches = {1:[0,0],2:[0,1],-1:[0,1],-2:[0,0]}
-            sage: c = CarryingData(branch_matrix, half_branch_map, hb_between_branches)
+        sage: branch_matrix = matrix([[1, 1], [0, 1]])
+        sage: half_branch_map = {1:1, 2:1, -1:-1, -2:-2}
+        sage: hb_between_branches = {1:[0, 0], 2:[0, 1], -1:[0, 1], -2:[0, 0]}
+        sage: c = CarryingData(branch_matrix, half_branch_map,
+        hb_between_branches)
 
-        
-        
+
+
         """
-        
+
         self._branch_matrix = branch_matrix
         self._half_branch_map = half_branch_map
         self._hb_between_branches = hb_between_branches
 
-        
-    def image_of_half_branch(self,half_branch):
+    def image_of_half_branch(self, half_branch):
         """
         Return the image of a half-branch in the domain.
 
@@ -78,31 +79,31 @@ class CarryingData(SageObject):
         The carrying data for splitting of the train track on the
         torus with two branches::
 
-            sage: branch_matrix = matrix([[1,1],[0,1]])
-            sage: half_branch_map = {1:1,2:1,-1:-1,-2:-2}
-            sage: hb_between_branches = {1:[0,0],2:[0,1],-1:[0,1],-2:[0,0]}
+            sage: branch_matrix = matrix([[1, 1], [0, 1]])
+            sage: half_branch_map = {1:1, 2:1, -1:-1, -2:-2}
+            sage: hb_between_branches = {1:[0, 0], 2:[0, 1], -1:[0, 1], -2:[0, 0]}
             sage: c = CarryingData(branch_matrix, half_branch_map, hb_between_branches)
-            sage: [c.image_of_half_branch(i) for i in [-2,-1,1,2]]
+            sage: [c.image_of_half_branch(i) for i in [-2, -1, 1,2]]
             [-2, -1, 1, 1]
-        
+
 
         """
         return self._half_branch_map[half_branch]
-        
-    def image_of_branch(self,branch):
+
+    def image_of_branch(self, branch):
         """
         Return the image of a brach in the domain as a measure.
 
-        INPUT: 
+        INPUT:
 
         - ``branch`` -- a branch, either as a positive or negative
           number. The orientation is ignored.
 
         EXAMPLES::
 
-            sage: branch_matrix = matrix([[1,1],[0,1]])
-            sage: half_branch_map = {1:1,2:1,-1:-1,-2:-2}
-            sage: hb_between_branches = {1:[0,0],2:[0,1],-1:[0,1],-2:[0,0]}
+            sage: branch_matrix = matrix([[1, 1], [0, 1]])
+            sage: half_branch_map = {1:1, 2:1, -1:-1, -2:-2}
+            sage: hb_between_branches = {1:[0, 0], 2:[0, 1], -1:[0, 1], -2:[0, 0]}
             sage: c = CarryingData(branch_matrix, half_branch_map, hb_between_branches)
             sage: c.image_of_branch(1)
             (1, 0)
@@ -116,20 +117,20 @@ class CarryingData(SageObject):
         """
         return self._branch_matrix.column(abs(branch)-1)
 
-    def preimage_of_branch(self,branch):
+    def preimage_of_branch(self, branch):
         """
         Return the preimage of a branch in the codomain as a measure.
 
-        INPUT: 
+        INPUT:
 
         - ``branch`` -- a branch, either as a positive or negative
           number. The orientation is ignored.
 
         EXAMPLES::
 
-            sage: branch_matrix = matrix([[1,1],[0,1]])
-            sage: half_branch_map = {1:1,2:1,-1:-1,-2:-2}
-            sage: hb_between_branches = {1:[0,0],2:[0,1],-1:[0,1],-2:[0,0]}
+            sage: branch_matrix = matrix([[1, 1], [0, 1]])
+            sage: half_branch_map = {1:1, 2:1, -1:-1, -2:-2}
+            sage: hb_between_branches = {1:[0, 0], 2:[0, 1], -1:[0, 1], -2:[0, 0]}
             sage: c = CarryingData(branch_matrix, half_branch_map, hb_between_branches)
             sage: c.preimage_of_branch(1)
             (1, 1)
@@ -142,8 +143,8 @@ class CarryingData(SageObject):
 
         """
         return self._branch_matrix[abs(branch)-1]
-    
-    def strands_on_side(self,half_branch,side,branch_to_count=None):
+
+    def strands_on_side(self, half_branch, side, branch_to_count=None):
         """Return the number of strands to the left of to the right of a
         half-branch of the domain.
 
@@ -159,16 +160,16 @@ class CarryingData(SageObject):
           can be the (positive) number of a branch in the domain train
           track and only the strands contained in this branch are
           counted
-    
+
         OUTPUT:
 
         A list or an integer.
 
         EXAMPLES::
 
-            sage: branch_matrix = matrix([[1,1],[0,1]])
-            sage: half_branch_map = {1:1,2:1,-1:-1,-2:-2}
-            sage: hb_between_branches = {1:[0,0],2:[1,0],-1:[0,1],-2:[0,0]}
+            sage: branch_matrix = matrix([[1, 1], [0, 1]])
+            sage: half_branch_map = {1:1, 2:1, -1:-1, -2:-2}
+            sage: hb_between_branches = {1:[0, 0], 2:[1, 0], -1:[0, 1], -2:[0, 0]}
             sage: c = CarryingData(branch_matrix, half_branch_map, hb_between_branches)
             sage: LEFT = 0
             sage: c.strands_on_side(1, LEFT)
@@ -184,30 +185,29 @@ class CarryingData(SageObject):
             sage: c.strands_on_side(-1, LEFT, 2)
             1
 
-       
+
         """
         all_data = self._hb_between_branches[half_branch]
         if side == LEFT:
-            if branch_to_count == None:
+            if branch_to_count is None:
                 return all_data
             return all_data[branch_to_count-1]
         else:
             raise NotImplementedError()
-        
-        
+
     # def h(n):
     #     r"""
-    #     Merge map from `[1,\infy)\cup(-\infty,-1)` to `[0,\infty).
+    #     Merge map from `[1, \infy)\cup(-\infty, -1)` to `[0, \infty).
     #     """
     #     return 2*n-2 if n>0 else -2*n-1
 
     # def hinv(n):
     #     r"""
-    #     The inverse of the merge map from `[1,\infy)\cup(-\infty,-1)` to `[0,\infty).
+    #     The inverse of the merge map from `[1, \infy)\cup(-\infty, -1)` to `[0, \infty).
     #     """
     #     return n//2+1 if n%2 == 0 else -n//2-1
-    
-    def __mul__(self,other):
+
+    def __mul__(self, other):
         """Return a composition of two carrying maps.
 
         INPUT:
@@ -218,34 +218,34 @@ class CarryingData(SageObject):
 
         """
 
-        
         # Number of branches in the domain train track of other
         n = other._branch_matrix.ncols()
         branch_matrix = self._branch_matrix * other._branch_matrix
         half_branch_map = {}
-        for i in range(1,n+1):
-            for j in {i,-i}:
-                if other._half_branch_map[j] == None:
+        for i in range(1, n+1):
+            for j in {i, -i}:
+                if other._half_branch_map[j] is None:
                     half_branch_map[j] = None
                 else:
-                    half_branch_map[j] = self._half_branch_map[other._half_branch_map[j]]
+                    half_branch_map[j] = self._half_branch_map[
+                        other._half_branch_map[j]]
 
         hb_between_branches = {}
 
         # iterate over half-branches of the domain of other
-        for i in range(1,n+1):
-            for hb in {i,-i}:
+        for i in range(1, n+1):
+            for hb in {i, -i}:
                 hb_between_branches[hb] = [0]*n
-                
+
                 # the image half-branch of hb under other
                 mid_hb = other.image_of_half_branch(hb)
 
                 # the vector of branches on the left of mid_hb in the
                 # codomain of other (the intermediate train track)
-                left_strands = self.strands_on_side(mid_hb,LEFT)
+                left_strands = self.strands_on_side(mid_hb, LEFT)
 
                 # iterate over branches of the domain of other
-                for k in range(1,n+1):
+                for k in range(1, n+1):
 
                     # the vector counting the strands on each of the
                     # strands to the left of mid_hb that are contained in
@@ -256,43 +256,24 @@ class CarryingData(SageObject):
                     print k_strands
                     # total number of strands on the left of mid_hb that
                     # are contained in branch k
-                    hb_between_branches[hb][k-1] += vector(left_strands)*vector(k_strands)
+                    hb_between_branches[hb][k-1] += \
+                        vector(left_strands) * vector(k_strands)
 
                     # adding the strands to the left of hb that also map
                     # onto mid_hb
-                    hb_between_branches[hb][k-1] += other.strands_on_side(hb,LEFT,k)
+                    hb_between_branches[hb][k-1] += \
+                        other.strands_on_side(hb, LEFT, k)
 
-                    
-
-        return CarryingData(branch_matrix,half_branch_map,hb_between_branches)
-
-
+        return CarryingData(branch_matrix, half_branch_map,
+                            hb_between_branches)
 
 
-
-
-
-
-
-         
-         
 # class SparseCarryingData(SageObject):
-    
-         
-         
-         
-# branch_matrix = matrix([[1,1],[0,1]])
-# half_branch_map = {1:1,2:1,-1:-1,-2:-2}
-# hb_between_branches = {1:[0,0],2:[0,1],-1:[0,1],-2:[0,0]}
+
+# branch_matrix = matrix([[1, 1], [0, 1]])
+# half_branch_map = {1:1, 2:1, -1:-1, -2:-2}
+# hb_between_branches = {1:[0, 0], 2:[0, 1], -1:[0, 1], -2:[0, 0]}
 # c = CarryingData(branch_matrix, half_branch_map, hb_between_branches)
-
-
-
-
-
-
-
-
 
 
 class TrainTrackMap(SageObject):
@@ -324,7 +305,7 @@ class TrainTrackMap(SageObject):
     easier for non-trivalent train tracks, and it is enough to
     restrict the Splitting class for trivalent ones.
     """
-    def __init__(self,domain,codomain,carrying_data):
+    def __init__(self, domain, codomain, carrying_data):
         """
 
          INPUT:
@@ -336,15 +317,14 @@ class TrainTrackMap(SageObject):
          - ``carrying_data`` -- a CarryingData object specifying how
             the domain is carried on the codomain
 
-         EXAMPLES:: 
+         EXAMPLES::
 
          <write examples>
 
          """
         self._domain = domain
         self._codomain = codomain
-        self._carrying_map = carrying_map
-
+        self._carrying_data = carrying_data
 
     def domain(self):
         return self._domain
@@ -352,11 +332,11 @@ class TrainTrackMap(SageObject):
     def codomain(self):
         return self._codomain
 
-     # def half_branch_map(self):
-     # return self._half_branch_map
+    # def half_branch_map(self):
+    # return self._half_branch_map
 
-     # def hb_between_branches(self):
-     # return self._hb_between_branches
+    # def hb_between_branches(self):
+    # return self._hb_between_branches
 
     def __mul__(self):
         """
@@ -366,46 +346,42 @@ class TrainTrackMap(SageObject):
 
     def compute_measure_on_codomain(self):
         """
-        Compute the measure on the codomain from the measure of the
-         domain.
-         """
+        Compute the measure on the codomain from the measure of the domain.
+        """
         pass
 
-    def unzip_codomain(self,branch):
-         """Unzips the codomain and, if necessary, the domain, too.
+    def unzip_codomain(self, branch):
+        """Unzips the codomain and, if necessary, the domain, too.
 
-     The domain has to be a measured train track. If there is a way
-         to unzip the codomain so that the domain is carried, then that
-         unzipping is performed and the domain does not change. In this
-         case, the measure on the domain does not play a role. If there
-         is no way to split the codomain so that the domain is carried,
-         then the domain is unzipped according to the measure, and the
-         codomain is unzipped accordingly to preserve the carrying
-         relationship. If there are multiple way to unzip the domain
-         according to the measure, then one of the possible unzips is
-         performed - it is not specified which one.
+        The domain has to be a measured train track. If there is a way
+        to unzip the codomain so that the domain is carried, then that
+        unzipping is performed and the domain does not change. In this
+        case, the measure on the domain does not play a role. If there
+        is no way to split the codomain so that the domain is carried,
+        then the domain is unzipped according to the measure, and the
+        codomain is unzipped accordingly to preserve the carrying
+        relationship. If there are multiple way to unzip the domain
+        according to the measure, then one of the possible unzips is
+        performed - it is not specified which one.
 
-     Nothing is returned, all components of the carrying map are
-         changed internally.
+        Nothing is returned, all components of the carrying map are
+        changed internally.
 
-     INPUT:
+        INPUT:
 
-     - ``branch`` --
+        - ``branch`` --
 
-     """
-         pass
+        """
+        pass
 
-
-
-     # ------------------------------------------------------------
-     # Teichmuller/Alexander polynomial computation.
-
+    # ------------------------------------------------------------
+    # Teichmuller/Alexander polynomial computation.
 
     def action_on_cohomology(self):
         pass
- 
+
     def invariant_cohomology(self):
         pass
-    
+
     def teichmuller_polynomial(self):
         pass
