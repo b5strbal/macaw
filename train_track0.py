@@ -157,8 +157,7 @@ class TrainTrack(SageObject):
         self._measure = measure
 
         if measure is not None:
-            for i in range(self.num_switches()):
-                sw = i+1
+            for sw in self.switches():
                 sums = [sum([self.branch_measure(b) for b in
                              self.outgoing_branches(sgn*sw)])
                         for sgn in [-1, 1]]
@@ -205,6 +204,27 @@ class TrainTrack(SageObject):
         return self._branch_endpoint[START][-branch-1] if branch < 0 \
             else self._branch_endpoint[END][branch-1]
 
+    def branches(self):
+        """Return the list of branches.
+
+        EXAMPLES::
+
+        sage: tt = TrainTrack([ [1, 2], [-2, -1] ])
+        sage: tt.branches()
+        [1, 2]
+
+        sage: tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
+        ....: [-5], [6, -6] ])
+        sage: tt.branches()
+        [1, 2, 3, 4, 5, 6]
+
+        """
+        ls = []
+        for i in range(len(self._branch_endpoint[START])):
+            if self._branch_endpoint[START][i] != 0:
+                ls.append(i+1)
+        return ls
+    
     def num_branches(self):
         """
         Return the number of branches.
@@ -216,6 +236,27 @@ class TrainTrack(SageObject):
             2
         """
         return self._num_branches
+
+    def switches(self):
+        """Return the list of switches.
+
+        EXAMPLES::
+
+        sage: tt = TrainTrack([ [1, 2], [-2, -1] ])
+        sage: tt.switches()
+        [1]
+
+        sage: tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
+        ....: [-5], [6, -6] ])
+        sage: tt.switches()
+        [1, 2, 3]
+
+        """
+        ls = []
+        for i in range(len(self._gluing_list)/2):
+            if len(self._gluing_list[2*i]) > 0:
+                ls.append(i+1)
+        return ls
 
     def num_switches(self):
         """
@@ -232,7 +273,7 @@ class TrainTrack(SageObject):
         sage: tt.num_switches()
         4
         """
-        return len(self.gluing_list()) // 2
+        return len(self.switches())
 
     def outgoing_branch(self, switch, index, start_side=LEFT):
         idx = index if start_side == LEFT else -1-index
@@ -301,6 +342,61 @@ class TrainTrack(SageObject):
     def branch_measure(self, branch):
         """Return the measure on the given branch."""
         return self._measure[abs(branch) - 1]
+
+    def _extra_valence(self):
+        """Return the total extra valence (above 3) of the switches.
+
+        TESTS:
+
+        sage: tt = TrainTrack([[1, 2, 3, 4], [-1, -2, -3, -4]])
+        sage: tt._extra_valence()
+        5
+
+        """
+        extra_valence = 0
+        for sw in self.switches():
+            val = self.switch_valence(sw)
+            if val > 3:
+                extra_valence += val - 3
+        return extra_valence
+
+    def num_switches_if_made_trivalent(self):
+        """Return the number of switches the train track can have if made
+        trivalent.
+
+        This is useful for knowing how big arrays to allocate.
+
+        TESTS:
+
+        sage: tt = TrainTrack([[1, 2], [-1, -2]])
+        sage: tt.num_switches_if_made_trivalent()
+        2
+
+        sage: tt = TrainTrack([[1, 2, 3, 4], [-1, -2, -3, -4]])
+        sage: tt.num_switches_if_made_trivalent()
+        6
+
+        """
+        return self.num_switches() + self._extra_valence()
+
+    def num_branches_if_made_trivalent(self):
+        """Return the number of branches the train track can have if made
+        trivalent.
+
+        This is useful for knowing how big arrays to allocate.
+
+        TESTS:
+
+        sage: tt = TrainTrack([[1, 2], [-1, -2]])
+        sage: tt.num_branches_if_made_trivalent()
+        3
+
+        sage: tt = TrainTrack([[1, 2, 3, 4], [-1, -2, -3, -4]])
+        sage: tt.num_branches_if_made_trivalent()
+        7
+
+        """
+        return self.num_branches() + self._extra_valence()
 
     # ----------------------------------------------------------------
     # SETTERS
@@ -446,7 +542,7 @@ class TrainTrack(SageObject):
         second. So if ``start_idx == 0`` and ``end_idx == 0``, then the end
         will be to the left of start. If ``end_idx == 1`` instead, then the end
         will be on the right of start.
-        
+
         OUTPUT:
 
         the number of the branch
@@ -457,7 +553,7 @@ class TrainTrack(SageObject):
         self._set_endpoint(b, end_switch)
         self._set_endpoint(-b, start_switch)
         return b
-    
+
     def _new_branch_number(self):
         """
         Return a positive integer suitable for an additional branch.
@@ -621,7 +717,7 @@ class TrainTrack(SageObject):
 
         """
         return all(self.switch_valence(sw) == 3
-                   for sw in range(1, self.num_switches()+1))
+                   for sw in self.switches())
 
     def is_connected(self):
         pass
@@ -677,7 +773,7 @@ class TrainTrack(SageObject):
             pass
 
         g = Graph(multiedges=True, loops=True)
-        for i in range(1, self.num_switches()+1):
+        for i in self.switches():
             for sw in {-i, i}:
                 b1 = self.outgoing_branches(sw)
                 b2 = self.outgoing_branches(-sw)
