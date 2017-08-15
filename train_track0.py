@@ -409,11 +409,6 @@ class TrainTrack(SageObject):
             array([2, 1])
             sage: tt.outgoing_branches(-1, start_side=RIGHT)
             array([-2, -1])
-            sage: tt.outgoing_branches(2)
-            Traceback (most recent call last):
-            ...
-            ValueError: Switch 2 does not exist.
-
             sage: tt = TrainTrack([[1, -1], [2], [-2, -3], [5], [6, -6], [-5],
             ....: [4, -4], [3]])
             sage: tt.outgoing_branches(3)
@@ -424,8 +419,8 @@ class TrainTrack(SageObject):
 
         """
         # side = self._side(switch)
-        if not self.is_switch(switch):
-            raise ValueError("Switch %d does not exist." % switch)
+        # if not self.is_switch(switch):
+        #     raise ValueError("Switch %d does not exist." % switch)
         arr = self._outgoing_branches[self._to_index(switch)]
         n = self._num_outgoing_branches[self._to_index(switch)]
         if start_side == LEFT:
@@ -702,7 +697,9 @@ class TrainTrack(SageObject):
 
         """
         ls = []
-        for i in self.switches():
+        n = self.switches()[-1]
+        # print n
+        for i in range(1, n+1):
             ls.append(list(self.outgoing_branches(i)))
             ls.append(list(self.outgoing_branches(-i)))
         return ls
@@ -1315,8 +1312,11 @@ class TrainTrack(SageObject):
             # if the new switch is the same as the old switch, removing the
             # branch shifts the indices, so we also shift the position of the
             # insertion
-            if old_pos <= position:
+            if old_pos < position:
                 position -= 1
+        # print "old_pos", old_pos
+        # print "old_sw", old_sw
+        # print "position", position
         self._pop_outgoing_branch(old_sw, old_pos, start_side=start_side)
         self.insert_branch(new_switch, position, -branch,
                            start_side=start_side)

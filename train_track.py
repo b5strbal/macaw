@@ -70,26 +70,26 @@ class TrainTrack(TrainTrack1):
         sage: peeled_side = tt.peel(1, LEFT)
         sage: peeled_side == RIGHT
         True
-        sage: tt._gluing_list
+        sage: tt.gluing_list()
         [[2, 1, 3], [-1, -2, -3]]
         sage: tt.measure()
         [2, 3, 2]
         sage: peeled_side = tt.peel(1, RIGHT, preferred_peeled_side=LEFT)
         sage: peeled_side == LEFT
         True
-        sage: tt._gluing_list
+        sage: tt.gluing_list()
         [[2, 1, 3], [-1, -2, -3]]
         sage: tt.measure()
         [0, 3, 2]
         sage: tt.fold_by_branch_labels(3, 1)
-        sage: tt._gluing_list
+        sage: tt.gluing_list()
         [[2, 1, 3], [-1, -2, -3]]
         sage: tt.measure()
         [2, 3, 2]
         sage: peeled_side = tt.peel(1, RIGHT, preferred_peeled_side=RIGHT)
         sage: peeled_side == RIGHT
         True
-        sage: tt._gluing_list
+        sage: tt.gluing_list()
         [[2, 1, 3], [-2, -1, -3]]
         sage: tt.measure()
         [2, 3, 0]
@@ -103,7 +103,7 @@ class TrainTrack(TrainTrack1):
             print "-------------------------------"
             print "BEGIN: peel()"
             print "-------------------------------"
-            print "Gluing list at beginning", self._gluing_list
+            print "Gluing list at beginning", self.gluing_list()
             print "Measure at beginning", self.measure()
             if branch_map is not None:
                 print "Branch map at the beginning", branch_map._branch_map
@@ -163,7 +163,7 @@ class TrainTrack(TrainTrack1):
             branch_map.append(-branches[sm_idx], branches[lg_idx])
 
         if debug:
-            print "Gluing list at the end", self._gluing_list
+            print "Gluing list at the end", self.gluing_list()
             print "Measure at the end", self.measure()
             if branch_map is not None:
                 print "Branch map at the end", branch_map._branch_map
@@ -184,37 +184,29 @@ class TrainTrack(TrainTrack1):
 
             sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
             sage: tt.fold(1, 1, 0)
-            sage: tt._gluing_list
+            sage: tt.gluing_list()
             [[1, 2], [-1, -2]]
-            sage: tt._branch_endpoint
-            [[1, 1], [-1, -1]]
             sage: tt.measure()
             [8, 5]
 
             sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
             sage: tt.fold(-1, 1, 0)
-            sage: tt._gluing_list
+            sage: tt.gluing_list()
             [[1, 2], [-1, -2]]
-            sage: tt._branch_endpoint
-            [[1, 1], [-1, -1]]
             sage: tt.measure()
             [8, 5]
 
             sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
             sage: tt.fold(1, 0, 1)
-            sage: tt._gluing_list
+            sage: tt.gluing_list()
             [[1, 2], [-1, -2]]
-            sage: tt._branch_endpoint
-            [[1, 1], [-1, -1]]
             sage: tt.measure()
             [3, 8]
 
             sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
             sage: tt.fold(-1, 0, 1)
-            sage: tt._gluing_list
+            sage: tt.gluing_list()
             [[1, 2], [-1, -2]]
-            sage: tt._branch_endpoint
-            [[1, 1], [-1, -1]]
             sage: tt.measure()
             [3, 8]
 
@@ -223,10 +215,8 @@ class TrainTrack(TrainTrack1):
 
             sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [8, 3, 5])
             sage: tt.fold(2, 1, 0)
-            sage: tt._gluing_list
+            sage: tt.gluing_list()
             [[1, 3], [-2, -3], [2], [-1]]
-            sage: tt._branch_endpoint
-            [[1, 2, 1], [-2, -1, -1]]
             sage: tt.measure()
             [8, 8, 5]
 
@@ -241,7 +231,7 @@ class TrainTrack(TrainTrack1):
 
         """
 
-        n = len(self.outgoing_branches(switch))
+        n = self.num_outgoing_branches(switch)
         # print "--------------------------------"
         # print "TrainTrack.fold()"
         # print "--------------------------------"
@@ -256,14 +246,14 @@ class TrainTrack(TrainTrack1):
 
         # from now on, start_side is assumed to be LEFT
 
-        fold_onto_br = self.outgoing_branch(switch, fold_onto_index,
-                                            start_side)
+        fold_onto_br = self.outgoing_branch(switch, fold_onto_index)
+        folded_br = self.outgoing_branch(switch, folded_branch_index)
         next_sw = self.branch_endpoint(fold_onto_br)
 
         if folded_branch_index == fold_onto_index - 1:
-            fold_start_side = RIGHT
+            side = LEFT
         elif folded_branch_index == fold_onto_index + 1:
-            fold_start_side = LEFT
+            side = RIGHT
         else:
             raise FoldError("Only two adjacent branches can be folded")
 
@@ -275,17 +265,21 @@ class TrainTrack(TrainTrack1):
         # print "TrainTrack.fold() end"
         # print "--------------------------------"
 
-        if self.outgoing_branch(next_sw, 0, fold_start_side) != -fold_onto_br:
+        if self.outgoing_branch(next_sw, 0, (side+1) % 2) != -fold_onto_br:
             raise FoldError("The fold is not possible, because there is "
                             "a blocking backward branch.")
+        # print -folded_br
+        # print(-next_sw)
+        # print(side)
+        
+        self.reglue_endpoint(-folded_br, -next_sw, 0, start_side=side)
+        # folded_br = self.outgoing_branches(switch).pop(folded_branch_index)
 
-        folded_br = self.outgoing_branches(switch).pop(folded_branch_index)
-
-        if fold_start_side == RIGHT:
-            self.outgoing_branches(-next_sw).insert(0, folded_br)
-        else:
-            self.outgoing_branches(-next_sw).append(folded_br)
-        self._set_endpoint(-folded_br, -next_sw)
+        # if fold_start_side == RIGHT:
+        #     self.outgoing_branches(-next_sw).insert(0, folded_br)
+        # else:
+        #     self.outgoing_branches(-next_sw).append(folded_br)
+        # self._set_endpoint(-folded_br, -next_sw)
 
         # update measure
 
@@ -321,17 +315,17 @@ class TrainTrack(TrainTrack1):
 
     #         # sage: tt = TrainTrack([ [1, 2], [-1, -2] ])
     #         # sage: tt.unzip_create_new_switch(1, 0, 0)
-    #         # sage: tt._gluing_list
+    #         # sage: tt.gluing_list()
     #         # [[1, 3], [-1, -2], [2], [-3]]
 
     #         # sage: tt = TrainTrack([ [1, 2], [-1, -2] ])
     #         # sage: tt.unzip_create_new_switch(1, 0, 1)
-    #         # sage: tt._gluing_list
+    #         # sage: tt.gluing_list()
     #         # [[1], [-2], [2, 3], [-1, -3]]
 
     #         # sage: tt = TrainTrack([ [1, 2], [-1, -2] ])
     #         # sage: tt.unzip_create_new_switch(1, 0, 0, True)
-    #         # sage: tt._gluing_list
+    #         # sage: tt.gluing_list()
     #         # [[1], [-2], [2], [-1]]
 
     #     """
@@ -346,8 +340,8 @@ class TrainTrack(TrainTrack1):
     #         end_switch = self.branch_endpoint(unzip_branch)
     #         s = self._a(end_switch)
     #         # print end_switch
-    #         end_index = self._gluing_list[s].index(-unzip_branch)
-    #         self._gluing_list[s].insert(end_index+1, -new_branch)
+    #         end_index = self.gluing_list()[s].index(-unzip_branch)
+    #         self.gluing_list()[s].insert(end_index+1, -new_branch)
     #         if switch == end_switch and pos >= end_index:
     #             pos += 1
     #         elif -switch == end_switch and unzip_pos > end_index:
@@ -362,28 +356,28 @@ class TrainTrack(TrainTrack1):
     #     neg_index_new = self._a(-new_switch)
     #     # print pos_index, neg_index, pos_index_new, neg_index_new
 
-    #     self._gluing_list.extend([[], []]) # add new switch
-    #     # print self._gluing_list
+    #     self.gluing_list().extend([[], []]) # add new switch
+    #     # print self.gluing_list()
     #     # print "Branch endpoint", self._branch_endpoint
     #     # dividing the branches on the top to two set
-    #     pos_left = self._gluing_list[pos_index][:pos+1]
-    #     pos_right = self._gluing_list[pos_index][pos+1:]
-    #     self._gluing_list[pos_index] = pos_left
-    #     self._gluing_list[pos_index_new] = pos_right
+    #     pos_left = self.gluing_list()[pos_index][:pos+1]
+    #     pos_right = self.gluing_list()[pos_index][pos+1:]
+    #     self.gluing_list()[pos_index] = pos_left
+    #     self.gluing_list()[pos_index_new] = pos_right
     #     for branch in pos_right:
     #         self._set_endpoint(-branch, new_switch)
-    #     # print self._gluing_list
+    #     # print self.gluing_list()
 
     #     # divide the branches on the bottom into two sets
     #     if not central_split:
-    #         neg_right = self._gluing_list[neg_index][unzip_pos:]
-    #         neg_left = self._gluing_list[neg_index][:unzip_pos] +
+    #         neg_right = self.gluing_list()[neg_index][unzip_pos:]
+    #         neg_left = self.gluing_list()[neg_index][:unzip_pos] +
     #     [new_branch]
     #     else:
-    #         neg_right = self._gluing_list[neg_index][unzip_pos+1:]
-    #         neg_left = self._gluing_list[neg_index][:unzip_pos+1]
-    #     self._gluing_list[neg_index] = neg_right
-    #     self._gluing_list[neg_index_new] = neg_left
+    #         neg_right = self.gluing_list()[neg_index][unzip_pos+1:]
+    #         neg_left = self.gluing_list()[neg_index][:unzip_pos+1]
+    #     self.gluing_list()[neg_index] = neg_right
+    #     self.gluing_list()[neg_index_new] = neg_left
     #     for branch in neg_left:
     #         self._set_endpoint(-branch, -new_switch)
 
@@ -505,21 +499,21 @@ class TrainTrack(TrainTrack1):
 
         sage: tt = TrainTrack([[1, 2], [-3], [3], [-1, -2]], [3, 5, 8])
         sage: tt.split(3)
-        sage: tt._gluing_list
+        sage: tt.gluing_list()
         [[2], [-1, -3], [1, 3], [-2]]
         sage: tt.measure()
         [3, 5, 2]
 
         sage: tt = TrainTrack([[1, 2], [-3], [3], [-1, -2]], [5, 3, 8])
         sage: tt.split(3)
-        sage: tt._gluing_list
+        sage: tt.gluing_list()
         [[1], [-3, -2], [3, 2], [-1]]
         sage: tt.measure()
         [5, 3, 2]
 
         sage: tt = TrainTrack([[1, 2], [-3], [3], [-1, -2]], [5, 5, 10])
         sage: tt.split(3)
-        sage: tt._gluing_list
+        sage: tt.gluing_list()
         [[], [], [1], [-1]]
         sage: tt.measure()
         [5, 0, 0]
@@ -578,14 +572,14 @@ class TrainTrack(TrainTrack1):
 
         sage: tt = TrainTrack([[2], [-1, -3], [1, 3], [-2]], [3, 5, 2])
         sage: tt.fold_trivalent(3)
-        sage: tt._gluing_list
+        sage: tt.gluing_list()
         [[1, 2], [-3], [3], [-1, -2]]
         sage: tt.measure()
         [3, 5, 8]
 
         sage: tt = TrainTrack([[1], [-3, -2], [3, 2], [-1]], [5, 3, 2])
         sage: tt.fold_trivalent(3)
-        sage: tt._gluing_list
+        sage: tt.gluing_list()
         [[1, 2], [-3], [3], [-1, -2]]
         sage: tt.measure()
         [5, 3, 8]
@@ -628,7 +622,7 @@ class TrainTrack(TrainTrack1):
 
         sage: tt = TrainTrack([[1, 2, 3], [-1, -2, -3]], [2, 3, 4])
         sage: tt.merge_branches(1, 1)
-        sage: tt._gluing_list
+        sage: tt.gluing_list()
         [[1, 2], [-1, -4, -3], [4, 3], [-2]]
         sage: tt.measure()
         [2, 7, 4, 3]

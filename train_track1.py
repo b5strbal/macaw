@@ -36,7 +36,7 @@ class TrainTrack(TrainTrack0):
 
         EXAMPLES::
 
-        sage: tt = TrainTrack([ [1], [-2, -3], [2, 3], [-1] ])
+        sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
         sage: tt._repr_()
         'Train track on the torus with 1 puncture'
 

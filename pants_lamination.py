@@ -27,7 +27,7 @@ from constants import LEFT, RIGHT
 
 
 def a(n):
-    return n-1 if n > 0 else -n-1
+    return 2*n-2 if n > 0 else -2*n-1
 
 
 class MeasuredLamination(SageObject):
