@@ -21,7 +21,7 @@ AUTHORS:
 # *****************************************************************************
 
 
-from train_track0 import TrainTrack as TrainTrack0
+from train_track1 import TrainTrack as TrainTrack1
 from train_track0 import DeleteSwitchError
 from constants import LEFT, RIGHT
 
@@ -43,7 +43,7 @@ class FoldError(Exception):
     pass
 
 
-class TrainTrack(TrainTrack0):
+class TrainTrack(TrainTrack1):
 
     # --------------------------------------------
     # Peeling and folding for general train tracks
@@ -72,26 +72,26 @@ class TrainTrack(TrainTrack0):
         True
         sage: tt._gluing_list
         [[2, 1, 3], [-1, -2, -3]]
-        sage: tt._measure
+        sage: tt.measure()
         [2, 3, 2]
         sage: peeled_side = tt.peel(1, RIGHT, preferred_peeled_side=LEFT)
         sage: peeled_side == LEFT
         True
         sage: tt._gluing_list
         [[2, 1, 3], [-1, -2, -3]]
-        sage: tt._measure
+        sage: tt.measure()
         [0, 3, 2]
         sage: tt.fold_by_branch_labels(3, 1)
         sage: tt._gluing_list
         [[2, 1, 3], [-1, -2, -3]]
-        sage: tt._measure
+        sage: tt.measure()
         [2, 3, 2]
         sage: peeled_side = tt.peel(1, RIGHT, preferred_peeled_side=RIGHT)
         sage: peeled_side == RIGHT
         True
         sage: tt._gluing_list
         [[2, 1, 3], [-2, -1, -3]]
-        sage: tt._measure
+        sage: tt.measure()
         [2, 3, 0]
         """
         assert(self.is_measured())
@@ -104,7 +104,7 @@ class TrainTrack(TrainTrack0):
             print "BEGIN: peel()"
             print "-------------------------------"
             print "Gluing list at beginning", self._gluing_list
-            print "Measure at beginning", self._measure
+            print "Measure at beginning", self.measure()
             if branch_map is not None:
                 print "Branch map at the beginning", branch_map._branch_map
             print "Switch:", switch
@@ -164,7 +164,7 @@ class TrainTrack(TrainTrack0):
 
         if debug:
             print "Gluing list at the end", self._gluing_list
-            print "Measure at the end", self._measure
+            print "Measure at the end", self.measure()
             if branch_map is not None:
                 print "Branch map at the end", branch_map._branch_map
             print "-------------------------------"
@@ -188,7 +188,7 @@ class TrainTrack(TrainTrack0):
             [[1, 2], [-1, -2]]
             sage: tt._branch_endpoint
             [[1, 1], [-1, -1]]
-            sage: tt._measure
+            sage: tt.measure()
             [8, 5]
 
             sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
@@ -197,7 +197,7 @@ class TrainTrack(TrainTrack0):
             [[1, 2], [-1, -2]]
             sage: tt._branch_endpoint
             [[1, 1], [-1, -1]]
-            sage: tt._measure
+            sage: tt.measure()
             [8, 5]
 
             sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
@@ -206,7 +206,7 @@ class TrainTrack(TrainTrack0):
             [[1, 2], [-1, -2]]
             sage: tt._branch_endpoint
             [[1, 1], [-1, -1]]
-            sage: tt._measure
+            sage: tt.measure()
             [3, 8]
 
             sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
@@ -215,7 +215,7 @@ class TrainTrack(TrainTrack0):
             [[1, 2], [-1, -2]]
             sage: tt._branch_endpoint
             [[1, 1], [-1, -1]]
-            sage: tt._measure
+            sage: tt.measure()
             [3, 8]
 
         This is a similar train track with two switches. Now the train track
@@ -227,7 +227,7 @@ class TrainTrack(TrainTrack0):
             [[1, 3], [-2, -3], [2], [-1]]
             sage: tt._branch_endpoint
             [[1, 2, 1], [-2, -1, -1]]
-            sage: tt._measure
+            sage: tt.measure()
             [8, 8, 5]
 
         An example when a fold is not possible::
@@ -507,22 +507,28 @@ class TrainTrack(TrainTrack0):
         sage: tt.split(3)
         sage: tt._gluing_list
         [[2], [-1, -3], [1, 3], [-2]]
-        sage: tt._measure
+        sage: tt.measure()
         [3, 5, 2]
 
         sage: tt = TrainTrack([[1, 2], [-3], [3], [-1, -2]], [5, 3, 8])
         sage: tt.split(3)
         sage: tt._gluing_list
         [[1], [-3, -2], [3, 2], [-1]]
-        sage: tt._measure
+        sage: tt.measure()
         [5, 3, 2]
 
         sage: tt = TrainTrack([[1, 2], [-3], [3], [-1, -2]], [5, 5, 10])
         sage: tt.split(3)
         sage: tt._gluing_list
         [[], [], [1], [-1]]
-        sage: tt._measure
+        sage: tt.measure()
         [5, 0, 0]
+
+        AUTHORS:
+
+        - IAN KATZ (2017-07-01): initial version
+        - BALAZS STRENNER (2017-08-15): rewrite using new backend
+
         """
         assert(self.is_branch_large(branch))
         assert(self.is_trivalent())
@@ -574,14 +580,14 @@ class TrainTrack(TrainTrack0):
         sage: tt.fold_trivalent(3)
         sage: tt._gluing_list
         [[1, 2], [-3], [3], [-1, -2]]
-        sage: tt._measure
+        sage: tt.measure()
         [3, 5, 8]
 
         sage: tt = TrainTrack([[1], [-3, -2], [3, 2], [-1]], [5, 3, 2])
         sage: tt.fold_trivalent(3)
         sage: tt._gluing_list
         [[1, 2], [-3], [3], [-1, -2]]
-        sage: tt._measure
+        sage: tt.measure()
         [5, 3, 8]
 
 
@@ -624,7 +630,7 @@ class TrainTrack(TrainTrack0):
         sage: tt.merge_branches(1, 1)
         sage: tt._gluing_list
         [[1, 2], [-1, -4, -3], [4, 3], [-2]]
-        sage: tt._measure
+        sage: tt.measure()
         [2, 7, 4, 3]
 
         """

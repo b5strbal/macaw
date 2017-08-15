@@ -26,6 +26,10 @@ from dehn_thurston_tt import DehnThurstonTT
 from constants import LEFT, RIGHT
 
 
+def a(n):
+    return n-1 if n > 0 else -n-1
+
+
 class MeasuredLamination(SageObject):
     def surface(self):
         pass
@@ -213,17 +217,17 @@ class PantsLamination(SageObject):
 
                 if coordinates[abs(c1)][1] >= 0:
                     # c1 is right-twisting
-                    gluing_list[DehnThurstonTT._a(c1)].insert(-1, next_branch)
+                    gluing_list[a(c1)].insert(-1, next_branch)
                 else:
                     # c1 is left-twisting
-                    gluing_list[DehnThurstonTT._a(-c1)].append(next_branch)
+                    gluing_list[a(-c1)].append(next_branch)
 
                 if coordinates[abs(c2)][1] >= 0:
                     # c2 is right-twisting
-                    gluing_list[DehnThurstonTT._a(c2)].insert(0, -next_branch)
+                    gluing_list[a(c2)].insert(0, -next_branch)
                 else:
                     # c2 is left-twisting
-                    gluing_list[DehnThurstonTT._a(-c2)].insert(1, -next_branch)
+                    gluing_list[a(-c2)].insert(1, -next_branch)
 
                 next_branch += 1
                 added_branches.append(i)
@@ -237,23 +241,21 @@ class PantsLamination(SageObject):
                 c = curves[self_conn_idx]
                 switch = sign(c)*(ipc.index(abs(c))+1)
                 if coordinates[abs(c)][1] >= 0:
-                    gluing_list[DehnThurstonTT._a(switch)].\
+                    gluing_list[a(switch)].\
                         insert(-1, -next_branch)
                     if self_conn_idx in added_branches:
                         insert_pos = -3
                     else:
                         insert_pos = -2
-                    gluing_list[DehnThurstonTT._a(switch)].insert(insert_pos,
-                                                                  next_branch)
+                    gluing_list[a(switch)].insert(insert_pos, next_branch)
                 else:
-                    gluing_list[DehnThurstonTT._a(-switch)].\
+                    gluing_list[a(-switch)].\
                         append(-next_branch)
                     if self_conn_idx in added_branches:
                         insert_pos = -2
                     else:
                         insert_pos = -1
-                    gluing_list[DehnThurstonTT._a(-switch)].insert(insert_pos,
-                                                                   next_branch)
+                    gluing_list[a(-switch)].insert(insert_pos, next_branch)
                 next_branch += 1
                 measure.append(abs(self_conn[self_conn_idx]))
 
@@ -365,7 +367,7 @@ class PantsLamination(SageObject):
             print "BEGIN: apply_elementary_move()"
             print "-------------------------------"
             print "Gluing list:", tt._gluing_list
-            print "Measure:", tt._measure
+            print "Measure:", tt.measure()
             print "pants_curve", pants_curve
         typ = tt.elem_move_type(pants_curve)
         if debug:

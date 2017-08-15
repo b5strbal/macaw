@@ -5,7 +5,7 @@ Pants decompositions of surfaces.
 AUTHORS:
 
 - BALAZS STRENNER (2017-05-02): initial version
-- YIHAN ZHOU (2017-6-11)
+- YIHAN ZHOU (2017-06-11)
 
 EXAMPLES::
 

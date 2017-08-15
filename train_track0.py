@@ -5,8 +5,6 @@ Define train tracks, measured train tracks, carrying, splitting.
 AUTHORS:
 
 - BALAZS STRENNER (2017-05-02): initial version
-- IAN KATZ
-- YANDI WU
 
 EXAMPLES::
 
@@ -26,12 +24,9 @@ EXAMPLES::
 # *****************************************************************************
 
 
-from surface import Surface
 from sage.structure.sage_object import SageObject
-from sage.misc.flatten import flatten
-from sage.graphs.graph import Graph
-from sage.graphs.digraph import DiGraph
-from constants import LEFT, START, END
+from constants import LEFT, RIGHT, START, END
+import numpy as np
 
 
 class DeleteSwitchError(Exception):
@@ -118,60 +113,246 @@ class TrainTrack(SageObject):
         ``twisted_branches`` argument.
 
     """
-    def __init__(self, gluing_list, measure=None, twisted_branches=None,
-                 branch_buffer_size=None):
+    def __init__(self, gluing_list, measure=None, branch_buffer_size=None,
+                 switch_buffer_size=None, max_num_outgoing_branches=None):
         """
-        TODO: add measures to the code and documentation.
+
+        TESTS::
+
+        sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 8])
 
         """
 
         if len(gluing_list) % 2 == 1:
             raise ValueError("The length of the gluing list must be even.")
-        for switch in gluing_list:
-            if len(switch) == 0:
-                raise ValueError("Each list in the gluing list has to"
-                                 " be non-empty.")
+        # for switch in gluing_list:
+        #     if len(switch) == 0:
+        #         raise ValueError("Each list in the gluing list has to"
+        #                          " be non-empty.")
 
-        g = flatten(gluing_list)
-        self._num_branches = len(g)//2
-        current_max_branch = max(abs(x) for x in g)
-        branch_buffer_size = current_max_branch if branch_buffer_size is None\
-            else branch_buffer_size
-        # potentially reserving a larger array then necessary to avoid
-        # allocating memory when entending the array
-        self._branch_endpoint = [[0] * (branch_buffer_size),
-                                 [0] * (branch_buffer_size)]
+        switch_buffer_size = max(switch_buffer_size,
+                                 len(gluing_list)/2)
+        branch_buffer_size = max(branch_buffer_size,
+                                 max(max(abs(x) for x in y)
+                                     for y in gluing_list if len(y) > 0))
+        max_outgoing = \
+            max(max_num_outgoing_branches,
+                max(len(gluing_list[i]) for i in range(len(gluing_list))))
+
+        # print switch_buffer_size
+        # print branch_buffer_size
+        # print max_valence
+
+        self._outgoing_branches = np.zeros((2, switch_buffer_size,
+                                            max_outgoing), dtype=np.int)
+        self._num_outgoing_branches = np.zeros((2, switch_buffer_size),
+                                               dtype=np.int)
+        self._branch_endpoint = np.zeros((2, branch_buffer_size),
+                                         dtype=np.int)
+
+        # self._switches = np.zeros(switch_buffer_size, dtype=np.int)
+        # self._branches = np.zeros(branch_buffer_size, dtype=np.int)
+        self._num_switches = 0
+        self._num_branches = 0
+
+        # print self._outgoing_branches
+        # print self._num_outgoing_branches
+        # print self._branch_endpoint
 
         for i in range(len(gluing_list)/2):
-            for branch in gluing_list[2*i]:
-                # print branch
-                self._set_endpoint(-branch, i+1)
-                # print self._branch_endpoint
-            for branch in gluing_list[2*i+1]:
-                # print branch
-                self._set_endpoint(-branch, -i-1)
-                # print self._branch_endpoint
+            for step in range(2):
+                sgn = 1 if step == 0 else -1
+                ls = gluing_list[2*i + step]
+                for branch in ls:
+                    if self.branch_endpoint(-branch) != 0:
+                        raise ValueError("Branch %d appears in the gluing list"
+                                         " more than once." % branch)
+                    self._set_endpoint(-branch, sgn*(i+1))
 
-        # print self._branch_endpoint
-        self._gluing_list = gluing_list
-        self._measure = measure
+                self._num_outgoing_branches[step][i] = len(ls)
+                self._outgoing_branches[step][i][:len(ls)] = ls
+
+        for i in range(len(gluing_list)/2):
+            l1 = len(gluing_list[2*i])
+            l2 = len(gluing_list[2*i+1])
+            if l1 > 0 and l2 > 0:
+                # self._switches[self._num_switches] = i+1
+                self._num_switches += 1
+            elif l1 > 0 or l2 > 0:
+                raise ValueError("A switch cannot have a branch only on one"
+                                 "side.")
+
+        for i in range(self._branch_endpoint[START].size):
+            sw1 = self._branch_endpoint[START, i]
+            sw2 = self._branch_endpoint[END, i]
+            if sw1 != 0 and sw2 != 0:
+                # self._branches[self._num_branches] = i+1
+                self._num_branches += 1
+            elif sw1 != 0 or sw2 != 0:
+                raise ValueError("Only one end of the branch %d appears "
+                                 "in the gluing list." % i+1)
 
         if measure is not None:
-            for sw in self.switches():
-                sums = [sum([self.branch_measure(b) for b in
-                             self.outgoing_branches(sgn*sw)])
-                        for sgn in [-1, 1]]
-                if sums[0] != sums[1]:
-                    raise ValueError("The switch condition is not satisfied at"
-                                     " switch " + str(sw))
+            if len(measure) != self._num_branches:
+                raise ValueError("The length of the measure list should equal"
+                                 " the number of branches.")
+            self._measure = np.zeros(branch_buffer_size,
+                                     dtype=object)  # python ints
+            branches = self.branches()
+            for i in range(self._num_branches):
+                if measure[i] < 0:
+                    raise ValueError("The measure should be nonnegative.")
+                self._measure[branches[i]-1] = measure[i]
+
+            # for sw in self.switches():
+            #     sums = [sum([self.branch_measure(b) for b in
+            #                  self.outgoing_branches(sg*sw)])
+            #             for sg in [-1, 1]]
+            #     print sums
+            #     if sums[0] != sums[1]:
+            #         raise ValueError("The switch condition is not satisfied at"
+            #                          " switch " + str(sw))
+        else:
+            self._measure = None
 
     # ----------------------------------------------------------------
     # GETTERS
     # ----------------------------------------------------------------
 
-    def gluing_list(self):
-        """Return the gluing list for the train track"""
-        return self._gluing_list
+    def branches(self):
+        """Return the list of branches.
+
+        EXAMPLES::
+
+        sage: tt = TrainTrack([ [1, 2], [-2, -1] ])
+        sage: tt.branches()
+        [1, 2]
+
+        sage: tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
+        ....: [-5], [6, -6] ])
+        sage: tt.branches()
+        [1, 2, 3, 4, 5, 6]
+
+        """
+        return filter(self.is_branch, range(1, self._branch_buffer_length()+1))
+
+    def switches(self):
+        """Return the list of switches.
+
+        EXAMPLES::
+
+        sage: tt = TrainTrack([ [1, 2], [-2, -1] ])
+        sage: tt.switches()
+        [1]
+
+        sage: tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
+        ....: [-5], [6, -6] ])
+        sage: tt.switches()
+        [1, 2, 3, 4]
+
+        """
+        return filter(self.is_switch, range(1, self._switch_buffer_length()+1))
+
+    def is_branch(self, branch):
+        """Decide if there is a branch in the train track with the given
+        number.
+
+        EXAMPLES:
+
+        sage: tt = TrainTrack([ [1, 3], [-3, -1] ])
+        sage: tt.is_branch(3)
+        True
+        sage: tt.is_branch(-3)
+        True
+        sage: tt.is_branch(2)
+        False
+        sage: tt.is_branch(0)
+        False
+        sage: tt.is_branch(-5)
+        False
+
+        """
+        if abs(branch) == 0 or abs(branch) > self._branch_buffer_length():
+            return False
+        if self._branch_endpoint[self._to_index(branch)] == 0:
+            return False
+        return True
+
+    def is_switch(self, switch):
+        """Decide if there is a switch in the train track with the given
+        number.
+
+        EXAMPLES:
+
+        sage: tt = TrainTrack([[1, 3], [-3, -1]])
+        sage: tt.is_switch(1)
+        True
+        sage: tt.is_switch(-1)
+        True
+        sage: tt.is_switch(0)
+        False
+        sage: tt.is_switch(2)
+        False
+
+        """
+        if abs(switch) == 0 or abs(switch) > self._switch_buffer_length():
+            return False
+        # print switch
+        # print self._to_index(switch)
+        # print self._num_outgoing_branches
+        # print self._outgoing_branches
+        # print self._switch_buffer_length()
+        if self._num_outgoing_branches[self._to_index(switch)] == 0:
+            return False
+        return True
+
+    def num_branches(self):
+        """
+        Return the number of branches.
+
+        EXAMPLES::
+
+            sage: tt = TrainTrack([[1, 3], [-3, -1]])
+            sage: tt.num_branches()
+            2
+
+        """
+        return self._num_branches
+
+    def num_switches(self):
+        """
+        Return the number of switches.
+
+        EXAMPLES::
+
+        sage: tt = TrainTrack([ [1, 2], [-2, -1] ])
+        sage: tt.num_switches()
+        1
+
+        sage: tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
+        ....: [-5], [6, -6] ])
+        sage: tt.num_switches()
+        4
+        """
+        return self._num_switches
+
+    @staticmethod
+    def _to_index(n):
+        """Return the pair of indices corresponding to a switch or branch.
+
+        EXAMPLES::
+
+        sage: TrainTrack._to_index(2)
+        (0, 1)
+        sage: TrainTrack._to_index(-2)
+        (1, 1)
+        sage: TrainTrack._to_index(6)
+        (0, 5)
+        sage: TrainTrack._to_index(-6)
+        (1, 5)
+
+        """
+        return (0, n-1) if n > 0 else (1, -n-1)
 
     def branch_endpoint(self, branch):
         """
@@ -201,106 +382,10 @@ class TrainTrack(SageObject):
             sage: tt.branch_endpoint(-2)
             1
             """
-        return self._branch_endpoint[START][-branch-1] if branch < 0 \
-            else self._branch_endpoint[END][branch-1]
+        return self._branch_endpoint[START, -branch-1] if branch < 0 \
+            else self._branch_endpoint[END, branch-1]
 
-    def branches(self):
-        """Return the list of branches.
-
-        EXAMPLES::
-
-        sage: tt = TrainTrack([ [1, 2], [-2, -1] ])
-        sage: tt.branches()
-        [1, 2]
-
-        sage: tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
-        ....: [-5], [6, -6] ])
-        sage: tt.branches()
-        [1, 2, 3, 4, 5, 6]
-
-        """
-        ls = []
-        for i in range(len(self._branch_endpoint[START])):
-            if self._branch_endpoint[START][i] != 0:
-                ls.append(i+1)
-        return ls
-    
-    def num_branches(self):
-        """
-        Return the number of branches.
-
-        EXAMPLES::
-
-            sage: tt = TrainTrack([ [1, 2], [-2, -1] ])
-            sage: tt.num_branches()
-            2
-        """
-        return self._num_branches
-
-    def switches(self):
-        """Return the list of switches.
-
-        EXAMPLES::
-
-        sage: tt = TrainTrack([ [1, 2], [-2, -1] ])
-        sage: tt.switches()
-        [1]
-
-        sage: tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
-        ....: [-5], [6, -6] ])
-        sage: tt.switches()
-        [1, 2, 3]
-
-        """
-        ls = []
-        for i in range(len(self._gluing_list)/2):
-            if len(self._gluing_list[2*i]) > 0:
-                ls.append(i+1)
-        return ls
-
-    def num_switches(self):
-        """
-        Return the number of switches.
-
-        EXAMPLES::
-
-        sage: tt = TrainTrack([ [1, 2], [-2, -1] ])
-        sage: tt.num_switches()
-        1
-
-        sage: tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
-        ....: [-5], [6, -6] ])
-        sage: tt.num_switches()
-        4
-        """
-        return len(self.switches())
-
-    def outgoing_branch(self, switch, index, start_side=LEFT):
-        idx = index if start_side == LEFT else -1-index
-        return self.outgoing_branches(switch)[idx]
-
-    def outgoing_branch_index(self, switch, branch, start_side=LEFT):
-        branches = self.outgoing_branches(switch)
-        idx = branches.index(branch)
-        return idx if start_side == LEFT else len(branches)-idx-1
-
-    def num_outgoing_branches(self, switch):
-        """
-        Return the number of outgoing branches from a switch.
-        """
-        return len(self.outgoing_branches(switch))
-
-    @staticmethod
-    def _a(switch):
-        """
-        INPUT:
-
-        - ``switch`` --
-
-        """
-        return 2*switch-2 if switch > 0 else -2*switch-1
-
-    def outgoing_branches(self, switch):
+    def outgoing_branches(self, switch, start_side=LEFT):
         """Return the outgoing branches from a switch.
 
         INPUT:
@@ -314,34 +399,237 @@ class TrainTrack(SageObject):
 
         EXAMPLES::
 
+            sage: from sage.topology.constants import RIGHT
             sage: tt = TrainTrack([[1, 2], [-1, -2]])
             sage: tt.outgoing_branches(1)
-            [1, 2]
+            array([1, 2])
             sage: tt.outgoing_branches(-1)
-            [-1, -2]
+            array([-1, -2])
+            sage: tt.outgoing_branches(1, start_side=RIGHT)
+            array([2, 1])
+            sage: tt.outgoing_branches(-1, start_side=RIGHT)
+            array([-2, -1])
+            sage: tt.outgoing_branches(2)
+            Traceback (most recent call last):
+            ...
+            ValueError: Switch 2 does not exist.
+
             sage: tt = TrainTrack([[1, -1], [2], [-2, -3], [5], [6, -6], [-5],
             ....: [4, -4], [3]])
             sage: tt.outgoing_branches(3)
-            [6, -6]
+            array([ 6, -6])
             sage: tt.outgoing_branches(-3)
-            [-5]
-            sage: tt.outgoing_branches(2)
-            [-2, -3]
+            array([-5])
+
 
         """
-        return self._gluing_list[self._a(switch)]
+        # side = self._side(switch)
+        if not self.is_switch(switch):
+            raise ValueError("Switch %d does not exist." % switch)
+        arr = self._outgoing_branches[self._to_index(switch)]
+        n = self._num_outgoing_branches[self._to_index(switch)]
+        if start_side == LEFT:
+            return arr[:n]
+        else:
+            return arr[n-1::-1]
+
+    def outgoing_branch(self, switch, index, start_side=LEFT):
+        """Return the outgoing branch from a switch at a specified index.
+
+        EXAMPLES::
+
+            sage: from sage.topology.constants import RIGHT
+            sage: tt = TrainTrack([[1, 2], [-1, -2]])
+            sage: tt.outgoing_branch(1, 0)
+            1
+            sage: tt.outgoing_branch(1, 0, start_side=RIGHT)
+            2
+            sage: tt.outgoing_branch(1, 1)
+            2
+            sage: tt.outgoing_branch(1, 1, start_side=RIGHT)
+            1
+            sage: tt.outgoing_branch(-1, 0)
+            -1
+            sage: tt.outgoing_branch(-1, 2)
+            Traceback (most recent call last):
+            ...
+            ValueError: Index 2 is invalid at switch -1. The number of outgoing branches is 2.
+
+        """# idx = index if start_side == LEFT else -1-index
+        n = self.num_outgoing_branches(switch)
+        if index < 0 or index >= n:
+            raise ValueError("Index %d is invalid at switch %d. The number of"
+                             " outgoing branches is %d." % (index, switch, n))
+        return self.outgoing_branches(switch, start_side)[index]
+
+    def outgoing_branch_index(self, switch, branch, start_side=LEFT):
+        """Return the the index of an outgoing branch at a switch.
+
+        EXAMPLES::
+
+            sage: from sage.topology.constants import RIGHT
+            sage: tt = TrainTrack([[1, 2], [-1, -2]])
+            sage: tt.outgoing_branch_index(1, 1)
+            0
+            sage: tt.outgoing_branch_index(1, 1, start_side=RIGHT)
+            1
+            sage: tt.outgoing_branch_index(1, 2)
+            1
+            sage: tt.outgoing_branch_index(1, 2, start_side=RIGHT)
+            0
+            sage: tt.outgoing_branch_index(-1, -2)
+            1
+            sage: tt.outgoing_branch_index(1, 3)
+            Traceback (most recent call last):
+            ...
+            ValueError: Branch 3 is not outgoing from switch 1.
+
+        """
+        branches = self.outgoing_branches(switch, start_side)
+        for i in range(branches.size):
+            if branches[i] == branch:
+                return i
+        raise ValueError("Branch %d is not outgoing from switch %d." %
+                         (branch, switch))
+
+    def num_outgoing_branches(self, switch):
+        """
+        Return the number of outgoing branches from a switch.
+
+
+        EXAMPLES::
+
+            sage: tt = TrainTrack([[1, -1], [2], [-2, -3], [5], [6, -6], [-5],
+            ....: [4, -4], [3]])
+            sage: tt.num_outgoing_branches(3)
+            2
+            sage: tt.num_outgoing_branches(-3)
+            1
+
+        Returns zero for switch numbers that are technically not switches but
+        are within the bounds of switch buffer length:
+
+            sage: tt._allocate_more_switches(1)
+            sage: tt.num_outgoing_branches(5)
+            0
+
+        """
+        n = self._switch_buffer_length()
+        if abs(switch) <= 0 or abs(switch) > n:
+            raise ValueError("Switch %d does not exist." % switch)
+        return self._num_outgoing_branches[self._to_index(switch)]
+
+    def switch_valence(self, switch):
+        """
+        Return the number of branches meeting at a switch.
+
+        INPUT:
+
+        - ``switch`` -- the index of the switch, positive or negative
+
+        EXAMPLES::
+
+            sage: tt = TrainTrack([[1, 2], [-1, -2]])
+            sage: tt.switch_valence(1)
+            4
+            sage: tt.switch_valence(-1)
+            4
+
+            sage: tt = TrainTrack([[1, -1], [2], [-2, -3], [5], [6, -6], [-5],
+            ....: [4, -4], [3]])
+            sage: tt.switch_valence(2)
+            3
+            sage: tt.switch_valence(-3)
+            3
+        """
+        return self.num_outgoing_branches(switch) +\
+            self.num_outgoing_branches(-switch)
+
+    def is_trivalent(self):
+        """
+        Test if the train track is trivalent.
+
+        EXAMPLES::
+
+            sage: tt = TrainTrack([ [1, 2], [-2, -1] ])
+            sage: tt.is_trivalent()
+            False
+
+            sage: tt = TrainTrack([ [1], [-2, -3], [2, 3], [-1] ])
+            sage: tt.is_trivalent()
+            True
+
+            sage: tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
+            ....: [-5], [6, -6] ])
+            sage: tt.is_trivalent()
+            True
+
+        """
+        return all(self.switch_valence(sw) == 3 for sw in self.switches())
+
+    # @staticmethod
+    # def _side(switch):
+    #     return 0 if switch > 0 else 1
+
+    # @staticmethod
+    # def _a(switch):
+    #     """
+    #     INPUT:
+
+    #     - ``switch`` --
+
+    #     """
+    #     return 2*switch-2 if switch > 0 else -2*switch-1
 
     def is_measured(self):
-        """Return if the train track has a measure on it."""
+        """Return if the train track has a measure on it.
+        """
         return self._measure is not None
 
     def measure(self):
-        """Return the measure on the train track."""
-        return self._measure
+        """Return the measure on the train track.
+
+        EXAMPLES::
+
+        """
+        if not self.is_measured():
+            raise ValueError("The train track does not have a measure.")
+        return list(self._measure)
 
     def branch_measure(self, branch):
-        """Return the measure on the given branch."""
+        """Return the measure on the given branch.
+
+        EXAMPLES::
+
+            sage: tt = TrainTrack([[1, 3], [-3, -1]], [3, 5])
+            sage: tt.branch_measure(1)
+            3
+            sage: tt.branch_measure(-1)
+            3
+            sage: tt.branch_measure(3)
+            5
+            sage: tt.branch_measure(-3)
+            5
+
+        """
+        if not self.is_branch(branch):
+            raise ValueError("There is no branch with number %d in the train"
+                             " track." % branch)
+        if not self.is_measured():
+            raise ValueError("The train track does not have a measure.")
         return self._measure[abs(branch) - 1]
+
+    def measure_on_switch(self, switch):
+        """Return the total measure on either side of a switch.
+
+        EXAMPLES::
+
+            sage: tt = TrainTrack([[1, 2], [-2, -1]], [3, 5])
+            sage: tt.measure_on_switch(1)
+            8
+
+        """
+        return sum(map(self.branch_measure, self.outgoing_branches(switch)))
 
     def _extra_valence(self):
         """Return the total extra valence (above 3) of the switches.
@@ -393,33 +681,632 @@ class TrainTrack(SageObject):
 
         sage: tt = TrainTrack([[1, 2, 3, 4], [-1, -2, -3, -4]])
         sage: tt.num_branches_if_made_trivalent()
-        7
+        9
 
         """
         return self.num_branches() + self._extra_valence()
+
+    # ----------------------------------------------------------------
+    # COPYING
+    # ----------------------------------------------------------------
+
+    def gluing_list(self):
+        """Return the gluing list for the train track.
+
+        EXAMPLES::
+
+            sage: tt = TrainTrack([[1, -1], [2], [-2, 3], [5], [4, -4], [-3],
+            ....: [-5], [6, -6]])
+            sage: tt.gluing_list()
+            [[1, -1], [2], [-2, 3], [5], [4, -4], [-3], [-5], [6, -6]]
+
+        """
+        ls = []
+        for i in self.switches():
+            ls.append(list(self.outgoing_branches(i)))
+            ls.append(list(self.outgoing_branches(-i)))
+        return ls
+
+    def copy(self):
+        if self.is_measured():
+            return TrainTrack(self.gluing_list(), list(self.measure()))
+        else:
+            return TrainTrack(self.gluing_list())
 
     # ----------------------------------------------------------------
     # SETTERS
     # ----------------------------------------------------------------
 
     def _set_endpoint(self, branch, switch):
-        """
+        """Set the endpoint to a branch to the specified switch.
+
+        This method does not change self._outgoing_branches, so by applying in
+        itself, it breaks the internal consistency. The switch
+        conditions might also break. The other data have to be updated separately.
+
+        TESTS::
+
+            sage: from sage.topology.constants import START, END
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
+            sage: tt._branch_endpoint[END]
+            array([-2, -1, -1])
+            sage: tt._set_endpoint(2, 1)
+            sage: tt._branch_endpoint[END]
+            array([-2,  1, -1])
+            sage: tt._branch_endpoint[START]
+            array([1, 2, 2])
+            sage: tt._set_endpoint(-3, -2)
+            sage: tt._branch_endpoint[START]
+            array([ 1, 2, -2])
 
         """
         if branch > 0:
-            self._branch_endpoint[END][branch-1] = switch
+            self._branch_endpoint[END, branch-1] = switch
         else:
-            self._branch_endpoint[START][-branch-1] = switch
+            self._branch_endpoint[START, -branch-1] = switch
 
     def _set_measure(self, branch, new_measure):
+        """Set a measure of a branch.
+
+        Since no other changes are made, this can break the switch conditions.
+
+        TESTS::
+
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [3, 5, 8])
+            sage: tt._measure
+            array([3, 5, 8], dtype=object)
+            sage: tt._set_measure(3, 16)
+            sage: tt._measure
+            array([3, 5, 16], dtype=object)
+        """
         self._measure[abs(branch)-1] = new_measure
+
+    # -----------------------------------------------------
+    # STORAGE AND MEMORY ALLOCATION
+    # -----------------------------------------------------
+
+    def _allocate_more_branches(self, k=1):
+        """Allocate a larger array to accomodate more branches.
+
+        TESTS::
+
+        sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [3, 5, 8])
+        sage: tt._measure
+        array([3, 5, 8], dtype=object)
+        sage: tt._branch_endpoint
+        array([[ 1,  2,  2],
+               [-2, -1, -1]])
+        sage: tt._allocate_more_branches(5)
+        sage: tt._measure
+        array([3, 5, 8, 0, 0, 0, 0, 0], dtype=object)
+        sage: tt._branch_endpoint
+        array([[ 1,  2,  2,  0,  0,  0,  0,  0],
+               [-2, -1, -1,  0,  0,  0,  0,  0]])
+
+
+        """
+        if self.is_measured():
+            ext = np.zeros(k, dtype=self._measure.dtype)
+            self._measure = np.concatenate((self._measure, ext), axis=0)
+
+        ext = np.zeros((2, k), dtype=self._branch_endpoint.dtype)
+        self._branch_endpoint = np.concatenate(
+            (self._branch_endpoint, ext), axis=1)
+
+    def _allocate_more_switches(self, k=1):
+        """Allocate a larger array to accomodate more switches.
+
+        TESTS::
+
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [3, 5, 8])
+            sage: tt._num_outgoing_branches
+            array([[1, 2],
+                   [2, 1]])
+            sage: tt._outgoing_branches
+            array([[[ 1,  0],
+                    [ 2,  3]],
+            <BLANKLINE>
+                   [[-2, -3],
+                    [-1,  0]]])
+            sage: tt._allocate_more_switches(2)
+            sage: tt._outgoing_branches
+            array([[[ 1,  0],
+                    [ 2,  3],
+                    [ 0,  0],
+                    [ 0,  0]],
+            <BLANKLINE>
+                   [[-2, -3],
+                    [-1,  0],
+                    [ 0,  0],
+                    [ 0,  0]]])
+            sage: tt._num_outgoing_branches
+            array([[1, 2, 0, 0],
+                   [2, 1, 0, 0]])
+
+        """
+        ob = self._outgoing_branches
+        ext = np.zeros((2, k, ob.shape[2]), dtype=ob.dtype)
+        self._outgoing_branches = np.concatenate((ob, ext), axis=1)
+
+        num_ob = self._num_outgoing_branches
+        ext = np.zeros((2, k), dtype=num_ob.dtype)
+        self._num_outgoing_branches = np.concatenate((num_ob, ext), axis=1)
+        
+    def _allocate_more_outgoing_branches(self, k=1):
+        """Allocate a larger array to accomodate more outgoing branches.
+
+        TESTS::
+
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [3, 5, 8])
+            sage: tt._outgoing_branches
+            array([[[ 1,  0],
+                    [ 2,  3]],
+            <BLANKLINE>
+                   [[-2, -3],
+                    [-1,  0]]])
+            sage: tt._num_outgoing_branches
+            array([[1, 2],
+                   [2, 1]])
+            sage: tt._allocate_more_outgoing_branches(2)
+            sage: tt._outgoing_branches
+            array([[[ 1,  0,  0,  0],
+                    [ 2,  3,  0,  0]],
+            <BLANKLINE>
+                   [[-2, -3,  0,  0],
+                    [-1,  0,  0,  0]]])
+            sage: tt._num_outgoing_branches
+            array([[1, 2],
+                   [2, 1]])
+
+        """
+        ob = self._outgoing_branches
+        ext = np.zeros((2, ob.shape[1], k), dtype=ob.dtype)
+        self._outgoing_branches = np.concatenate((ob, ext), axis=2)
+        
+    def _switch_buffer_length(self):
+        """Return the maximum number of switches the current allocation can
+        handle.
+
+        TESTS::
+
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [3, 5, 8])
+            sage: tt._switch_buffer_length()
+            2
+            sage: tt._allocate_more_switches(5)
+            sage: tt._switch_buffer_length()
+            7
+
+        """
+        return self._outgoing_branches.shape[1]
+
+    def _branch_buffer_length(self):
+        """Return the maximum number of branches the current allocation can
+        handle.
+
+        TESTS::
+
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [3, 5, 8])
+            sage: tt._branch_buffer_length()
+            3
+            sage: tt._allocate_more_branches(5)
+            sage: tt._branch_buffer_length()
+            8
+
+        """
+        return self._branch_endpoint.shape[1]
+
+    def _outgoing_branch_buffer_length(self):
+        """Return the maximum number outgoing branches the current allocation can
+        handle.
+
+        TESTS::
+
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [3, 5, 8])
+            sage: tt._outgoing_branch_buffer_length()
+            2
+            sage: tt._allocate_more_outgoing_branches(5)
+            sage: tt._outgoing_branch_buffer_length()
+            7
+
+        """
+        return self._outgoing_branches.shape[2]
+
+    # ----------------------------------------------------
+    # ADDING SWITCHES AND BRANCHES
+    # ----------------------------------------------------
+
+    def insert_branch(self, switch, pos, branch, start_side=LEFT):
+        """Insert a branch to the array of outgoing branches at a switch.
+
+        It is not assumed that the branch already exists and consistency of the
+        train track after the operation is not guaranteed.
+
+        TESTS::
+
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [3, 5, 8])
+            sage: tt._num_outgoing_branches
+            array([[1, 2],
+                   [2, 1]])
+            sage: tt._outgoing_branches
+            array([[[ 1,  0],
+                    [ 2,  3]],
+            <BLANKLINE>
+                   [[-2, -3],
+                    [-1,  0]]])
+            sage: tt.insert_branch(-2, 0, 5)
+            sage: tt._num_outgoing_branches
+            array([[1, 2],
+                   [2, 2]])
+            sage: tt._outgoing_branches
+            array([[[ 1,  0],
+                    [ 2,  3]],
+            <BLANKLINE>
+                   [[-2, -3],
+                    [ 5, -1]]])
+
+        If there necessary, new space is allocated:
+        
+            sage: from sage.topology.constants import RIGHT
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [3, 5, 8])
+            sage: tt.insert_branch(2, 2, -4, start_side=RIGHT)
+            sage: tt._num_outgoing_branches
+            array([[1, 3],
+                   [2, 1]])
+            sage: tt._outgoing_branches
+            array([[[ 1,  0,  0],
+                    [-4,  2,  3]],
+            <BLANKLINE>
+                   [[-2, -3,  0],
+                    [-1,  0,  0]]])
+
+        """
+        arr = self._outgoing_branches[self._to_index(switch)]
+        # print "A", self._outgoing_branches
+        # print "B", self._num_outgoing_branches
+        n = self.num_outgoing_branches(switch)
+        if pos < 0 or pos > n:
+            raise ValueError("Position %d is out of range at switch %d." %
+                             (pos, switch))
+        if n == self._outgoing_branch_buffer_length():
+            k = 1
+            self._allocate_more_outgoing_branches(k)
+            arr = self._outgoing_branches[self._to_index(switch)]
+            n = self.num_outgoing_branches(switch)
+        self._num_outgoing_branches[self._to_index(switch)] += 1
+
+        if start_side == RIGHT:
+            pos = n-pos
+        for i in range(n-1, pos-1, -1):
+            arr[i+1] = arr[i]
+        arr[pos] = branch
+
+    # def insert_branches(self, switch, pos, branch_list, start_side=LEFT):
+    #     ls = self.outgoing_branches(switch)
+    #     assert(pos >= 0)
+    #     if start_side == LEFT:
+    #         ls[pos:pos] = branch_list
+    #     else:
+    #         insert_pos = len(ls)-pos
+    #         ls[insert_pos:insert_pos] = list(reversed(branch_list))
+
+    def _find_new_switch_number(self):
+        """Return a switch number with is suitable as a new switch.
+
+        The new switch won't be connected to any branches just yet. If
+        necessary, new space is allocated.
+
+        OUTPUT:
+
+        a positive integer, the number of the new switch
+
+        TESTS::
+
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
+            sage: tt._switch_buffer_length()
+            2
+            sage: tt._find_new_switch_number()
+            3
+            sage: tt._switch_buffer_length()
+            3
+
+            sage: tt = TrainTrack([[1], [-2, -3], [], [], [2, 3], [-1]])
+            sage: tt._switch_buffer_length()
+            3
+            sage: tt._find_new_switch_number()
+            2
+            sage: tt._switch_buffer_length()
+            3
+
+        """
+        n = self._num_switches
+        if n < self._switch_buffer_length():
+            # we have enough allocated memory, so we just pick the smallest
+            # interger which is not yet used as a switch.
+            for i in range(n):
+                if not self.is_switch(i+1):
+                    return i+1
+
+        else:
+            self._allocate_more_switches()
+            return n+1
+
+    def _find_new_branch_number(self):
+        """
+        Return a positive integer suitable for an additional branch.
+
+        The new branch won't be connected to any switches just yet. If
+        necessary, new space is allocated.
+
+        OUTPUT:
+
+        a positive integer, the number of the new branch
+
+        TESTS::
+
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
+            sage: tt._branch_buffer_length()
+            3
+            sage: tt._find_new_branch_number()
+            4
+            sage: tt._branch_buffer_length()
+            4
+
+            sage: tt = TrainTrack([[1], [-2, -5], [2, 5], [-1]])
+            sage: tt._branch_buffer_length()
+            5
+            sage: tt._find_new_branch_number()
+            3
+            sage: tt._branch_buffer_length()
+            5
+
+        """
+        n = self._num_branches
+        if n < self._branch_buffer_length():
+            # we have enough allocated memory, so we just pick the smallest
+            # interger which is not yet used as a branch.
+            for i in range(n):
+                if not self.is_branch(i+1):
+                    return i+1
+
+        else:
+            self._allocate_more_branches()
+            return n+1
+
+    def create_branch(self, start_switch, start_idx, end_switch, end_idx):
+        """Create a new branch with the specified start and end switches.
+
+        In case ``start_switch`` equals ``end_switch``, keep in mind for
+        specifying indices that the start is inserted first, and the end
+        second. So if ``start_idx == 0`` and ``end_idx == 0``, then the end
+        will be to the left of start. If ``end_idx == 1`` instead, then the end
+        will be on the right of start.
+
+        The created branch will have measure zero. The resulting train track
+        will be internally consistent.
+
+        OUTPUT:
+
+        the number of the branch created
+
+        TESTS::
+
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
+            sage: tt.create_branch(1, 0, 1, 1)
+            4
+            sage: tt.gluing_list()
+            [[4, -4, 1], [-2, -3], [2, 3], [-1]]
+            sage: tt.create_branch(-1, 2, -1, 3)
+            5
+            sage: tt.gluing_list()
+            [[4, -4, 1], [-2, -3, 5, -5], [2, 3], [-1]]
+
+        """
+        b = self._find_new_branch_number()
+        self.insert_branch(start_switch, start_idx, b)
+        self.insert_branch(end_switch, end_idx, -b)
+        self._set_endpoint(b, end_switch)
+        self._set_endpoint(-b, start_switch)
+
+        # n = self._num_branches
+        # for i in range(n, 0, -1):
+        #     if self._branches[i-1] > b:
+        #         self._branches[i] = self._branches[i-1]
+        #     else:
+        #         self._branches[i] = b
+        #         break
+        self._num_branches += 1
+        return b
+
+    def add_switch_on_branch(self, branch):
+        """Create switch from the midpoint of a branch.
+
+        We add the new branch to the front.
+
+        TESTS::
+
+            sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
+            sage: new_switch = tt.add_switch_on_branch(1)
+            sage: new_switch
+            2
+            sage: tt.gluing_list()
+            [[1, 2], [-3, -2], [3], [-1]]
+            sage: tt.measure()
+            [3, 5, 3]
+
+        """
+        end_sw = self.branch_endpoint(branch)
+        end_index = self.outgoing_branch_index(end_sw, -branch)
+
+        sw = self._find_new_switch_number()
+        # print self._num_outgoing_branches
+        # print self._outgoing_branches
+        self._num_switches += 1
+        self.reglue_endpoint(branch, -sw, 0)
+
+        b = self.create_branch(sw, 0, end_sw, end_index)
+
+        if self.is_measured():
+            self._set_measure(b, self.branch_measure(branch))
+        return sw
+
+    # ------------------------------
+    # DELETING SWITCHES AND BRANCHES
+    # ------------------------------
+
+    def _pop_outgoing_branch(self, switch, pos, start_side=LEFT):
+        """Pop an outgoing branch at a switch.
+
+        Do other changes are made, so the object is left at an inconsistent
+        state.
+
+        TESTS:
+
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
+            sage: tt._pop_outgoing_branch(-1, 1)
+            sage: tt._num_outgoing_branches
+            array([[1, 2],
+                   [1, 1]])
+            sage: tt._outgoing_branches
+            array([[[ 1,  0],
+                    [ 2,  3]],
+            <BLANKLINE>
+                   [[-2,  0],
+                    [-1,  0]]])
+
+        """
+        arr = self._outgoing_branches[self._to_index(switch)]
+        n = self.num_outgoing_branches(switch)
+        if pos < 0 or pos >= n:
+            raise ValueError("There is no branch at position %d from switch"
+                             "%d." % (pos, switch))
+        self._num_outgoing_branches[self._to_index(switch)] -= 1
+        if start_side == RIGHT:
+            pos = n-1-pos
+        for i in range(pos, n-1):
+            arr[i] = arr[i+1]
+        arr[n-1] = 0
+
+    # def _pop_outgoing_branches(self, switch, start_idx, end_idx,
+    #                           start_side=LEFT):
+    #     ls = self.outgoing_branches(switch)
+    #     n = len(ls)
+    #     if start_side == LEFT:
+    #         ret = ls[start_idx:end_idx]
+    #         del ls[start_idx:end_idx]
+    #     else:
+    #         ret = list(reversed(ls[n-end_idx:n-start_idx]))
+    #         del ls[n-end_idx:n-start_idx]
+    #     return ret
+
+    def _delete_branch(self, branch):
+        """Deletes a branch from the train track.
+
+        WARNING: Does not check if the switch conditions continue to hold or
+        that we don't end up with valence 1 vertices.
+
+        TESTS::
+
+            sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
+            sage: tt._delete_branch(-2)
+            sage: tt._branch_endpoint
+            array([[ 1,  0],
+                   [-1,  0]])
+            sage: tt._outgoing_branches
+            array([[[ 1,  0]],
+                   [[-1,  0]]])
+            sage: tt._num_outgoing_branches
+            array([[1],
+                   [1]])
+            sage: tt._measure
+            array([3, 0], dtype=object)
+
+        """
+        for b in [branch, -branch]:
+            sw = self.branch_endpoint(b)
+            pos = self.outgoing_branch_index(sw, -b)
+            self._pop_outgoing_branch(sw, pos)
+        self._set_endpoint(branch, 0)
+        self._set_endpoint(-branch, 0)
+        # n = self._num_branches
+        # for i in range(n):
+        #     if self._branches[i] == abs(branch):
+        #         break
+        # for j in range(i, n):
+        #     self._branches[j] = self._branches[j+1]
+        # self._branches[n-1] = 0
+        self._num_branches -= 1
+        if self.is_measured():
+            self._set_measure(branch, 0)
+
+    def delete_switch(self, switch):
+        """Delete a switch with valence two.
+
+        After the operation the object remains in a consistent state.
+
+        We keep the branch on the positive side, delete the one on the negative
+        side.
+
+        EXAMPLES::
+
+        sage: tt = TrainTrack([[1, 2], [-1, -3], [-2], [3]])
+        sage: tt.delete_switch(-2)
+        sage: tt._outgoing_branches
+        array([[[ 1,  3],
+                [ 0,  0]],
+        <BLANKLINE>
+               [[-1, -3],
+                [ 0,  0]]])
+        sage: tt._num_outgoing_branches
+        array([[2, 0],
+               [2, 0]])
+        sage: tt._branch_endpoint
+        array([[ 1,  0,  1],
+               [-1,  0, -1]])
+
+        """
+        if self.switch_valence(switch) != 2:
+            raise ValueError("Only switches of valence two can be deleted")
+        pos_branch = self.outgoing_branch(switch, 0)
+        neg_branch = self.outgoing_branch(-switch, 0)
+        if pos_branch == -neg_branch:
+            raise DeleteSwitchError("A switch cannot be deleted it is the only"
+                                    "switch on a curve")
+        sw = self.branch_endpoint(neg_branch)
+        pos = self.outgoing_branch_index(sw, -neg_branch)
+        self._delete_branch(neg_branch)
+        self.reglue_endpoint(-pos_branch, sw, pos)
+        self._num_switches -= 1
+
+    # ------------------------------
+    # MODIFYING THE TRAIN TRACK
+    # ------------------------------
 
     def reglue_endpoint(self, branch, new_switch, position,
                         start_side=LEFT):
         """
         Set the endpoint of a branch to a new switch, at a specified position.
 
-        It updates both the gluing_list and branch_endpoint.
+        It updates both the gluing_list and branch_endpoint, and leaves the
+        object at a consistent state apart from possibly breaking the switch
+        condition.
+
+        TESTS::
+
+            sage: from sage.topology.constants import RIGHT        
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
+            sage: tt.reglue_endpoint(3, -2, 1, start_side=RIGHT)
+            sage: tt._branch_endpoint
+            array([[ 1,  2,  2],
+                   [-2, -1, -2]])
+            sage: tt._num_outgoing_branches
+            array([[1, 2],
+                   [1, 2]])
+            sage: tt._outgoing_branches
+            array([[[ 1,  0],
+                    [ 2,  3]],
+            <BLANKLINE>
+                   [[-2,  0],
+                    [-3, -1]]])
         """
         old_sw = self.branch_endpoint(branch)
         old_pos = self.outgoing_branch_index(old_sw, -branch,
@@ -430,169 +1317,108 @@ class TrainTrack(SageObject):
             # insertion
             if old_pos <= position:
                 position -= 1
-        self.pop_outgoing_branch(old_sw, old_pos, start_side=start_side)
+        self._pop_outgoing_branch(old_sw, old_pos, start_side=start_side)
         self.insert_branch(new_switch, position, -branch,
                            start_side=start_side)
         self._set_endpoint(branch, new_switch)
 
-    def _delete_branch(self, branch):
-        """Deletes a branch from the train track.
-
-        WANRING: Does not check if the switch conditions continue to hold or
-        that we don't end up with valence 1 vertices.
-        """
-        for b in [branch, -branch]:
-            sw = self.branch_endpoint(b)
-            pos = self.outgoing_branch_index(sw, -b)
-            self.pop_outgoing_branch(sw, pos)
-        self._set_endpoint(branch, 0)
-        self._set_endpoint(-branch, 0)
-        self._num_branches -= 1
-        self._set_measure(branch, 0)
-
     def change_switch_orientation(self, switch):
+        """Change the orientation of a switch.
+
+        EXAMPLES::
+
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [3, 5, 8])
+            sage: tt.change_switch_orientation(-1)
+            sage: tt._branch_endpoint
+            array([[-1,  2,  2],
+                   [-2,  1,  1]])
+            sage: tt._num_outgoing_branches
+            array([[2, 2],
+                   [1, 1]])
+            sage: tt._outgoing_branches
+            array([[[-2, -3],
+                    [ 2,  3]],
+            <BLANKLINE>
+                   [[ 1,  0],
+                    [-1,  0]]])
+
+        """
         for br in self.outgoing_branches(switch):
             self._set_endpoint(-br, -switch)
         for br in self.outgoing_branches(-switch):
             self._set_endpoint(-br, switch)
-        a, b = self.outgoing_branches(switch), self.outgoing_branches(-switch)
-        self._gluing_list[self._a(switch)] = b
-        self._gluing_list[self._a(-switch)] = a
-
-    def insert_branch(self, switch, pos, branch, start_side=LEFT):
-        ls = self.outgoing_branches(switch)
-        assert(pos >= 0)
-        if start_side == LEFT:
-            ls.insert(pos, branch)
-        else:
-            ls.insert(len(ls)-pos, branch)
-
-    def insert_branches(self, switch, pos, branch_list, start_side=LEFT):
-        ls = self.outgoing_branches(switch)
-        assert(pos >= 0)
-        if start_side == LEFT:
-            ls[pos:pos] = branch_list
-        else:
-            insert_pos = len(ls)-pos
-            ls[insert_pos:insert_pos] = list(reversed(branch_list))
-
-    def pop_outgoing_branch(self, switch, pos, start_side=LEFT):
-        if start_side == LEFT:
-            return self.outgoing_branches(switch).pop(pos)
-        else:
-            ls = self.outgoing_branches(switch)
-            return ls.pop(len(ls)-1-pos)
-
-    def pop_outgoing_branches(self, switch, start_idx, end_idx,
-                              start_side=LEFT):
-        ls = self.outgoing_branches(switch)
-        n = len(ls)
-        if start_side == LEFT:
-            ret = ls[start_idx:end_idx]
-            del ls[start_idx:end_idx]
-        else:
-            ret = list(reversed(ls[n-end_idx:n-start_idx]))
-            del ls[n-end_idx:n-start_idx]
-        return ret
+        idx1, idx2 = self._to_index(switch), self._to_index(-switch)
+        temp = np.copy(self._outgoing_branches[idx1])
+        self._outgoing_branches[idx1] = self._outgoing_branches[idx2]
+        self._outgoing_branches[idx2] = temp
+        self._num_outgoing_branches[idx1], self._num_outgoing_branches[idx2] =\
+            self._num_outgoing_branches[idx2],\
+            self._num_outgoing_branches[idx1]
+        # a, b = self.outgoing_branches(switch),
+        # self.outgoing_branches(-switch)
+        # self._gluing_list[self._a(switch)] = b
+        # self._gluing_list[self._a(-switch)] = a
 
     def swap_branch_numbers(self, branch1, branch2):
-        sw1p = self.branch_endpoint(branch1)
-        sw1m = self.branch_endpoint(-branch1)
-        sw2p = self.branch_endpoint(branch2)
-        sw2m = self.branch_endpoint(-branch2)
-        m1 = self.branch_measure(branch1)
-        m2 = self.branch_measure(branch2)
+        """Swap the numbers of two branches.
 
-        for x in self._gluing_list:
-            for i in range(len(x)):
-                if x[i] == branch1:
-                    x[i] = branch2
-                elif x[i] == branch2:
-                    x[i] = branch1
-                elif x[i] == -branch1:
-                    x[i] = -branch2
-                elif x[i] == -branch2:
-                    x[i] = -branch1
-        self._set_endpoint(branch1, sw2p)
-        self._set_endpoint(-branch1, sw2m)
-        self._set_endpoint(branch2, sw1p)
-        self._set_endpoint(-branch2, sw1m)
+        EXAMPLES::
+
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [3, 5, 8])
+            sage: tt.swap_branch_numbers(2, 3)
+            sage: tt._branch_endpoint
+            array([[ 1,  2,  2],
+                   [-2, -1, -1]])
+            sage: tt._num_outgoing_branches
+            array([[1, 2],
+                   [2, 1]])
+            sage: tt._outgoing_branches
+            array([[[ 1,  0],
+                    [ 3,  2]],
+            <BLANKLINE>
+                   [[-3, -2],
+                    [-1,  0]]])
+            sage: tt._measure
+            array([3, 8, 5], dtype=object)
+
+        """
+        branches = [branch1, -branch1, branch2, -branch2]
+        endpoints = [self.branch_endpoint(b) for b in branches]
+        indices = [self.outgoing_branch_index(endpoints[i], -branches[i])
+                   for i in range(4)]
+
+        for i in range(4):
+            arr = self._outgoing_branches[self._to_index(endpoints[i])]
+            arr[indices[i]] = branches[3-i]
+            self._set_endpoint(branches[i], endpoints[(i+2) % 4])
+
+        # sw1p = self.branch_endpoint(branch1)
+        # sw1m = self.branch_endpoint(-branch1)
+        # sw2p = self.branch_endpoint(branch2)
+        # sw2m = self.branch_endpoint(-branch2)
+        # indices = [self.outgoing_branch_index(sw,
+
+        # self._outgoing_branches
+        # for x in self._gluing_list:
+        #     for i in range(len(x)):
+        #         if x[i] == branch1:
+        #             x[i] = branch2
+        #         elif x[i] == branch2:
+        #             x[i] = branch1
+        #         elif x[i] == -branch1:
+        #             x[i] = -branch2
+        #         elif x[i] == -branch2:
+        #             x[i] = -branch1
+        # self._set_endpoint(branch1, sw2p)
+        # self._set_endpoint(-branch1, sw2m)
+        # self._set_endpoint(branch2, sw1p)
+        # self._set_endpoint(-branch2, sw1m)
 
         if self.is_measured():
+            m1 = self.branch_measure(branch1)
+            m2 = self.branch_measure(branch2)
             self._set_measure(branch1, m2)
             self._set_measure(branch2, m1)
-
-    def _create_switch(self):
-        """Create a new switch.
-
-        The new switch won't be connected to any branches just yet.
-
-        OUTPUT:
-
-        a positive integer, the number of the switch created
-        """
-        self._gluing_list.extend([[], []])
-        return len(self._gluing_list)/2
-
-    def _create_branch(self, start_switch, start_idx, end_switch, end_idx):
-        """Create a new branch with the specified start and end switches.
-
-        In case ``start_switch`` equals ``end_switch``, keep in mind for
-        specifying indices that the start is inserted first, and the end
-        second. So if ``start_idx == 0`` and ``end_idx == 0``, then the end
-        will be to the left of start. If ``end_idx == 1`` instead, then the end
-        will be on the right of start.
-
-        OUTPUT:
-
-        the number of the branch
-        """
-        b = self._new_branch_number()
-        self.insert_branch(start_switch, start_idx, b)
-        self.insert_branch(end_switch, end_idx, -b)
-        self._set_endpoint(b, end_switch)
-        self._set_endpoint(-b, start_switch)
-        return b
-
-    def _new_branch_number(self):
-        """
-        Return a positive integer suitable for an additional branch.
-        """
-        self._branch_endpoint[START].append([])
-        self._branch_endpoint[END].append([])
-        self._measure.append(0)
-        return len(self._branch_endpoint[0])
-
-    def add_switch_on_branch(self, branch):
-        """Create switch from the midpoint of a branch.
-
-        We add the new branch to the front.
-
-        TESTS::
-
-        sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
-        sage: new_switch = tt.add_switch_on_branch(1)
-        sage: new_switch
-        2
-        sage: tt._gluing_list
-        [[1, 2], [-3, -2], [3], [-1]]
-        sage: tt._measure
-        [3, 5, 3]
-
-        """
-        end_sw = self.branch_endpoint(branch)
-        end_index = self.outgoing_branch_index(end_sw, -branch)
-
-        sw = self._create_switch()
-
-        self.reglue_endpoint(branch, -sw, 0)
-
-        b = self._create_branch(sw, 0, end_sw, end_index)
-        self._num_branches += 1
-
-        if self.is_measured():
-            self._set_measure(b, self.branch_measure(branch))
-        return sw
 
     # def swap_switch_numbers(self, switch1, switch2):
     #     out1 = self.outgoing_branches(switch1)
@@ -621,373 +1447,8 @@ class TrainTrack(SageObject):
 
     #         #     x = self._branch_endpoint[side][i]
 
-    def delete_switch(self, switch):
-        """
 
-        Keep the branch on the positive side, delete the one on the negative
-        side.
 
-        The switch will continue to persist in gluing_list as two empty lists
-        at the usual position.
-        """
-        if self.switch_valence(switch) != 2:
-            raise ValueError("Only switches of valence two can be deleted")
-        pos_branch = self.outgoing_branch(switch, 0)
-        neg_branch = self.outgoing_branch(-switch, 0)
-        if pos_branch == -neg_branch:
-            raise DeleteSwitchError("A switch cannot be deleted it is the only"
-                                    "switch on a curve")
-        sw = self.branch_endpoint(neg_branch)
-        pos = self.outgoing_branch_index(sw, -neg_branch)
-        self._delete_branch(neg_branch)
-        self.reglue_endpoint(-pos_branch, sw, pos)
-
-    # ----------------------------------------------------------------
-    # GENERAL METHODS
-    # ----------------------------------------------------------------
-
-    def _repr_(self):
-        """
-        Return a string representation of self.
-
-        EXAMPLES::
-
-        sage: tt = TrainTrack([ [1], [-2, -3], [2, 3], [-1] ])
-        sage: tt._repr_()
-        'Train track on the torus with 1 puncture'
-
-        """
-        s = self.regular_neighborhood()
-        return 'Train track on the ' + repr(s).lower()
-
-    def copy(self):
-        if self.is_measured():
-            return TrainTrack(self._gluing_list, self._measure)
-        else:
-            return TrainTrack(self._gluing_list)
-
-    # ----------------------------------------------------------------
-    # BASIC PROPERTIES OF TRAIN TRACKS
-    # ----------------------------------------------------------------
-
-    def switch_valence(self, switch):
-        """
-        Return the number of branches meeting at a switch.
-
-        INPUT:
-
-        - ``switch`` -- the index of the switch, positive or negative
-
-        EXAMPLES::
-
-            sage: tt = TrainTrack([[1, 2], [-1, -2]])
-            sage: tt.switch_valence(1)
-            4
-            sage: tt.switch_valence(-1)
-            4
-
-            sage: tt = TrainTrack([[1, -1], [2], [-2, -3], [5], [6, -6], [-5],
-            ....: [4, -4], [3]])
-            sage: tt.switch_valence(2)
-            3
-            sage: tt.switch_valence(-3)
-            3
-        """
-        return self.num_outgoing_branches(switch) +\
-            self.num_outgoing_branches(-switch)
-
-    def is_trivalent(self):
-        """
-        Test if the train track is trivalent.
-
-        EXAMPLES::
-
-            sage: tt = TrainTrack([ [1, 2], [-2, -1] ])
-            sage: tt.is_trivalent()
-            False
-
-            sage: tt = TrainTrack([ [1], [-2, -3], [2, 3], [-1] ])
-            sage: tt.is_trivalent()
-            True
-
-            sage: tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
-            ....: [-5], [6, -6] ])
-            sage: tt.is_trivalent()
-            True
-
-        """
-        return all(self.switch_valence(sw) == 3
-                   for sw in self.switches())
-
-    def is_connected(self):
-        pass
-
-    def is_tangentially_orientable(self):
-        pass
-
-    def is_transversely_orientable(self):
-        pass
-
-    def _get_puncturefinder_graph(self):
-        """
-        Constructs a graph to help find the complementary region of the train
-        track.
-
-        The vertices are -n, ..., -1, 1, ..., n where n is the number
-        of branches. Each such number is associated to an oriented
-        branch, and to each oriented branch we associate its left
-        side.
-
-        Two vertices are connected by an edge if the sides of the two
-        branches follow each other in a complementary region.
-
-        OUTPUT:
-
-        A graph which is a union of cycles. The cycles are in
-        bijection with the complementary regions of the train track.
-        Weights are assigned to the edges so that the number of cusps
-        in each region equals the sum of the weights on the
-        corresponding cycle.
-
-        EXAMPLES::
-
-            sage: tt = TrainTrack([ [1, 2], [-1, -2] ])
-            sage: G = tt._get_puncturefinder_graph()
-            sage: set(G.neighbors(1)) == {2, -2}
-            True
-            sage: set(G.neighbors(-1)) == {2, -2}
-            True
-
-            sage: tt = TrainTrack([ [1, -1], [2], [3], [4, -4], [-2, -3], [5],
-            ....: [6, -6], [-5] ])
-            sage: G = tt._get_puncturefinder_graph()
-            sage: set(G.neighbors(1)) == {-2, 2}
-            True
-            sage: set(G.neighbors(5)) == {3, 6}
-            True
-
-        """
-        try:
-            return self._puncturefinder_graph
-        except AttributeError:
-            pass
-
-        g = Graph(multiedges=True, loops=True)
-        for i in self.switches():
-            for sw in {-i, i}:
-                b1 = self.outgoing_branches(sw)
-                b2 = self.outgoing_branches(-sw)
-                # connecting branches forming a 180 degree angle
-                g.add_edge([b1[0], -b2[-1], 0])
-
-                # The left side of branch b, when looking
-                # from the switch conveniently corresponds to vertex
-                # b. The right side corresponds to -b.
-
-                # connecting branches at cusps
-                for j in range(len(b1)-1):
-                    g.add_edge([-b1[j], b1[j+1], 1])
-
-        self._puncturefinder_graph = g
-        return self._puncturefinder_graph
-
-    def num_complementary_regions(self):
-
-        """
-        Return number of complementary regions of train track.
-
-        EXAMPLES::
-        sage: tt = TrainTrack([[-2, 1], [2, -1]])
-        sage: tt.num_complementary_regions()
-        1
-        sage: tt = TrainTrack([ [1, -1], [2], [3], [4, -4], [-2, -3], [5], [6,
-        ....: -6], [-5] ])
-        sage: tt.num_complementary_regions()
-        4
-
-        """
-        g = self._get_puncturefinder_graph()
-        return g.connected_components_number()
-
-    def complementary_regions(self):
-        """
-        Return the boundary paths of complementary regions.
-
-        The region is on the right side of the paths.
-
-        EXAMPLES::
-
-            sage: tt = TrainTrack([ [1, 2], [-1, -2] ])
-            sage: c = tt.complementary_regions()
-            sage: len(c)
-            1
-            sage: set(c[0]) == {-2, -1, 1, 2}
-            True
-
-            sage: tt = TrainTrack([ [1], [-2, -3], [2, 3], [-1] ])
-            sage: c = tt.complementary_regions()
-            sage: len(c)
-            1
-            sage: set(c[0]) == {-3, -2, -1, 1, 2, 3}
-            True
-
-            sage: tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
-            ....: [-5], [6, -6] ])
-            sage: tt.complementary_regions()
-            [[-5, -3, -2, 1, 2, 3, 4, 5, 6], [-6], [-4], [-1]]
-
-
-        """
-        g = self._get_puncturefinder_graph()
-        return g.connected_components()
-
-    def regular_neighborhood(self):
-        """
-        Return the surface that is regular neighborhood of ``self``.
-
-        EXAMPLES::
-
-            sage: tt = TrainTrack([ [1, 2], [-1, -2] ])
-            sage: tt.regular_neighborhood()
-            Torus with 1 puncture
-
-            sage: tt = TrainTrack([ [1], [-2, -3], [2, 3], [-1] ])
-            sage: tt.regular_neighborhood()
-            Torus with 1 puncture
-
-            sage: tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
-            ....: [-5], [6, -6] ])
-            sage: tt.regular_neighborhood()
-            Sphere with 4 punctures
-
-        """
-        euler_char = self.num_switches() - self.num_branches()
-        return Surface(num_punctures=self.num_complementary_regions(),
-                       euler_char=euler_char)
-
-    def num_cusps_of_regions(self):
-        """
-        Return the number of cusps for each complementary region.
-
-        OUTPUT:
-
-        A list containing the number of cusps for each region.
-
-        EXAMPLES::
-
-            sage: tt = TrainTrack([[1, -1], [-2, 2]])
-            sage: tt.num_cusps_of_regions()
-            [0, 1, 1]
-
-            sage: tt = TrainTrack([[1, 2], [-1, -2]])
-            sage: tt.num_cusps_of_regions()
-            [2]
-
-            sage: tt = TrainTrack([ [1, -1], [2], [-2, -3], [5], [6, -6],
-            ....: [-5], [4, -4], [3] ])
-            sage: tt.num_cusps_of_regions()
-            [1, 1, 1, 1]
-
-        """
-        G = self._get_puncturefinder_graph()
-        return [sum(G.subgraph(vertices=region).edge_labels())
-                for region in G.connected_components()]
-
-    def _get_recurrence_graph(self):
-        """Return a graph to determine recurrence.
-
-        OUTPUT:
-
-        A directed graph whose vertices are oriented branches. There
-        is an edge from one vertex to another if the endpoint
-        of the first oriented branch is the starting point of the
-        second branch.
-
-        EXAMPLES:
-
-            sage: tt = TrainTrack([ [1, -1], [2, -2] ])
-            sage: G = tt._get_recurrence_graph()
-            sage: G.edges()
-            [(-2, -1, None),
-            (-2, 1, None),
-            (-1, -2, None),
-            (-1, 2, None),
-            (1, -2, None),
-            (1, 2, None),
-            (2, -1, None),
-            (2, 1, None)]
-
-        TESTS::
-
-            sage: tt = TrainTrack([ [1, -1], [2, -2] ])
-            sage: G = tt._get_recurrence_graph()
-            sage: set(G.edges()) == {(-2, -1, None), (-2, 1, None), (-1, -2,
-            ....: None), (-1, 2, None), (1, -2, None), (1, 2, None), (2, -1,
-            ....: None), (2, 1, None)}
-            True
-
-            sage: tt = TrainTrack([ [1, 2], [-1, -2] ])
-            sage: G = tt._get_recurrence_graph()
-            sage: set(G.edges()) == {(-2, -1, None), (-1, -2, None), (1, 2,
-            ....: None), (2, 1, None)}
-            True
-
-            sage: tt = TrainTrack([ [1, -1], [2], [-2, -3], [5], [6, -6],
-            ....: [-5], [4, -4], [3] ])
-            sage: G = tt._get_recurrence_graph()
-            sage: set(G.edges()) == {(-6, 5, None), (-5, -6, None), (-5, 6,
-            ....: None), (-4, -3, None), (-3, -5, None), (-2, -5, None), (-1,
-            ....: -2, None), (1, -2, None), (2, -1, None), (2, 1, None), (3,
-            ....: -4, None), (3, 4, None), (4, -3, None), (5, 2, None), (5, 3,
-            ....: None), (6, 5, None)}
-            True
-
-        """
-        try:
-            return self._recurrence_graph
-        except AttributeError:
-            pass
-
-        g = DiGraph()
-        for i in range(self.num_switches()):
-            for ii in {-i-1, i+1}:
-                g.add_edges([(j, -k) for j in self.outgoing_branches(ii) for k
-                             in self.outgoing_branches(-ii)])
-
-        self._recurrence_graph = g
-        return g
-
-    def is_recurrent(self):
-        """Test if ``self`` is recurrent.
-
-        A train track is recurrent if it admits a scrictly positive
-        measure. Equivalently, it is recurrent, if it is possible to
-        get from any branch to any other branch along train paths.
-
-        EXAMPLES::
-
-            sage: tt = TrainTrack([ [1, 2], [-1, -2] ])
-            sage: tt.is_recurrent()
-            True
-
-            sage: tt = TrainTrack([ [1, -1], [2], [-2, -3], [5], [6, -6],
-            ....: [-5], [4, -4], [3] ])
-            sage: tt.is_recurrent()
-            True
-
-            sage: tt = TrainTrack([ [2, 1, -2], [-1] ])
-            sage: tt.is_recurrent()
-            False
-
-            sage: tt = TrainTrack([ [1, 2, 3, -3], [-1, -2] ])
-            sage: tt.is_recurrent()
-            False
-
-        """
-        G = self._get_recurrence_graph()
-        C = G.strongly_connected_components()
-        return sorted(list(set([abs(x) for x in C[0]]))) == \
-            range(1, self.num_branches()+1)
 
     # def swap_branch_numbers(self, branch1, branch2):
     #     """
@@ -998,14 +1459,14 @@ class TrainTrack(SageObject):
     #     [[1, 2], [-1, -2]]
     #     sage: tt._branch_endpoint
     #     [[1, 1], [-1, -1]]
-    #     sage: tt._measure
+    #     sage: tt.measure()
     #     [3, 5]
     #     sage: tt.swap_branch_numbers(1, 2)
     #     sage: tt._gluing_list
     #     [[2, 1], [-2, -1]]
     #     sage: tt._branch_endpoint
     #     [[1, 1], [-1, -1]]
-    #     sage: tt._measure
+    #     sage: tt.measure()
     #     [5, 3]
 
     #     """
@@ -1040,102 +1501,4 @@ class TrainTrack(SageObject):
     #                         (end1, -branch2)]:
     #         self._set_endpoint(-new_br, sw)
     #         index = indices.pop()
-    #         self.outgoing_branches(sw)[index] = new_br
-
-    def measure_on_switch(self, switch):
-        return sum(map(self.branch_measure, self.outgoing_branches(switch)))
-
-    # ------------------------------------------------------------
-    # Homology/cohomology computation.
-    # ------------------------------------------------------------
-
-    def _edge_cocycles(self):
-        pass
-
-    def _coboundary_map(self):
-        pass
-
-# class TrainTrackLamination(SageObject):
-#      """
-#      A measured lamination represented with respect to a train track.
-
-#      The lamination may be carried, may be tranverse, or may even be a
-#      combination of the two, but in minimal position
-#      with the train track.
-
-#      There is a finite collection of arcs such that every lamination
-#      can be composed by these arcs. These arcs are either:
-#      - branches of the train track
-#      - arcs in the complementary regions of the train track connecting
-#      a branch with another branch such that the intersection with the
-#      branches are perpendicular
-#      - arcs in the complementary regions connecting a cusp with a
-#      branch such that the intersection with the branch is
-#      perpendicular
-#      - arcs in the complementary regions connecting the puncture in the
-#      region to either a branch or a cusp
-
-
-#      The main use of this class is the following:
-#      - when we find the flat structure of a pA, we put the repelling
-#      lamination in minimal position, and split towards the attracting
-#      lamination until the repelling lamination becomes transverse.
-#      """
-
-#      def __init__(self, train_track, arcs_with_measures):
-#      """
-
-#      """
-
-#      def put_in_minimal_position(self):
-#      """
-#      Put the lamination in minimal position.
-#      """
-
-#      def is_transverse(self):
-#      """
-#      Decide if the lamination is transverse to the train track.
-#      """
-
-#      def is_carried(self):
-#      """
-#      Decide if the lamination is carried on the train track.
-#      """
-
-#      def find_carrying_branch(self):
-#      """
-#      Find a branch carrying the lamination in minimal position.
-
-#      This branch should be a branch that *must* carry the
-#      lamination. For a combed curve, the curve can be pushed off to
-#      still be in minimal position and in fact become transverse. So
-#      these carrying branches are not obstructions for being
-#      transverse.
-#      """
-
-#      def split(self, branch, how_to_split):
-#      """
-#      Split the branch in the direction specified and update the
-#      lamination in minimal position.
-#      """
-
-#      def dehn_twist(self):
-#      """
-#      If the lamination is a two-sided curve, return the Dehn twist
-#      about it.
-
-#      OUTPUT: A MappingClass object.
-#      """
-
-#      def __rmul__(self, mapping_class):
-#      """
-
-#      INPUT: A simple mapping class, usually a Dehn twist about a
-#      simple curve.
-
-#      OUTPUT: the image under the mapping class.
-
-#      First implement it assuming that the two curves are already
-#      transverse, then try the case when they are almost transverse
-#      but not quite.
-#      """
+    #         self.outgoing_branches(sw)[index] = new_br 
