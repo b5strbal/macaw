@@ -635,3 +635,44 @@ class TrainTrack(TrainTrack1):
         self.reglue_endpoint(-b2, sw, 1)
         self._set_measure(new_branch,
                           self.branch_measure(b1) + self.branch_measure(b2))
+
+        if hasattr(self, "_carried_tts"):
+            raise NotImplementedError("Merging branches is not implemented "
+                                      "when the train track carries other "
+                                      "train tracks.")
+
+        if hasattr(self, "_carrying_tts"):
+            # the carrying data does change
+
+            # however, changes might needed for the representation of the cusps
+            pass
+
+    def make_trivalent(self):
+        """Merge branches until the train track becomes trivalent.
+
+        TESTS::
+
+            sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
+            sage: tt.make_trivalent()
+            sage: tt.gluing_list()
+            [[1], [-3, -2], [3, 2], [-1]]
+            sage: tt.measure()
+            [8, 5, 3]
+
+            sage: tt = TrainTrack([[1, 2, 3], [-1, -2, -3]], [2, 3, 4])
+            sage: tt.make_trivalent()
+            sage: tt.gluing_list()
+            [[1], [-4, -3], [-6, 2], [-5], [5, 3], [-1], [6, -2], [4]]
+            sage: tt.measure()
+            [9, 3, 4, 5, 5, 2]
+
+        """
+        # This is not very efficient, but it doesn't have to be.
+        while not self.is_trivalent():
+            for sw in self.switches():
+                if self.switch_valence(sw) <= 3:
+                    continue
+                for sgn in [1, -1]:
+                    if self.num_outgoing_branches(sgn*sw) >= 2:
+                        self.merge_branches(sgn*sw, 0)
+                        break
