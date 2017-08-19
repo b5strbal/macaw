@@ -50,7 +50,9 @@ class TrainTrack(TrainTrack1):
     # --------------------------------------------
 
     def peel(self, switch, side, branch_map=None, debug=False,
-             preferred_peeled_side=RIGHT):
+             preferred_peeled_side=RIGHT,
+             carrying_maps_self_small=[],  # DONE (up to cusps)
+             carrying_maps_self_large=[]):  # TODO
         """
 
         INPUT:
@@ -112,7 +114,7 @@ class TrainTrack(TrainTrack1):
 
         branches = [self.outgoing_branch(-switch, 0, start_side=RIGHT),
                     self.outgoing_branch(switch, 0)]
-
+        
         assert(abs(branches[0]) != abs(branches[1]))
 
         lens = [len(self.outgoing_branches(-switch)),
@@ -171,10 +173,29 @@ class TrainTrack(TrainTrack1):
             print "END: peel()"
             print "-------------------------------"
 
+        for cm in carrying_maps_self_small:
+            cm._carrying_data.append(-branches[sm_idx], branches[lg_idx])
+            if sm_idx == LEFT:
+                # The peeled branch ends up on the right of the branch we
+                # peeled it off. So we need to add the latter branch to the
+                # _hb_between_branches array of the peeled branch.
+                cm._carrying_data.add_to_hb_between_branches(branches[sm_idx],
+                                                             branches[lg_idx])
+            else:
+                # The peeled branch ends up on the left of the branch we
+                # peeled it off. So we need to add the peeled branch to the
+                # _hb_between_branches array of the other branch.
+                cm._carrying_data.add_to_hb_between_branches(branches[lg_idx],
+                                                             branches[sm_idx])
+
+        for cm in carrying_maps_self_large:
+            raise NotImplementedError
+
         return sm_idx
 
     def fold(self, switch, folded_branch_index, fold_onto_index,
-             start_side=LEFT):
+             start_side=LEFT,
+             carrying_maps_self_small=[]):
         r"""
 
         EXAMPLES::
@@ -286,6 +307,13 @@ class TrainTrack(TrainTrack1):
         if self.is_measured():
             self._set_measure(fold_onto_br, self.branch_measure(fold_onto_br) +
                               self.branch_measure(folded_br))
+
+
+        for cm in carrying_maps_self_small:
+            #
+            cm._carrying_data
+            # TODO:
+            pass
 
     def fold_by_branch_labels(self, folded_branch, fold_onto_branch):
         sw1 = self.branch_endpoint(-folded_branch)
@@ -491,7 +519,9 @@ class TrainTrack(TrainTrack1):
     #     """
     #     pass
 
-    def split(self, branch):
+    def split(self, branch,
+              carrying_maps_self_small=[],
+              carrying_maps_self_large=[]):
         """
         Split the train track at a large branch according to the measure.
 
@@ -546,25 +576,66 @@ class TrainTrack(TrainTrack1):
             typ = CENTRAL_SPLIT
 
         if typ == RIGHT_SPLIT or typ == CENTRAL_SPLIT:
-            self.reglue_endpoint(-top_left, bottom_switch, 0)
-            self.reglue_endpoint(-bottom_left, top_switch, 0)
-            self._set_measure(branch, abs(diff))
+            # print "A", top_switch
+            self.peel(
+                -top_switch, LEFT,
+                carrying_maps_self_large=carrying_maps_self_large,
+                carrying_maps_self_small=carrying_maps_self_small
+            )
+            # print self.gluing_list()
+            # print self.measure()
+            self.peel(
+                -bottom_switch, LEFT, preferred_peeled_side=RIGHT,
+                carrying_maps_self_large=carrying_maps_self_large,
+                carrying_maps_self_small=carrying_maps_self_small
+            )
+            # self.reglue_endpoint(-top_left, bottom_switch, 0)
+            # self.reglue_endpoint(-bottom_left, top_switch, 0)
+            # self._set_measure(branch, abs(diff))
 
         elif typ == LEFT_SPLIT:
-            self.reglue_endpoint(-top_right, bottom_switch, 1)
-            self.reglue_endpoint(-bottom_right, top_switch, 1)
-            self._set_measure(branch, abs(diff))
+            self.peel(
+                -top_switch, RIGHT,
+                carrying_maps_self_large=carrying_maps_self_large,
+                carrying_maps_self_small=carrying_maps_self_small
+            )
+            self.peel(
+                -bottom_switch, RIGHT,
+                carrying_maps_self_large=carrying_maps_self_large,
+                carrying_maps_self_small=carrying_maps_self_small
+            )
+            # self.reglue_endpoint(-top_right, bottom_switch, 1)
+            # self.reglue_endpoint(-bottom_right, top_switch, 1)
+            # self._set_measure(branch, abs(diff))
 
         if typ == CENTRAL_SPLIT:
-            self._delete_branch(branch)
+            self._delete_branch(
+                branch,
+                carrying_maps_self_large=carrying_maps_self_large,
+                carrying_maps_self_small=carrying_maps_self_small
+            )
             try:
-                self.delete_switch(top_switch)
+                self.delete_switch(
+                    top_switch,
+                    carrying_maps_self_large=carrying_maps_self_large,
+                    carrying_maps_self_small=carrying_maps_self_small
+                )
             except DeleteSwitchError:
                 pass
             try:
-                self.delete_switch(bottom_switch)
+                self.delete_switch(
+                    bottom_switch,
+                    carrying_maps_self_large=carrying_maps_self_large,
+                    carrying_maps_self_small=carrying_maps_self_small
+                )
             except DeleteSwitchError:
                 pass
+            # The branch number that remain are top_left and bottom_right
+
+        # if hasattr(self, "_carried_tts"):
+        #     raise NotImplementedError("Merging branches is not implemented "
+        #                               "when the train track carries other "
+        #                               "train tracks.")
 
     def fold_trivalent(self, branch):
         """
@@ -609,7 +680,8 @@ class TrainTrack(TrainTrack1):
         self._set_measure(branch, self.branch_measure(branch) +
                           top_measure + bottom_measure)
 
-    def merge_branches(self, switch, pos):
+    def merge_branches(self, switch, pos,
+                       carrying_maps_self_small=[]):
         """Merge the starting halves of two branches emanating from a switch.
 
         INPUT:
@@ -629,25 +701,31 @@ class TrainTrack(TrainTrack1):
 
         """
         b1 = self.outgoing_branch(switch, pos)
-        b2 = self.outgoing_branch(switch, pos+1)
-        sw = self.add_switch_on_branch(b1)
-        new_branch = self.outgoing_branch(-sw, 0)
-        self.reglue_endpoint(-b2, sw, 1)
-        self._set_measure(new_branch,
-                          self.branch_measure(b1) + self.branch_measure(b2))
+        # b2 = self.outgoing_branch(switch, pos+1)
+        self.add_switch_on_branch(
+            b1,
+            carrying_maps_self_small=carrying_maps_self_small
+        )
+        # new_branch = self.outgoing_branch(-sw, 0)
+        self.fold(switch, pos+1, pos,
+                  carrying_maps_self_small=carrying_maps_self_small)
 
-        if hasattr(self, "_carried_tts"):
-            raise NotImplementedError("Merging branches is not implemented "
-                                      "when the train track carries other "
-                                      "train tracks.")
+        # self.reglue_endpoint(-b2, sw, 1)
+        # self._set_measure(new_branch,
+        #                   self.branch_measure(b1) + self.branch_measure(b2))
 
-        if hasattr(self, "_carrying_tts"):
-            # the carrying data does change
+        # if hasattr(self, "_carried_tts"):
+        #     raise NotImplementedError("Merging branches is not implemented "
+        #                               "when the train track carries other "
+        #                               "train tracks.")
 
-            # however, changes might needed for the representation of the cusps
-            pass
+        # if hasattr(self, "_carrying_tts"):
+        #     # the carrying data does change
 
-    def make_trivalent(self):
+        #     # however, changes might needed for the representation of the cusps
+        #     pass
+
+    def make_trivalent(self, carrying_maps_self_small=[]):
         """Merge branches until the train track becomes trivalent.
 
         TESTS::
@@ -667,12 +745,16 @@ class TrainTrack(TrainTrack1):
             [9, 3, 4, 5, 5, 2]
 
         """
-        # This is not very efficient, but it doesn't have to be.
+        # This is not very efficient, but it doesn't have to be. (It is only
+        # called once for a mapping class.)
         while not self.is_trivalent():
             for sw in self.switches():
                 if self.switch_valence(sw) <= 3:
                     continue
                 for sgn in [1, -1]:
                     if self.num_outgoing_branches(sgn*sw) >= 2:
-                        self.merge_branches(sgn*sw, 0)
+                        self.merge_branches(
+                            sgn*sw, 0,
+                            carrying_maps_self_small=carrying_maps_self_small
+                        )
                         break

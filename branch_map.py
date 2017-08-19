@@ -136,15 +136,20 @@ class BranchMap(SageObject):
             print "Branch map of branch:", ls
 
         if ls == [10, 19, -13, -4] or ls == [4, 13, -19, -10]:
+            # These branch paths describe the new pants curve, so they should
+            # not be considered left or right.
             return None
+
         if ls[0] in [1, -4, -9, 13] or \
            ls[0] == 4 and (len(ls) == 1 or ls[1] != 13) or\
            ls[0] == 10 and len(ls) > 1 and ls[1] == 19:
             return LEFT
+
         if ls[0] in [7, -10, -3, 19] or \
            ls[0] == 10 and (len(ls) == 1 or ls[1] != 19) or\
            ls[0] == 4 and len(ls) > 1 and ls[1] == 13:
             return RIGHT
+
         assert(False)
 
         # if ls[0] in [1, -4, -9, 13] or \

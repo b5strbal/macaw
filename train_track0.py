@@ -1114,7 +1114,8 @@ class TrainTrack(SageObject):
         self._num_branches += 1
         return b
 
-    def add_switch_on_branch(self, branch):
+    def add_switch_on_branch(self, branch,
+                             carrying_maps_self_small=[]):
         """Create switch from the midpoint of a branch.
 
         We add the new branch to the front.
@@ -1144,6 +1145,15 @@ class TrainTrack(SageObject):
 
         if self.is_measured():
             self._set_measure(b, self.branch_measure(branch))
+
+        for cm in carrying_maps_self_small:
+            # we assume that the old branch maps to where it mapped before and
+            # the new branch maps to a point. So _branch_matrix,
+            # _half_branch_map, _hb_between_branches don't need to be changed.
+            # TODO: We might have to do something with the cusp paths, since
+            # the branch next to one of the cusps has changed.
+            pass
+
         return sw
 
     # ------------------------------
@@ -1195,7 +1205,9 @@ class TrainTrack(SageObject):
     #         del ls[n-end_idx:n-start_idx]
     #     return ret
 
-    def _delete_branch(self, branch):
+    def _delete_branch(self, branch,
+                       carrying_maps_self_small=[],  # DONE (up to cusps)
+                       carrying_maps_self_large=[]):   # TODO
         """Deletes a branch from the train track.
 
         WARNING: Does not check if the switch conditions continue to hold or
@@ -1224,18 +1236,19 @@ class TrainTrack(SageObject):
             self._pop_outgoing_branch(sw, pos)
         self._set_endpoint(branch, 0)
         self._set_endpoint(-branch, 0)
-        # n = self._num_branches
-        # for i in range(n):
-        #     if self._branches[i] == abs(branch):
-        #         break
-        # for j in range(i, n):
-        #     self._branches[j] = self._branches[j+1]
-        # self._branches[n-1] = 0
         self._num_branches -= 1
         if self.is_measured():
             self._set_measure(branch, 0)
 
-    def delete_switch(self, switch):
+        for cm in carrying_maps_self_small:
+            cm.delete_branch_from_small(branch)
+
+        for cm in carrying_maps_self_large:
+            raise NotImplementedError
+
+    def delete_switch(self, switch,
+                      carrying_maps_self_small=[],
+                      carrying_maps_self_large=[]):
         """Delete a switch with valence two.
 
         After the operation the object remains in a consistent state.
@@ -1270,10 +1283,25 @@ class TrainTrack(SageObject):
                                     "switch on a curve")
         sw = self.branch_endpoint(neg_branch)
         pos = self.outgoing_branch_index(sw, -neg_branch)
-        self._delete_branch(neg_branch)
+
+        for cm in carrying_maps_self_small:
+            # pushing the switch along neg_branch. As a result, neg_branch
+            # shrinks to a point and pos_branch becomes the union of neg_branch
+            # and pos_branch
+            cm._carrying_data.isotope_switch_into_branch(
+                -switch, neg_branch)
+        
+        self._delete_branch(
+            neg_branch,
+            carrying_maps_self_large=carrying_maps_self_large,
+            carrying_maps_self_small=carrying_maps_self_small
+        )
         self.reglue_endpoint(-pos_branch, sw, pos)
         self._num_switches -= 1
 
+        for cm in carrying_maps_self_large:
+            raise NotImplementedError
+        
     # ------------------------------
     # MODIFYING THE TRAIN TRACK
     # ------------------------------

@@ -26,6 +26,7 @@ from pants_lamination import PantsLamination
 # from pants_lamination_old import PantsLamination
 from mapping_class import MappingClass
 from sage.all import numerical_approx, norm
+from carrying import CarryingMap
 
 
 class PantsTwist(SageObject):
@@ -289,6 +290,18 @@ class PantsMappingClass(MappingClass):
                 return n
         return 0
 
+    def splitting_sequence(self, pants_lamination):
+        """Compute a splitting sequence for the mapping class carrying a
+        curve.
+        """
+        tt = pants_lamination._tt
+        cm = CarryingMap.identity(tt)
+        small_tt = cm.small_tt
+        small_tt.make_trivalent(carrying_maps_self_small=[cm])
+        tt.delete_zero_measure_branches()
+        
+        
+    
 
 def humphries_generators(g):
     p = PantsDecomposition.humphries(g)
