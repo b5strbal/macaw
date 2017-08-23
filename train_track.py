@@ -174,19 +174,19 @@ class TrainTrack(TrainTrack1):
             print "-------------------------------"
 
         for cm in carrying_maps_self_small:
-            cm._carrying_data.append(-branches[sm_idx], branches[lg_idx])
+            cm.append(-branches[sm_idx], branches[lg_idx])
             if sm_idx == LEFT:
                 # The peeled branch ends up on the right of the branch we
                 # peeled it off. So we need to add the latter branch to the
                 # _hb_between_branches array of the peeled branch.
-                cm._carrying_data.add_to_hb_between_branches(branches[sm_idx],
-                                                             branches[lg_idx])
+                cm.add_to_hb_between_branches(branches[sm_idx],
+                                              branches[lg_idx])
             else:
                 # The peeled branch ends up on the left of the branch we
                 # peeled it off. So we need to add the peeled branch to the
                 # _hb_between_branches array of the other branch.
-                cm._carrying_data.add_to_hb_between_branches(branches[lg_idx],
-                                                             branches[sm_idx])
+                cm.add_to_hb_between_branches(branches[lg_idx],
+                                              branches[sm_idx])
 
         for cm in carrying_maps_self_large:
             raise NotImplementedError

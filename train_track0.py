@@ -191,7 +191,6 @@ class TrainTrack(SageObject):
             elif sw1 != 0 or sw2 != 0:
                 raise ValueError("Only one end of the branch %d appears "
                                  "in the gluing list." % i+1)
-
         if measure is not None:
             if len(measure) != self._num_branches:
                 raise ValueError("The length of the measure list should equal"
