@@ -132,6 +132,85 @@ class PantsDecomposition(Surface):
         # self._non_ori_bdy_set = non_ori_bdy_set
 
     def dual_graph(self):
+        """Construct the dual graph of the pants decomposition.
+
+        It is constructed as follows. For each pair of pants in the pants
+        decomposition, we create a vertex for the pair of pants and one vertex
+        for each boundary component. We connect the three vertices correponding
+        to the boundary components to the vertex of the pair of pants to get a
+        "tripod". Now we have a collection of tripods correponding to the pairs
+        of pants of the pants decomposition. Whenever two boundary components
+        are identitied, we connect the correponding vertices.
+
+        In the end, we get a graph, where every vertex correponding to a pair
+        of pants has degree 3, every inner pants curve has degree 2 and every
+        boundary pants curve has degree 1. 
+
+        We could also consider the simpler graph where we remove vertices of
+        degree 2, but that would sometimes yield a graph with loops and
+        multiedges, but the Sage implementation of those graphs seems pretty
+        buggy.
+
+        OUTPUT:
+
+        The dual graph of the pants decomposition. The vertices corresponding
+        to pairs of pants are named by integers (the same integers as the label
+        of the pants decompositions). The vertices correponding to the
+        boundaries of the pairs of pants are tuples of the form ``(pant,
+        bdy)``, where ``pant`` is the number of the pair of pants and ``bdy``
+        is 0, 1 or 2. 
+
+        The edges of the graph are labelled 0 or 1. Most edge gets label 0. An
+        edge gets label 1 if it corresponds to an inner pants curve where the
+        gluing is orientation-reversing.
+
+        SEE ALSO:
+
+        - self._compute_orientable() -- this method uses the labellings on
+          the edges to determine of the resulting surface is orientable.
+
+        TESTS:
+
+            sage: p = PantsDecomposition([[1, 2, 3], [-3, -2, -1]])
+            sage: g = p.dual_graph()
+            sage: g.edges()
+            [(0, (0, 0), 0),
+             (0, (0, 1), 0),
+             (0, (0, 2), 0),
+             (1, (1, 0), 0),
+             (1, (1, 1), 0),
+             (1, (1, 2), 0),
+             ((0, 0), (1, 2), 0),
+             ((0, 1), (1, 1), 0),
+             ((0, 2), (1, 0), 0)]
+
+            sage: p = PantsDecomposition([[1, 2, -2]])
+            sage: g = p.dual_graph()
+            sage: g.edges()
+            [(0, (0, 0), 0), (0, (0, 1), 0), (0, (0, 2), 0), ((0, 1), (0, 2), 0)]
+
+            sage: p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
+            sage: g = p.dual_graph()
+            sage: g.edges()
+            [(0, (0, 0), 0),
+             (0, (0, 1), 0),
+             (0, (0, 2), 0),
+             (1, (1, 0), 0),
+             (1, (1, 1), 0),
+             (1, (1, 2), 0),
+             (2, (2, 0), 0),
+             (2, (2, 1), 0),
+             (2, (2, 2), 0),
+             (3, (3, 0), 0),
+             (3, (3, 1), 0),
+             (3, (3, 2), 0),
+             ((0, 0), (0, 1), 0),
+             ((0, 2), (1, 0), 0),
+             ((1, 1), (3, 1), 0),
+             ((1, 2), (2, 0), 0),
+             ((2, 1), (3, 0), 0),
+             ((2, 2), (3, 2), 0)]
+        """
         edge_ls = []
         for c in self.inner_pants_curves():
             left, right = self.adjacent_pants(c)
