@@ -228,16 +228,40 @@ class PantsDecomposition(Surface):
         return Graph(edge_ls)
 
     def _compute_orientable(self):
+        """Decide if the surface is orientable.
+        """
         g = self.dual_graph()
         for cycle in g.cycle_basis(output='edge'):
             if sum(e[2] for e in cycle) %2 == 1:
                 return False
         return True
 
-
-
     def is_connected(self):
+        """Decide if the surface is connected.
+        """
         return self.dual_graph().is_connected()
+
+    def homology_basis(self):
+        """Compute a homology basis for the surface.
+
+        ALGORITHM (by Dan Margalit):
+
+        We construct the dual graph and find a spanning tree. The edges not
+        included in the spanning tree correpond to pants curves. These pants
+        curves will be part of the homology basis. For the closed genus g
+        surface, we have g curves so far, so we need another g.
+
+        Now we consider each of the edges above that are not included in the
+        spanning tree. Add back such an edge creates a unique cycle. Such a
+        cycle corresponds to loop going though a bunch of pairs of pants. We
+        have g of these too, so overall, we obtain the necessary 2g curves.
+
+        For punctured surfaces, we also follow the above process, but we don't
+        get enough generators. We fix this by adding in a generator for all but
+        one boundary components of the surface.
+        """
+        # assert(self.homology_dimension() = size of the basis constructed)
+        pass
 
     def _repr_(self):
         return 'Pants decomposition with gluing list ' + repr(self._gluing_list)

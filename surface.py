@@ -313,6 +313,52 @@ class Surface(SageObject):
         """
         return self._euler_char
 
+    def homology_dimension(self):
+        """Return the dimension of the first homology of the surface.
+
+        TESTS::
+
+            sage: Surface(2).homology_dimension()
+            4
+
+            sage: Surface(0,1).homology_dimension()
+            0
+
+            sage: Surface(0,2).homology_dimension()
+            1
+
+            sage: Surface(1,2).homology_dimension()
+            3
+
+            sage: Surface(2,3).homology_dimension()
+            6
+
+            sage: Surface(1,0,is_orientable=False).homology_dimension()
+            0
+
+            sage: Surface(1,1,is_orientable=False).homology_dimension()
+            1
+
+            sage: Surface(1,2,is_orientable=False).homology_dimension()
+            2
+
+            sage: Surface(2,0,is_orientable=False).homology_dimension()
+            1
+
+            sage: Surface(2,1,is_orientable=False).homology_dimension()
+            2
+
+            sage: Surface(3,is_orientable=False).homology_dimension()
+            2
+
+            sage: Surface(3,4,is_orientable=False).homology_dimension()
+            6
+
+        """
+        return 2*self.genus() + max(self.num_punctures()-1, 0) \
+            if self.is_orientable() else \
+            self.genus() - 1 + self.num_punctures()
+
     def teich_space_dim(self):
         r"""
 
