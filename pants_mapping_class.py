@@ -299,6 +299,22 @@ class PantsMappingClass(MappingClass):
         else:
             return self._action_on_homology
 
+    def is_in_torelli(self):
+        """Decide if the mapping class is in the Torelli subgroup.
+
+        EXAMPLES:
+
+            sage: f = hyperelliptic_involution(2)
+            sage: f.is_in_torelli()
+            False
+
+            sage: (f^2).is_in_torelli()
+            True
+
+        """
+        mat = self.action_on_homology()
+        return mat == matrix.identity(mat.nrows())
+
     def order(self):
         """
 
@@ -317,13 +333,15 @@ class PantsMappingClass(MappingClass):
         # https://projecteuclid.org/euclid.ojm/1277298910
         p = self._pants_decomposition
         g = p.genus()
-        if g <= 2 or p.num_punctures() > 0:
+        if g < 2 or p.num_punctures() > 0:
             raise NotImplementedError(
                 "The order computation currently "
-                "only works for surfaces of genus 3 and higher.")
+                "only works for closed surfaces of genus 2 and higher.")
         for n in range(1, 4*g+3):
-            if (self**n).is_identity():
-                return n
+            power = self**n
+            if power.is_identity():
+                if g > 2 or g == 2 and power.is_in_torelli():
+                    return n
         return 0
 
     # def splitting_sequence(self, pants_lamination):
@@ -337,12 +355,17 @@ class PantsMappingClass(MappingClass):
     #     tt.delete_zero_measure_branches()
 
 
-def humphries_generators(genus):
+def humphries_generators(genus, right_most_included=False):
     """Construct the Humphries generators on a closed orientable surface.
 
     INPUT:
 
     - ``genus`` -- the genus of the closed orientable surface.
+
+    - ``right_most_included`` -- (default: False) if True, the right-most curve
+      in the `A`-`B` chain is also included in `A`. It is not part of the
+      Humpries generator set, but it is useful for some computations (e.g.
+      hyperelliptic involution.)
 
     OUTPUT:
 
@@ -400,9 +423,21 @@ def humphries_generators(genus):
 
     # The curve c intersects only curve 1 of B. The curve c itself is
     # homologous to A[0]+A[1].
-    mat1 = elementary_matrix(dim, row1=0, row2=g+1, scale=-Integer(1))
-    mat2 = elementary_matrix(dim, row1=1, row2=g+1, scale=-Integer(1))
+    mat1 = elementary_matrix(dim, row1=0, row2=g+1, scale=Integer(1))
+    mat2 = elementary_matrix(dim, row1=1, row2=g+1, scale=Integer(1))
     c = PantsMappingClass(p, [PantsTwist([], 3)], mat1*mat2)
+
+    if right_most_included:
+        # The right-most curve only intersects (from the right) the last homology
+        # basis element going around a hole. When oriented from left to right, the
+        # curve is homologous to minus the sum of the A-curves. Since the
+        # intersection is from the right, that cancels out this minus sign and the
+        # matrix has positive entries.
+        mat = matrix.identity(2*g)
+        for i in range(g):
+            mat[i, 2*g-1] = 1
+        A.append(PantsMappingClass(p, [PantsTwist([], 3*g-3)], mat))
+
     return (A, B, c)
 
 
@@ -430,17 +465,8 @@ def hyperelliptic_involution(genus):
     """
     g = genus
     p = PantsDecomposition.humphries(g)
-    A, B, c = humphries_generators(g)
+    A, B, c = humphries_generators(g, right_most_included=True)
 
-    # The right-most curve only intersects (from the right) the last homology
-    # basis element going around a hole. When oriented from left to right, the
-    # curve is homologous to minus the sum of the A-curves. Since the
-    # intersection is from the right, that cancels out this minus sign and the
-    # matrix has positive entries.
-    mat = matrix.identity(2*g)
-    for i in range(g):
-        mat[i, 2*g-1] = 1
-    A.append(PantsMappingClass(p, [PantsTwist([], 3*g-3)], mat))
     f = A[0]
     # print c
     # print A[-1]
