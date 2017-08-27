@@ -1,4 +1,4 @@
-# macaw
+# Macaw
 Sage library for experiments in mapping class groups.
 
 ## Installation
@@ -61,4 +61,25 @@ sage: f.order()
 sage: g = hyperelliptic_involution(3)  # Hyperelliptic involution on the genus 3 surface.
 sage: g.order()
 2
+```
+
+6. Computing the action on homology.
+
+```
+sage: A, B, c = humphries_generators(2)
+sage: f = A[0]*B[0]^(-1)
+sage: f.action_on_homology()
+[ 2 -1  1  0]
+[ 0  1  0  0]
+[ 1 -1  1  0]
+[ 0  0  0  1]
+sage: _.charpoly().factor()
+(x - 1)^2 * (x^2 - 3*x + 1)
+
+sage: g = hyperelliptic_involution(2)
+sage: g.action_on_homology()
+[-1  0  0  0]
+[ 0 -1  0  0]
+[ 0  0 -1  0]
+[ 0  0  0 -1]
 ```
