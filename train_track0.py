@@ -741,6 +741,37 @@ class TrainTrack(SageObject):
             ls.append(self.adjacent_cusp(br, RIGHT))
         return ls
 
+    def branch_next_to_cusp(self, cusp, side):
+        """Return the branch on the left or right side of a cusp.
+
+        EXAMPLES::
+
+        sage: from sage.topology.constants import LEFT, RIGHT
+        sage: tt = TrainTrack([[1, 2], [-1, -2]])
+        sage: tt.branch_next_to_cusp(1, LEFT)
+        1
+        sage: tt.branch_next_to_cusp(1, RIGHT)
+        2
+        sage: tt.branch_next_to_cusp(2, LEFT)
+        -1
+        sage: tt.branch_next_to_cusp(2, RIGHT)
+        -2
+
+        """
+        # TODO: With extra storage, this can be made more efficient if
+        # necessary.
+        for b in self.branches():
+            for sg in [-1, 1]:
+                sb = sg*b
+                try:
+                    if self.adjacent_cusp(sb, (side+1) % 2) == cusp:
+                        return sb
+                except:
+                    # We get here when adjacent_cusp() looks to the left of a
+                    # left-most branch, for instance.
+                    pass
+        assert(False)
+
     # ----------------------------------------------------------------
     # COPYING
     # ----------------------------------------------------------------
