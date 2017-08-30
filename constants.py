@@ -24,4 +24,5 @@ RIGHT = 1
 START = 0
 END = 1
 
-
+BRANCH = 0
+CUSP = 1

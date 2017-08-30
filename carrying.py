@@ -69,260 +69,16 @@ def is_equal(array1, array2):
     # return True
 
 
-# class TrainPath(SageObject):
-#     """A train path on a train track.
-#     """
-#     def __init__(self, branch_array, start_hb, end_hb):
-#         """
-
-#         """
-#         self.branch_array = branch_array
-#         self.start_hb = start_hb
-#         self.end_hb = end_hb
-
-
-class CarryingData(SageObject):
-
-    def image_of_half_branch(self, half_branch):
-        """
-        Return the image of a half-branch in the domain.
-
-        EXAMPLES:
-
-        The carrying data for splitting of the train track on the
-        torus with two branches::
-
-            # sage: branch_matrix = matrix([[1, 1], [0, 1]])
-            # sage: half_branch_map = {1:1, 2:1, -1:-1, -2:-2}
-            # sage: hb_between_branches = {1:[0, 0], 2:[0, 1], -1:[0, 1], -2:[0, 0]}
-            # sage: c = CarryingData(branch_matrix, half_branch_map, hb_between_branches)
-            # sage: [c.image_of_half_branch(i) for i in [-2, -1, 1,2]]
-            # [-2, -1, 1, 1]
-
-
-        """
-        return self._half_branch_map[half_branch]
-
-    def image_of_branch(self, branch):
-        """
-        Return the image of a brach in the domain as a measure.
-
-        INPUT:
-
-        - ``branch`` -- a branch, either as a positive or negative
-          number. The orientation is ignored.
-
-        EXAMPLES::
-
-            # sage: branch_matrix = matrix([[1, 1], [0, 1]])
-            # sage: half_branch_map = {1:1, 2:1, -1:-1, -2:-2}
-            # sage: hb_between_branches = {1:[0, 0], 2:[0, 1], -1:[0, 1], -2:[0, 0]}
-            # sage: c = CarryingData(branch_matrix, half_branch_map, hb_between_branches)
-            # sage: c.image_of_branch(1)
-            # (1, 0)
-            # sage: c.image_of_branch(-1)
-            # (1, 0)
-            # sage: c.image_of_branch(2)
-            # (1, 1)
-            # sage: c.image_of_branch(-2)
-            # (1, 1)
-
-        """
-        return self._branch_matrix.column(abs(branch)-1)
-
-    def preimage_of_branch(self, branch):
-        """
-        Return the preimage of a branch in the codomain as a measure.
-
-        INPUT:
-
-        - ``branch`` -- a branch, either as a positive or negative
-          number. The orientation is ignored.
-
-        EXAMPLES::
-
-            # sage: branch_matrix = matrix([[1, 1], [0, 1]])
-            # sage: half_branch_map = {1:1, 2:1, -1:-1, -2:-2}
-            # sage: hb_between_branches = {1:[0, 0], 2:[0, 1], -1:[0, 1], -2:[0, 0]}
-            # sage: c = CarryingData(branch_matrix, half_branch_map, hb_between_branches)
-            # sage: c.preimage_of_branch(1)
-            # (1, 1)
-            # sage: c.preimage_of_branch(-1)
-            # (1, 1)
-            # sage: c.preimage_of_branch(2)
-            # (0, 1)
-            # sage: c.preimage_of_branch(-2)
-            # (0, 1)
-
-        """
-        return self._branch_matrix[abs(branch)-1]
-
-    def strands_on_side(self, half_branch, side, branch_to_count=None):
-        """Return the number of strands to the left of to the right of a
-        half-branch of the domain.
-
-        INPUT:
-
-        - ``half_branch`` -- a half-branch of the domain train track
-
-        - ``side`` -- LEFT or RIGHT, depending on which side the
-          strands are counted on
-
-        - ``branch_to_count`` -- (default: None) If None, a list is
-          returned counting the strands for every branch. Otherwise it
-          can be the (positive) number of a branch in the domain train
-          track and only the strands contained in this branch are
-          counted
-
-        OUTPUT:
-
-        A list or an integer.
-
-        EXAMPLES::
-
-            # sage: branch_matrix = matrix([[1, 1], [0, 1]])
-            # sage: half_branch_map = {1:1, 2:1, -1:-1, -2:-2}
-            # sage: hb_between_branches = {1:[0, 0], 2:[1, 0], -1:[0, 1], -2:[0, 0]}
-            # sage: c = CarryingData(branch_matrix, half_branch_map, hb_between_branches)
-            # sage: LEFT = 0
-            # sage: c.strands_on_side(1, LEFT)
-            # [0, 0]
-            # sage: c.strands_on_side(-1, LEFT)
-            # [0, 1]
-            # sage: c.strands_on_side(2, LEFT)
-            # [1, 0]
-            # sage: c.strands_on_side(-2, LEFT)
-            # [0, 0]
-            # sage: c.strands_on_side(-1, LEFT, 1)
-            # 0
-            # sage: c.strands_on_side(-1, LEFT, 2)
-            # 1
-
-
-        """
-        all_data = self._hb_between_branches[half_branch]
-        if side == LEFT:
-            if branch_to_count is None:
-                return all_data
-            return all_data[branch_to_count-1]
-        else:
-            raise NotImplementedError()
-
-    # def h(n):
-    #     r"""
-    #     Merge map from `[1, \infy)\cup(-\infty, -1)` to `[0, \infty).
-    #     """
-    #     return 2*n-2 if n>0 else -2*n-1
-
-    # def hinv(n):
-    #     r"""
-    #     The inverse of the merge map from `[1, \infy)\cup(-\infty, -1)` to `[0, \infty).
-    #     """
-    #     return n//2+1 if n%2 == 0 else -n//2-1
-
-    def __mul__(self, other):
-        """Return a composition of two carrying maps.
-
-        INPUT:
-
-        - ``other`` -- a CarryingData object. The product is read from
-          right-to-left, so ``other`` is the first map and ``self`` is
-          the second map.
-
-        """
-
-        # Number of branches in the domain train track of other
-        n = other._branch_matrix.ncols()
-        branch_matrix = self._branch_matrix * other._branch_matrix
-        half_branch_map = {}
-        for i in range(1, n+1):
-            for j in {i, -i}:
-                if other._half_branch_map[j] is None:
-                    half_branch_map[j] = None
-                else:
-                    half_branch_map[j] = self._half_branch_map[
-                        other._half_branch_map[j]]
-
-        hb_between_branches = {}
-
-        # iterate over half-branches of the domain of other
-        for i in range(1, n+1):
-            for hb in {i, -i}:
-                hb_between_branches[hb] = [0]*n
-
-                # the image half-branch of hb under other
-                mid_hb = other.image_of_half_branch(hb)
-
-                # the vector of branches on the left of mid_hb in the
-                # codomain of other (the intermediate train track)
-                left_strands = self.strands_on_side(mid_hb, LEFT)
-
-                # iterate over branches of the domain of other
-                for k in range(1, n+1):
-
-                    # the vector counting the strands on each of the
-                    # strands to the left of mid_hb that are contained in
-                    # the branch k
-                    k_strands = other.image_of_branch(k)
-
-                    print vector(left_strands)
-                    print k_strands
-                    # total number of strands on the left of mid_hb that
-                    # are contained in branch k
-                    hb_between_branches[hb][k-1] += \
-                        vector(left_strands) * vector(k_strands)
-
-                    # adding the strands to the left of hb that also map
-                    # onto mid_hb
-                    hb_between_branches[hb][k-1] += \
-                        other.strands_on_side(hb, LEFT, k)
-
-        return CarryingData(branch_matrix, half_branch_map,
-                            hb_between_branches)
-
-
-# class SparseCarryingData(SageObject):
-
-# branch_matrix = matrix([[1, 1], [0, 1]])
-# half_branch_map = {1:1, 2:1, -1:-1, -2:-2}
-# hb_between_branches = {1:[0, 0], 2:[0, 1], -1:[0, 1], -2:[0, 0]}
-# c = CarryingData(branch_matrix, half_branch_map, hb_between_branches)
-
-
 class CarryingMap(SageObject):
     """
-    A map between two train tracks.
-
-    The train track map is stored in one of two ways (or both).
-
-    1. By the branch map. This is the detailed description of the train
-    track map. The image of every branch is stored as a train path.
-    The advantage of this representation is that this can be used to
-    compute Alexander and Teichmuller polynomials of mapping tori,
-    since the the transition maps can be computed on the maximal
-    Abelian cover. The disadvantage is that this requires a lot of
-    storage space. After `n` splittings, the images of branches may
-    get exponentially long in `n`.
-
-    2. By the transition matrix, and storing where the ends of
-    branches map and the position of the image of the ends of branches
-    among the strands of the image of this branch. The storage is much
-    more efficient in this case (the bitsize of the entries of the
-    transition matrix is at most about `n`), and operations like
-    splittings and compositions can be computed much faster.
-
-    Each representation can be computed from the other.
-
-    Maybe we should only consider trivalent train tracks for now? The
-    ones in the examples below are not trivalent. Maybe this class is
-    easier for non-trivalent train tracks, and it is enough to
-    restrict the Splitting class for trivalent ones.
+    A carrying relationship between two train tracks.
     """
     def __init__(self, large_tt, small_tt,
                  train_paths,
                  half_branch_map,
                  hb_between_branches,
-                 branch_to_cusp_idx):
+                 cusp_index_offset,
+                 cusp_map):
         """l = number of branches of the large train track
         s = number of branches of the small train track
         c = number of cusps of the small train track
@@ -349,19 +105,14 @@ class CarryingMap(SageObject):
         paths and the entries of the row store the position of the half-branch
         all branches and cusp paths. Shape: (2, s+c, s+c).
 
-        - ``branch_to_cusp_idx`` -- A 2D array consisting of two rows
-        whose entries correspond to half-branches. Each entry is the number of
-        the cups path that is on the right of the half-branch. Shape: (2, s).
+        - ``cusp_index_offset`` -- a positive integer, usually ``s``. The paths
+        in ``train_paths`` correspond to branch paths for indices less than
+        ``cusp_index_offset`` and to cusp paths for indices at least
+        ``cusp_index_offset``. Similarly for ``half_branch_map`` and the 2nd
+        and 3rd axes of ``hb_between_branches``.
 
-        # - ``switch_pos_to_cusp_idx`` -- A 3D arrays consisting of two 2D
-        # arrays, just like TrainTrack._outgoing_branches. The first 2D array
-        # corresponds to positive sides of switches, the second the negative
-        # sides. The second dimension is the absolute value of the switch number.
-        # The third dimension is the position of the cusp (from 0 to the number
-        # of outgoing branches minus 2). Each entry is the index of the
-        # corresponding cups path in ``train_paths``, ``half_branch_map`` and
-        # ``hb_between_branches``. Shape: (2, number of switches of small train
-        # track, max number of outgoing branches of small train track)
+        - ``cusp_map`` -- A 1D array specifying the image of any cusp in the
+          small train track in the large train track.
 
         """
         self._large_tt = large_tt
@@ -369,7 +120,45 @@ class CarryingMap(SageObject):
         self._train_paths = train_paths
         self._half_branch_map = half_branch_map
         self._hb_between_branches = hb_between_branches
-        self._branch_to_cusp_idx = branch_to_cusp_idx
+        self._cusp_index_offset = cusp_index_offset
+        self._cusp_map = cusp_map
+
+    def _path_index(self, typ, index):
+        """
+        """
+        a = 0 if index > 0 else 1
+        if typ == BRANCH:
+            return (a, abs(index)-1)
+        elif typ == CUSP:
+            return (a, abs(index) - 1 + self._cusp_index_offset)
+
+    def append(self, typ1, append_to_idx, typ2, appended_path_idx):
+        """Update the carrying data when a train path is appended to another.
+
+        
+        """
+        append_to = self._path_index(typ1, -append_to_idx)
+        appended = self._path_index(typ2, -appended_path_idx)
+        self._train_paths[append_to[1]] += \
+            self._train_paths[appended[1]]
+        self._half_branch_map[append_to] = \
+            self._half_branch_map[appended]
+        self._hb_between_branches[:, :, append_to[1]] += \
+            self._hb_between_branches[:, :, appended[1]]
+        self._hb_between_branches[append_to] = \
+            self._hb_between_branches[appended]
+
+    def add_to_hb_between_branches(self, typ1, add_to_idx,
+                                   typ2, added_idx):
+        """Add 1 to the count of a branch on the left of a half-branch.
+
+        We usually need to call this method after self.append(), since that
+        method simply sets the _hb_between_branches of two branches the same,
+        but one of them is to the left of the other. 
+        """
+        add_to = self._path_index(typ1, add_to_idx)
+        added = self._path_index(typ2, added_idx)
+        self._hb_between_branches[add_to][added[1]] += 1
 
     @classmethod
     def identity_map(cls, train_track):
@@ -471,18 +260,6 @@ class CarryingMap(SageObject):
             # TODO: Revise the implementation of cusp paths later.
             pass
 
-    def append(self, append_to_idx, appended_path_idx):
-        """Update the carrying data when a train path is appended to another.
-        """
-        self._train_paths[abs(append_to_idx)-1] += \
-            self._train_paths[abs(appended_path_idx)-1]
-        self._half_branch_map[to_index(-append_to_idx)] = \
-            self._half_branch_map[to_index(-appended_path_idx)]
-        self._hb_between_branches[:, :, abs(append_to_idx)-1] += \
-            self._hb_between_branches[:, :, abs(appended_path_idx)-1]
-        self._hb_between_branches[to_index(-append_to_idx)] = \
-            self._hb_between_branches[to_index(-appended_path_idx)]
-
     def trim(self, trim_from_idx, trimmed_path_idx):
         """Update the carrying data when a train path is trimmed off of
         another.
@@ -499,12 +276,6 @@ class CarryingMap(SageObject):
 
         # self._hb_between_branches[to_index(-trim_from_idx)] = ...
         # This is also difficult, since we don't know the half-branch map.
-
-    def add_to_hb_between_branches(self, half_branch, branch_to_add):
-        """Add 1 to the count of a branch on the left of a half-branch.
-        """
-        self._hb_between_branches[to_index(half_branch),
-                                  abs(branch_to_add)-1] += 1
 
     def outgoing_cusp_path_indices_in_small_tt(self, switch):
         """Return the numbers of the cusp paths outgoing from a switch.

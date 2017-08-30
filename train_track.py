@@ -23,7 +23,7 @@ AUTHORS:
 
 from train_track1 import TrainTrack as TrainTrack1
 from train_track0 import DeleteSwitchError
-from constants import LEFT, RIGHT
+from constants import LEFT, RIGHT, BRANCH, CUSP
 
 
 LARGE = 0
@@ -174,19 +174,38 @@ class TrainTrack(TrainTrack1):
             print "-------------------------------"
 
         for cm in carrying_maps_self_small:
-            cm.append(-branches[sm_idx], branches[lg_idx])
+            cm.append(BRANCH, -branches[sm_idx], BRANCH, branches[lg_idx])
+            cusp_to_append_to = self.adjacent_cusp(
+                branches[sm_idx],
+                side=sm_idx
+            )
+            cm.append(CUSP, -cusp_to_append_to, BRANCH, branches[lg_idx])
             if sm_idx == LEFT:
                 # The peeled branch ends up on the right of the branch we
-                # peeled it off. So we need to add the latter branch to the
-                # _hb_between_branches array of the peeled branch.
-                cm.add_to_hb_between_branches(branches[sm_idx],
-                                              branches[lg_idx])
+                # peeled it off. So we need to add the latter branch (and also
+                # the cusp path) to the _hb_between_branches array of the
+                # peeled branch.
+                cm.add_to_hb_between_branches(BRANCH, branches[sm_idx],
+                                              BRANCH, -branches[lg_idx])
+                cm.add_to_hb_between_branches(BRANCH, branches[sm_idx],
+                                              CUSP, cusp_to_append_to)
+                # We also need to add the latter branch to the
+                # _hb_between_branches array of the cusp_path
+                cm.add_to_hb_between_branches(CUSP, cusp_to_append_to,
+                                              BRANCH, -branches[lg_idx])
             else:
                 # The peeled branch ends up on the left of the branch we
-                # peeled it off. So we need to add the peeled branch to the
+                # peeled it off. So we need to add the peeled branch (and also
+                # the cusp path) to the
                 # _hb_between_branches array of the other branch.
-                cm.add_to_hb_between_branches(branches[lg_idx],
-                                              branches[sm_idx])
+                cm.add_to_hb_between_branches(BRANCH, -branches[lg_idx],
+                                              BRANCH, branches[sm_idx])
+                cm.add_to_hb_between_branches(BRANCH, -branches[lg_idx],
+                                              CUSP, cusp_to_append_to)
+                # We also need to add the peeled branch to the array of the
+                # cusp path.
+                cm.add_to_hb_between_branches(CUSP, cusp_to_append_to,
+                                              BRANCH, branches[sm_idx])
 
         for cm in carrying_maps_self_large:
             raise NotImplementedError
