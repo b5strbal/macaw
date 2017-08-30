@@ -722,7 +722,25 @@ class TrainTrack(SageObject):
                              "branch. There is no cusp on the "
                              "specified side of it." % branch)
         return cusp
-    
+
+    def outgoing_cusps(self, switch):
+        """Return the list of cusps on a switch.
+
+        EXAMPLES:
+
+        sage: tt = TrainTrack([[1, 2], [-1, -2]])
+        sage: tt.outgoing_cusps(1)
+        [1]
+        sage: tt.outgoing_cusps(-1)
+        [2]
+
+        """
+        ls = []
+        for i in range(self.num_outgoing_branches()-1):
+            br = self.outgoing_branch(switch, i)
+            ls.append(self.adjacent_cusp(br, RIGHT))
+        return ls
+
     # ----------------------------------------------------------------
     # COPYING
     # ----------------------------------------------------------------

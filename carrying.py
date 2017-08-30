@@ -277,15 +277,6 @@ class CarryingMap(SageObject):
         # self._hb_between_branches[to_index(-trim_from_idx)] = ...
         # This is also difficult, since we don't know the half-branch map.
 
-    def outgoing_cusp_path_indices_in_small_tt(self, switch):
-        """Return the numbers of the cusp paths outgoing from a switch.
-        """
-        ls = []
-        for i in range(self._small_tt.num_outgoing_branches()-1):
-            br = self._small_tt.outgoing_branch(switch, i)
-            ls.append(self._branch_to_cusp_idx[to_index(br)])
-        return ls
-
     def outgoing_path_indices_in_small_tt(self, switch):
         """Return the numbers of all outgoing branches and cusp pahts from a
         switch. 
@@ -297,13 +288,16 @@ class CarryingMap(SageObject):
         """Isotopes a switch of the small train track in the positive direction
         as far as possible.
         """
-        # TODO: rewrite this
         small_tt = self._small_tt
 
-        outgoing_path_indices = \
-            self.outgoing_path_indices_in_small_tt(switch)
+        outgoing_path_numbers = merge_lists(
+            small_tt.outgoing_branches(),
+            small_tt.outgoing_cusps()
+        )
 
-        min_path_indices = self.shortest_paths(outgoing_path_indices)
+        # These are indices for the list outgoing_path_indices, not elements of
+        # the list!
+        min_path_indices = self.shortest_paths(outgoing_path_numbers)
         min_path = self._train_paths[abs(min_path_idx)-1]
 
         outgoing_path_indices_neg = \
@@ -391,44 +385,61 @@ class CarryingMap(SageObject):
                isotopy_side == RIGHT and cusp_path == branch_path_right:
                 pass
 
-    def shortest_paths(indices):
+    def shortest_paths(self, branches_and_cusps):
         """Return the shortest paths of the paths provided.
 
         If there is no shortest path (this is possible, since paths are arrays
         of integers, so the relation is a partial order, not an order), then it
         returns an error. But in our applications, this should not happen.
 
+        INPUT:
+
+        - ``branches_and_cusps`` -- a list with branch and cusp numbers. We
+          assume that even positions contain branches, odd positions contain
+          cusps.
+
         OUTPUT:
 
-        the list of indices of the shortest paths
+        the list of indices (between 0 and ``len(branches_and_cusps)-1``) of
+        the shortest paths
 
         """
-        for i in range(len(indices)):
-            path = self._train_paths[abs(indices[i])-1]
-            if all(is_smaller_or_equal(path,
-                                       self._train_paths[abs(j)-1])
-                   for j in indices):
+        def get_path(k):
+            num = branches_and_cusps[k]
+            path = self.train_path(BRANCH if k % 2 == 0 else CUSP, num)
+            return path
+
+        for i in range(len(branches_and_cusps)):
+            path = get_path(i)
+            if all(is_smaller_or_equal(path, get_path(j))
+                   for j in range(len(branches_and_cusps))):
                 break
         else:
             raise ValueError("There is no shortest path!")
 
-        ls = [indices(i)]
+        ls = [i]
         for k in range(i+1, len(indices)):
-            if is_equal(path, self._train_paths[abs(indices[k])-1]):
-                ls.append(indices[k])
+            if is_equal(path, get_path(k)):
+                ls.append(k)
         return ls
 
-    def branch_path(self, branch):
-        """Return the train path of the specified branch.
+    def train_path(self, typ, branch_or_cusp):
+        """Return the train path correponding to a branch or cusp.
         """
-        return self._train_paths[abs(branch)-1]
+        a = self._path_index(typ, branch_or_cusp)
+        return self._train_paths[a]
 
-    def cusp_path(self, switch, pos):
-        """Return the path corresponding to the cusp at the specified cusp and
-        position.
-        """
-        idx = self._switch_pos_to_cusp_idx[to_index(switch)][pos]
-        return self._cusp_paths[idx]
+    # def branch_path(self, branch):
+    #     """Return the train path of the specified branch.
+    #     """
+    #     return self._train_paths[abs(branch)-1]
+
+    # def cusp_path(self, switch, pos):
+    #     """Return the path corresponding to the cusp at the specified cusp and
+    #     position.
+    #     """
+    #     idx = self._switch_pos_to_cusp_idx[to_index(switch)][pos]
+    #     return self._cusp_paths[idx]
 
     def end_hb_of_cusp_path(self, switch, pos):
         """Return the ending half-branch of the cusp path at the specified
@@ -490,3 +501,12 @@ class CarryingMap(SageObject):
 
     def teichmuller_polynomial(self):
         pass
+
+
+def merge_lists(a, b):
+    assert(len(a) == len(b) + 1)
+    ls = [a[0]]
+    for i in range(len(b)):
+        ls.append(b[i])
+        ls.append(a[i+1])
+    return ls
