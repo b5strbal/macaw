@@ -125,10 +125,6 @@ class TrainTrack(SageObject):
 
         if len(gluing_list) % 2 == 1:
             raise ValueError("The length of the gluing list must be even.")
-        # for switch in gluing_list:
-        #     if len(switch) == 0:
-        #         raise ValueError("Each list in the gluing list has to"
-        #                          " be non-empty.")
 
         switch_buffer_size = max(switch_buffer_size,
                                  len(gluing_list)/2)
@@ -139,26 +135,23 @@ class TrainTrack(SageObject):
             max(max_num_outgoing_branches,
                 max(len(gluing_list[i]) for i in range(len(gluing_list))))
 
-        # print switch_buffer_size
-        # print branch_buffer_size
-        # print max_valence
-
         self._outgoing_branches = np.zeros((2, switch_buffer_size,
                                             max_outgoing), dtype=np.int)
         self._num_outgoing_branches = np.zeros((2, switch_buffer_size),
                                                dtype=np.int)
         self._branch_endpoint = np.zeros((2, branch_buffer_size),
                                          dtype=np.int)
+        self._adjacent_cusp = np.zeros((2, 2, 2*branch_buffer_size),
+                                       dtype=np.int)
+        # 2*branch_buffer_size is a trivial overestimate here (there is an
+        # injection from the cusps to the half-branches by looking at the
+        # half-branch on the left of the cusp.
 
-        # self._switches = np.zeros(switch_buffer_size, dtype=np.int)
-        # self._branches = np.zeros(branch_buffer_size, dtype=np.int)
         self._num_switches = 0
         self._num_branches = 0
+        self._num_cusps = 0
 
-        # print self._outgoing_branches
-        # print self._num_outgoing_branches
-        # print self._branch_endpoint
-
+        # Initializing the arrays.
         for i in range(len(gluing_list)/2):
             for step in range(2):
                 sgn = 1 if step == 0 else -1
@@ -172,6 +165,16 @@ class TrainTrack(SageObject):
                 self._num_outgoing_branches[step][i] = len(ls)
                 self._outgoing_branches[step][i][:len(ls)] = ls
 
+                # Initializing the cusp array.
+                for i in range(len(ls)-1):
+                    self._num_cusps += 1
+                    nc = self._num_cusps
+                    b1 = ls[i]
+                    self._adjacent_cusp[RIGHT][self._to_index(b1)] = nc
+                    b2 = ls[i+1]
+                    self._adjacent_cusp[LEFT][self._to_index(b2)] = nc
+
+        # Checking that there are no one-sided switches.
         for i in range(len(gluing_list)/2):
             l1 = len(gluing_list[2*i])
             l2 = len(gluing_list[2*i+1])
@@ -182,6 +185,7 @@ class TrainTrack(SageObject):
                 raise ValueError("A switch cannot have a branch only on one"
                                  "side.")
 
+        # Checking that every branch has two endpoints, with opposite signs.
         for i in range(self._branch_endpoint[START].size):
             sw1 = self._branch_endpoint[START, i]
             sw2 = self._branch_endpoint[END, i]
@@ -191,7 +195,9 @@ class TrainTrack(SageObject):
             elif sw1 != 0 or sw2 != 0:
                 raise ValueError("Only one end of the branch %d appears "
                                  "in the gluing list." % i+1)
+
         if measure is not None:
+            # Setting the measure
             if len(measure) != self._num_branches:
                 raise ValueError("The length of the measure list should equal"
                                  " the number of branches.")
@@ -203,14 +209,15 @@ class TrainTrack(SageObject):
                     raise ValueError("The measure should be nonnegative.")
                 self._measure[branches[i]-1] = measure[i]
 
-            # for sw in self.switches():
-            #     sums = [sum([self.branch_measure(b) for b in
-            #                  self.outgoing_branches(sg*sw)])
-            #             for sg in [-1, 1]]
-            #     print sums
-            #     if sums[0] != sums[1]:
-            #         raise ValueError("The switch condition is not satisfied at"
-            #                          " switch " + str(sw))
+            # Checking the switch conditions.
+            for sw in self.switches():
+                sums = [sum([self.branch_measure(b) for b in
+                             self.outgoing_branches(sg*sw)])
+                        for sg in [-1, 1]]
+                # print sums
+                if sums[0] != sums[1]:
+                    raise ValueError("The switch condition is not satisfied at"
+                                     " switch " + str(sw))
         else:
             self._measure = None
 
@@ -680,6 +687,42 @@ class TrainTrack(SageObject):
         """
         return self.num_branches() + self._extra_valence()
 
+    def adjacent_cusp(self, branch, side):
+        """Return the index of the cusp next to a branch.
+
+        INPUT:
+
+        - ``branch`` -- an oriented branch of the train track
+        
+        - ``side`` -- LEFT or RIGHT. The cusp is looked up on the specified
+        side of the starting half-branch of branch.
+
+        EXAMPLES:
+
+        sage: from sage.topology.constants import LEFT, RIGHT
+        sage: tt = TrainTrack([[1, 2], [-1, -2]])
+        sage: tt.adjacent_cusp(1, RIGHT)
+        1
+        sage: tt.adjacent_cusp(2, LEFT)
+        1
+        sage: tt.adjacent_cusp(-1, RIGHT)
+        2
+        sage: tt.adjacent_cusp(-2, LEFT)
+        2
+        sage: tt.adjacent_cusp(1, LEFT)
+        Traceback (most recent call last):
+        ...
+        ValueError: Branch 1 is the left-most or right-most branch. There is no cusp on the specified side of it.
+
+        """
+        orientation = 0 if branch > 0 else 1
+        cusp = self._adjacent_cusp[side, orientation, abs(branch)-1]
+        if cusp == 0:
+            raise ValueError("Branch %d is the left-most or right-most "
+                             "branch. There is no cusp on the "
+                             "specified side of it." % branch)
+        return cusp
+    
     # ----------------------------------------------------------------
     # COPYING
     # ----------------------------------------------------------------
@@ -748,12 +791,12 @@ class TrainTrack(SageObject):
 
         TESTS::
 
-            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [3, 5, 8])
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [8, 3, 5])
             sage: tt._measure
-            array([3, 5, 8], dtype=object)
-            sage: tt._set_measure(3, 16)
+            array([8, 3, 5], dtype=object)
+            sage: tt._set_measure(1, 16)
             sage: tt._measure
-            array([3, 5, 16], dtype=object)
+            array([16, 3, 5], dtype=object)
         """
         self._measure[abs(branch)-1] = new_measure
 
@@ -766,35 +809,42 @@ class TrainTrack(SageObject):
 
         TESTS::
 
-        sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [3, 5, 8])
+        sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [8, 3, 5])
         sage: tt._measure
-        array([3, 5, 8], dtype=object)
+        array([8, 3, 5], dtype=object)
         sage: tt._branch_endpoint
         array([[ 1,  2,  2],
                [-2, -1, -1]])
         sage: tt._allocate_more_branches(5)
         sage: tt._measure
-        array([3, 5, 8, 0, 0, 0, 0, 0], dtype=object)
+        array([8, 3, 5, 0, 0, 0, 0, 0], dtype=object)
         sage: tt._branch_endpoint
         array([[ 1,  2,  2,  0,  0,  0,  0,  0],
                [-2, -1, -1,  0,  0,  0,  0,  0]])
 
 
         """
+        # Increase self._measure
         if self.is_measured():
             ext = np.zeros(k, dtype=self._measure.dtype)
             self._measure = np.concatenate((self._measure, ext), axis=0)
 
+        # Increase self._branch_endpoint
         ext = np.zeros((2, k), dtype=self._branch_endpoint.dtype)
         self._branch_endpoint = np.concatenate(
             (self._branch_endpoint, ext), axis=1)
+
+        # Increase self._adjacent_cusp
+        ext = np.zeros((2, 2, 2*k), dtype=self._adjacent_cusp.dtype)
+        self._adjacent_cusp = np.concatenate(
+            (self._adjacent_cusp, ext), axis=2)
 
     def _allocate_more_switches(self, k=1):
         """Allocate a larger array to accomodate more switches.
 
         TESTS::
 
-            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [3, 5, 8])
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
             sage: tt._num_outgoing_branches
             array([[1, 2],
                    [2, 1]])
@@ -833,7 +883,7 @@ class TrainTrack(SageObject):
 
         TESTS::
 
-            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [3, 5, 8])
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
             sage: tt._outgoing_branches
             array([[[ 1,  0],
                     [ 2,  3]],
@@ -865,7 +915,7 @@ class TrainTrack(SageObject):
 
         TESTS::
 
-            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [3, 5, 8])
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
             sage: tt._switch_buffer_length()
             2
             sage: tt._allocate_more_switches(5)
@@ -881,7 +931,7 @@ class TrainTrack(SageObject):
 
         TESTS::
 
-            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [3, 5, 8])
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
             sage: tt._branch_buffer_length()
             3
             sage: tt._allocate_more_branches(5)
@@ -897,7 +947,7 @@ class TrainTrack(SageObject):
 
         TESTS::
 
-            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [3, 5, 8])
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
             sage: tt._outgoing_branch_buffer_length()
             2
             sage: tt._allocate_more_outgoing_branches(5)
@@ -919,7 +969,7 @@ class TrainTrack(SageObject):
 
         TESTS::
 
-            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [3, 5, 8])
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
             sage: tt._num_outgoing_branches
             array([[1, 2],
                    [2, 1]])
@@ -943,7 +993,7 @@ class TrainTrack(SageObject):
         If there necessary, new space is allocated:
         
             sage: from sage.topology.constants import RIGHT
-            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [3, 5, 8])
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
             sage: tt.insert_branch(2, 2, -4, start_side=RIGHT)
             sage: tt._num_outgoing_branches
             array([[1, 3],
@@ -1354,7 +1404,7 @@ class TrainTrack(SageObject):
 
         EXAMPLES::
 
-            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [3, 5, 8])
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
             sage: tt.change_switch_orientation(-1)
             sage: tt._branch_endpoint
             array([[-1,  2,  2],
@@ -1391,7 +1441,7 @@ class TrainTrack(SageObject):
 
         EXAMPLES::
 
-            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [3, 5, 8])
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [8, 3, 5])
             sage: tt.swap_branch_numbers(2, 3)
             sage: tt._branch_endpoint
             array([[ 1,  2,  2],
@@ -1406,7 +1456,7 @@ class TrainTrack(SageObject):
                    [[-3, -2],
                     [-1,  0]]])
             sage: tt._measure
-            array([3, 8, 5], dtype=object)
+            array([8, 5, 3], dtype=object)
 
         """
         branches = [branch1, -branch1, branch2, -branch2]
