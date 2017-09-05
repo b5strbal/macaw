@@ -166,16 +166,17 @@ class CarryingMap(SageObject):
             self._hb_between_branches[:, :, trimmed[1]]
 
     def add_to_hb_between_branches(self, typ1, add_to_num,
-                                   typ2, added_num):
-        """Add 1 to the count of a branch on the left of a half-branch.
+                                   typ2, added_num, amount):
+        """Add some amount to the count of a branch on the left of a half-branch.
 
         We usually need to call this method after self.append(), since that
         method simply sets the _hb_between_branches of two branches the same,
         but one of them is to the left of the other.
+
         """
         add_to = self._path_index(typ1, add_to_num)
         added = self._path_index(typ2, added_num)
-        self._hb_between_branches[add_to][added[1]] += 1
+        self._hb_between_branches[add_to][added[1]] += amount
 
     @classmethod
     def identity_map(cls, train_track):
@@ -280,15 +281,15 @@ class CarryingMap(SageObject):
         # self._hb_between_branches[to_index(-trim_from_idx)] = ...
         # This is also difficult, since we don't know the half-branch map.
 
-    def outgoing_large_branch(self, small_switch, side):
-        """Return the branch of the large train track where the left- or
-        right-most branch emanates from a switch of the small train track.
+    def first_non_collapsed_branch(self, small_switch, side):
+        """Return the first non-collapsed branch of the small train track going
+        to the left or right.
 
         It is possible, that the left- or right-most outgoing branch from the
-        switch is collapsed, so this branch of the large train track is not
-        immediately well-defined. In this case, we move to the next switch, and
+        switch is collapsed. In this case, we move to the next switch, and
         look at the left- or right-most branch of that. We keep doing this
         until we find branch of the small train track which is not collapsed.
+
         """
         small_tt = self.small_tt()
         sw = small_switch
@@ -298,7 +299,7 @@ class CarryingMap(SageObject):
             hb = self.image_of_half_branch(BRANCH, br)
             if hb != 0:
                 # the branch br is not collapsed
-                return hb
+                return br
             sw = -small_tt.branch_endpoint(br)
 
             # For safety, we make sure that we don't get into an infinite loop.
@@ -341,19 +342,12 @@ class CarryingMap(SageObject):
         # -------------------------------------------------------------
         # Next, we fix the half-branch maps.
 
-        def get_hb_to_set(idx, side):
-            """Find the half-branch of the large train track.
-            """
-            if idx % 2 == 0:
-                # This short path is a branch.
-                br = outgoing_path_numbers[idx]
-                next_sw = br.branch_endpoint(br)
-                return self.outgoing_large_branch(next_sw, side)
-            else:
-                # This short path is a cusp.
-                small_cusp = outgoing_path_numbers[idx]
-                large_cusp = self.image_of_small_cusp(small_cusp)
-                return self._large_tt.branch_next_to_cusp(large_cusp, side)
+        def get_first_non_collapsed(idx, side):
+            assert(idx % 2 == 0)
+            br = outgoing_path_numbers[idx]
+            next_sw = br.branch_endpoint(br)
+            return self.first_non_collapsed_branch(
+                next_sw, side)
 
         def set_hb_in_interval(int_min, int_max, hb_to_set):
             """Set the image half-branch for paths in an interval.
@@ -362,40 +356,92 @@ class CarryingMap(SageObject):
                 num = outgoing_path_numbers[j]
                 self.set_image_of_half_branch(typ(j), num, hb_to_set)
 
-        for i in range(len(min_path_indices)):
+        def update_data(i, side):
             idx = min_path_indices[i]
-            # We look to the left and right for the first short path. We look
-            # only to the right for the rest of them.
-            if i == 0:
-                hb_to_set = get_hb_to_set(idx, LEFT)
-                set_hb_in_interval(0, idx, hb_to_set)
+            num = outgoing_path_numbers[idx]
+            if idx % 2 == 0:
+                # If the short path is a branch, then we need to find
+                # (iteratively) the first left-most branch which is not
+                # collapsed.
+                first_non_collapsed = get_first_non_collapsed(idx, side)
+                hb_to_set = self.image_of_half_branch(first_non_collapsed)
+                start_array = self.get_strands_on_side(first_non_collapsed)
+            else:
+                # If the short path is a cusp, then the strands on the left are
+                # all the strands in the large branch on the left of the cusp
+                # (hb_to_set).
+                small_cusp = outgoing_path_numbers[idx]
+                large_cusp = self.image_of_small_cusp(small_cusp)
+                hb_to_set = self._large_tt.branch_next_to_cusp(large_cusp,
+                                                               side)
 
-            # Now we update between the current short path and the next one.
-            hb_to_set = get_hb_to_set(idx, RIGHT)
-            next_idx = min_path_indices[i+1] if i != len(min_path_indices)-1 \
-                else len(outgoing_path_numbers)
-            set_hb_in_interval(idx+1, next_idx, hb_to_set)
+                # If we are looking to the left, all branches are to the left.
+                start_array = self.get_strands_in_branch(hb_to_set)
 
+            # We update the half-branch map.
+            if side == LEFT:
+                prev_idx = min_path_indices[i-1] if i != 0 else 0
+                set_hb_in_interval(prev_idx, idx, hb_to_set)
+            else:
+                assert(i == len(min_path_indices)-1)
+                set_hb_in_interval(idx+1, len(outgoing_path_numbers),
+                                   hb_to_set)
             # The current short path collapses, to we set the image of the
             # half-branch to zero.
-            self.set_image_of_half_branch(typ(idx), outgoing_path_numbers[idx],
-                                          0)
-        # ------------------------------------------------------------
-        # Now we fix _hb_between_branches on the positive side.
+            self.set_image_of_half_branch(typ(idx), num, 0)
+
+            # We update the _hb_between_branches.
+            if side == LEFT:
+                # Updating from right to left.
+                current_array = start_array
+                for j in range(next_idx-1, idx, -1):
+                    num = outgoing_path_numbers[j]
+                    self.set_strands_on_the_left(typ(j), num, current_array)
+
+                    # We subtract the branch itself from the array.
+                    self.add_to_hb_between_branches(typ(j), num,
+                                                    typ(j), num, -1)
+                    current_array = self.get_strands_on_side(typ(j), num)
+                # Also, it doesn't make sense to count the branches on the left, so
+                # we set it to zero.
+                self.zero_out_strands_on_the_left(typ(idx), num)
+
+            else side == RIGHT:
+                # the paths to the right-most short path need to be updated
+                # from the left to right.
+
+                prev_typ = typ(idx)
+                prev_num = outgoing_path_numbers[idx]
+                if idx % 2 == 0:
+                    prev_array = start_array
+                else:
+                    # At this point the array at index idx should be zero, because
+                    # all calls with side == LEFT have been performed.
+                    prev_array = self.get_strands_on_side(prev_typ, prev_num)
+                    assert(all(prev_array) == 0)
+
+                for j in range(idx+1, len(outgoing_path_numbers)):
+                    num = outgoing_path_numbers[j]
+                    self.set_strands_on_the_left(typ(j), num, prev_array)
+
+                    # Add the previous branch to the the array, unless it is
+                    # the first step and the short path is a cusp.
+                    self.add_to_hb_between_branches(typ(j), num,
+                                                    typ(j-1), num, 1)
+                    current_array = self.get_strands_on_side(typ(j), num)
+
 
         for i in range(len(min_path_indices)):
-            idx = min_path_indices[0]
+            update_data(i, LEFT)
 
-            # First we set it for the short path itself.
-            if idx % 2 == 0:
-                pass
-            else:
-                # For cusps
-                pass
-            
-            if i == 0:
-                pass
-            
+            # We look to the left and right for the first short path. We look
+            # only to the right for the rest of them.
+            # if i == 0:
+            #     first_non_collapsed = get_first_non_collapsed(idx, LEFT)
+            #     hb_to_set = self.image_of_half_branch(first_non_collapsed)
+            #     set_hb_in_interval(0, idx, hb_to_set)
+
+        update_data(len(min_path_indices)-1, RIGHT)
         # ------------------------------------------------------------
 
         self.trim(min_path_typ, -min_path_num,
@@ -550,24 +596,29 @@ class CarryingMap(SageObject):
         """
         return self._cusp_map[small_cusp-1]
 
-    def preimage_of_branch_in_large(self, branch):
-        """Return the preimage of a branch of the large train track.
+    def get_strands_in_branch(self, branch):
+        """Return the 1D array counting the branches and cusp paths in a branch
+        of the large train track.
 
         INPUT:
 
         - ``branch`` -- a branch of the large train track. Its sign does not
-        matter. 
+        matter.
 
         OUTPUT:
 
         a 1D array, containing how many times each branch and cusp path of the
-        small train track maps onto this branch.
+        small train track shows up in this branch.
+
         """
         return self._train_paths[:, abs(branch)-1]
 
     def get_strands_on_side(self, typ, branch_or_cusp, side):
-        """Return the 1D array counting the branches and cusp on the specified
-        side of the branch.
+        """Return the 1D array counting the branches and cusps on the specified
+        side of the branch of the small train track.
+
+        The counting occurs in the branch of the large train track where the
+        branch or cusp goes into.
 
         This makes sense only if the branch of cusp specified is not collapsed.
         If it is not collapsed, then we can consider the first branch of the
@@ -590,11 +641,23 @@ class CarryingMap(SageObject):
 
         # For counting on the right, we count all branches and subtract the
         # branches on the left and the branch or cusp path itself.
-        all_strands = self.preimage_of_branch_in_large(large_hb)
+        all_strands = self.get_strands_in_branch(large_hb)
         right_strands = all_strands - left_strands
         # We also need to take out the branch itself.
         right_strands[a[1]] -= 1
         return right_strands
+
+    def zero_out_strands_on_the_left(self, typ, branch_or_cusp):
+        """Set _hb_between_branches to the zero array for a branch or cusp.
+        """
+        a = self._path_index(typ, branch_or_cusp)
+        self._hb_between_branches[a].fill(0)
+
+    def set_strands_on_the_left(self, typ, branch_or_cusp, new_array):
+        """Set _hb_between_branches to a new array.
+        """
+        a = self._path_index(typ, branch_or_cusp)
+        self._hb_between_branches[a] = new_array
 
     def small_tt(self):
         return self._small_tt

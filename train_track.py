@@ -114,7 +114,7 @@ class TrainTrack(TrainTrack1):
 
         branches = [self.outgoing_branch(-switch, 0, start_side=RIGHT),
                     self.outgoing_branch(switch, 0)]
-        
+
         assert(abs(branches[0]) != abs(branches[1]))
 
         lens = [len(self.outgoing_branches(-switch)),
@@ -186,26 +186,26 @@ class TrainTrack(TrainTrack1):
                 # the cusp path) to the _hb_between_branches array of the
                 # peeled branch.
                 cm.add_to_hb_between_branches(BRANCH, branches[sm_idx],
-                                              BRANCH, -branches[lg_idx])
+                                              BRANCH, -branches[lg_idx], 1)
                 cm.add_to_hb_between_branches(BRANCH, branches[sm_idx],
-                                              CUSP, cusp_to_append_to)
+                                              CUSP, cusp_to_append_to, 1)
                 # We also need to add the latter branch to the
                 # _hb_between_branches array of the cusp_path
                 cm.add_to_hb_between_branches(CUSP, cusp_to_append_to,
-                                              BRANCH, -branches[lg_idx])
+                                              BRANCH, -branches[lg_idx], 1)
             else:
                 # The peeled branch ends up on the left of the branch we
                 # peeled it off. So we need to add the peeled branch (and also
                 # the cusp path) to the
                 # _hb_between_branches array of the other branch.
                 cm.add_to_hb_between_branches(BRANCH, -branches[lg_idx],
-                                              BRANCH, branches[sm_idx])
+                                              BRANCH, branches[sm_idx], 1)
                 cm.add_to_hb_between_branches(BRANCH, -branches[lg_idx],
-                                              CUSP, cusp_to_append_to)
+                                              CUSP, cusp_to_append_to, 1)
                 # We also need to add the peeled branch to the array of the
                 # cusp path.
                 cm.add_to_hb_between_branches(CUSP, cusp_to_append_to,
-                                              BRANCH, branches[sm_idx])
+                                              BRANCH, branches[sm_idx], 10)
 
         for cm in carrying_maps_self_large:
             raise NotImplementedError
@@ -311,7 +311,7 @@ class TrainTrack(TrainTrack1):
         # print -folded_br
         # print(-next_sw)
         # print(side)
-        
+
         self.reglue_endpoint(-folded_br, -next_sw, 0, start_side=side)
         # folded_br = self.outgoing_branches(switch).pop(folded_branch_index)
 
