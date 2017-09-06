@@ -1,20 +1,25 @@
 # Macaw
+
 Sage library for experiments in mapping class groups.
+
+The project is still under construction, but some functionality already
+exists, see below.
 
 ## Installation
 
-One way to get the examples below working is to download this project, run Sage in your terminal from this directory, and run
+Download the project and run
 ```
-sage: %runfile pants_mapping_class.py
+sage setup.py install
 ```
+from the main directory containing the `setup.py` file. For this to work,
+`Sage` needs to be installed.
 
 ## Current functionality
 
-WARNING: The code is in a highly experimental state! Any of these features can change or break any time.
-
-1) Define the Humphries generators on closed surfaces.
+1) Defining the Humphries generators on closed surfaces.
 
 ```
+sage: from macaw import humphries_generators
 sage: A, B, c = humphries_generators(3)  # Humphries generators on the genus 3 surface.
 ```
 
@@ -58,6 +63,7 @@ sage: f = A[0]*B[0]^(-1)
 sage: f.order()
 0
 
+sage: from macaw import hyperelliptic_involution
 sage: g = hyperelliptic_involution(3)  # Hyperelliptic involution on the genus 3 surface.
 sage: g.order()
 2
