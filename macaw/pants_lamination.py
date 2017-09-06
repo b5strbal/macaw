@@ -22,8 +22,8 @@ AUTHORS:
 
 from sage.structure.sage_object import SageObject
 from sage.all import vector, sign, Integer
-from macaw.train_track.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
-from macaw.constants import LEFT, RIGHT
+from .train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
+from .constants import LEFT, RIGHT
 
 
 def a(n):
@@ -46,8 +46,8 @@ class PantsLamination(SageObject):
 
         Specifying the coordinates in a list:
 
-            sage: from sage.topology.pants_decomposition import PantsDecomposition
-            sage: from sage.topology.pants_lamination import PantsLamination
+            sage: from macaw.pants_decomposition import PantsDecomposition
+            sage: from macaw.pants_lamination import PantsLamination
             sage: p = PantsDecomposition([[-1, 1, 2], [-2, 3, -3]])
             sage: lam = PantsLamination(p, [2, -2, 7, 1, 1, 1])
             sage: lam._tt.gluing_list()

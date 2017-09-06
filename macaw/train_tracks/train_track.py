@@ -21,8 +21,8 @@ AUTHORS:
 # *****************************************************************************
 
 
-from macaw.train_track.train_track1 import TrainTrack as TrainTrack1
-from macaw.train_track.train_track0 import DeleteSwitchError
+from .train_track1 import TrainTrack as TrainTrack1
+from .train_track0 import DeleteSwitchError
 from macaw.constants import LEFT, RIGHT, BRANCH, CUSP
 
 
@@ -67,7 +67,8 @@ class TrainTrack(TrainTrack1):
 
         TESTS::
 
-        sage: from sage.topology.constants import LEFT, RIGHT
+        sage: from macaw.constants import LEFT, RIGHT
+        sage: from macaw.train_tracks.train_track import TrainTrack
         sage: tt = TrainTrack([[1, 2, 3], [-1, -2, -3]], [2, 3, 4])
         sage: peeled_side = tt.peel(1, LEFT)
         sage: peeled_side == RIGHT
@@ -222,6 +223,7 @@ class TrainTrack(TrainTrack1):
         In the following examples, we get the same train track back after
         folding, only the measure changes::
 
+            sage: from macaw.train_tracks.train_track import TrainTrack
             sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
             sage: tt.fold(1, 1, 0)
             sage: tt.gluing_list()
@@ -546,26 +548,27 @@ class TrainTrack(TrainTrack1):
 
         EXAMPLES:
 
-        sage: tt = TrainTrack([[1, 2], [-3], [3], [-1, -2]], [3, 5, 8])
-        sage: tt.split(3)
-        sage: tt.gluing_list()
-        [[2], [-1, -3], [1, 3], [-2]]
-        sage: tt.measure()
-        [3, 5, 2]
+            sage: from macaw.train_tracks.train_track import TrainTrack
+            sage: tt = TrainTrack([[1, 2], [-3], [3], [-1, -2]], [3, 5, 8])
+            sage: tt.split(3)
+            sage: tt.gluing_list()
+            [[2], [-1, -3], [1, 3], [-2]]
+            sage: tt.measure()
+            [3, 5, 2]
 
-        sage: tt = TrainTrack([[1, 2], [-3], [3], [-1, -2]], [5, 3, 8])
-        sage: tt.split(3)
-        sage: tt.gluing_list()
-        [[1], [-3, -2], [3, 2], [-1]]
-        sage: tt.measure()
-        [5, 3, 2]
+            sage: tt = TrainTrack([[1, 2], [-3], [3], [-1, -2]], [5, 3, 8])
+            sage: tt.split(3)
+            sage: tt.gluing_list()
+            [[1], [-3, -2], [3, 2], [-1]]
+            sage: tt.measure()
+            [5, 3, 2]
 
-        sage: tt = TrainTrack([[1, 2], [-3], [3], [-1, -2]], [5, 5, 10])
-        sage: tt.split(3)
-        sage: tt.gluing_list()
-        [[], [], [1], [-1]]
-        sage: tt.measure()
-        [5, 0, 0]
+            sage: tt = TrainTrack([[1, 2], [-3], [3], [-1, -2]], [5, 5, 10])
+            sage: tt.split(3)
+            sage: tt.gluing_list()
+            [[], [], [1], [-1]]
+            sage: tt.measure()
+            [5, 0, 0]
 
         AUTHORS:
 
@@ -660,19 +663,20 @@ class TrainTrack(TrainTrack1):
         """
         Folds a small branch of a trivalent train track.
 
-        sage: tt = TrainTrack([[2], [-1, -3], [1, 3], [-2]], [3, 5, 2])
-        sage: tt.fold_trivalent(3)
-        sage: tt.gluing_list()
-        [[1, 2], [-3], [3], [-1, -2]]
-        sage: tt.measure()
-        [3, 5, 8]
+            sage: from macaw.train_tracks.train_track import TrainTrack
+            sage: tt = TrainTrack([[2], [-1, -3], [1, 3], [-2]], [3, 5, 2])
+            sage: tt.fold_trivalent(3)
+            sage: tt.gluing_list()
+            [[1, 2], [-3], [3], [-1, -2]]
+            sage: tt.measure()
+            [3, 5, 8]
 
-        sage: tt = TrainTrack([[1], [-3, -2], [3, 2], [-1]], [5, 3, 2])
-        sage: tt.fold_trivalent(3)
-        sage: tt.gluing_list()
-        [[1, 2], [-3], [3], [-1, -2]]
-        sage: tt.measure()
-        [5, 3, 8]
+            sage: tt = TrainTrack([[1], [-3, -2], [3, 2], [-1]], [5, 3, 2])
+            sage: tt.fold_trivalent(3)
+            sage: tt.gluing_list()
+            [[1, 2], [-3], [3], [-1, -2]]
+            sage: tt.measure()
+            [5, 3, 8]
 
 
         """
@@ -711,12 +715,13 @@ class TrainTrack(TrainTrack1):
 
         Merging branches 2 and 3:
 
-        sage: tt = TrainTrack([[1, 2, 3], [-1, -2, -3]], [2, 3, 4])
-        sage: tt.merge_branches(1, 1)
-        sage: tt.gluing_list()
-        [[1, 2], [-1, -4, -3], [4, 3], [-2]]
-        sage: tt.measure()
-        [2, 7, 4, 3]
+            sage: from macaw.train_tracks.train_track import TrainTrack
+            sage: tt = TrainTrack([[1, 2, 3], [-1, -2, -3]], [2, 3, 4])
+            sage: tt.merge_branches(1, 1)
+            sage: tt.gluing_list()
+            [[1, 2], [-1, -4, -3], [4, 3], [-2]]
+            sage: tt.measure()
+            [2, 7, 4, 3]
 
         """
         b1 = self.outgoing_branch(switch, pos)
@@ -749,6 +754,7 @@ class TrainTrack(TrainTrack1):
 
         TESTS::
 
+            sage: from macaw.train_tracks.train_track import TrainTrack
             sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
             sage: tt.make_trivalent()
             sage: tt.gluing_list()

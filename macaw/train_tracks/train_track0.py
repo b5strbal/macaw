@@ -93,6 +93,7 @@ class TrainTrack(SageObject):
 
     1. A train track on the torus with one switch::
 
+        sage: from macaw.train_tracks.train_track import TrainTrack
         sage: TrainTrack([ [1, 2], [-1, -2] ])
         Train track on the torus with 1 puncture
 
@@ -119,6 +120,7 @@ class TrainTrack(SageObject):
 
         TESTS::
 
+        sage: from macaw.train_tracks.train_track0 import TrainTrack
         sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 8])
 
         """
@@ -166,12 +168,12 @@ class TrainTrack(SageObject):
                 self._outgoing_branches[step][i][:len(ls)] = ls
 
                 # Initializing the cusp array.
-                for i in range(len(ls)-1):
+                for j in range(len(ls)-1):
                     self._num_cusps += 1
                     nc = self._num_cusps
-                    b1 = ls[i]
+                    b1 = ls[j]
                     self._adjacent_cusp[RIGHT][self._to_index(b1)] = nc
-                    b2 = ls[i+1]
+                    b2 = ls[j+1]
                     self._adjacent_cusp[LEFT][self._to_index(b2)] = nc
 
         # Checking that there are no one-sided switches.
@@ -230,10 +232,12 @@ class TrainTrack(SageObject):
 
         EXAMPLES::
 
+        sage: from macaw.train_tracks.train_track0 import TrainTrack
         sage: tt = TrainTrack([ [1, 2], [-2, -1] ])
         sage: tt.branches()
         [1, 2]
 
+        sage: from macaw.train_tracks.train_track0 import TrainTrack
         sage: tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
         ....: [-5], [6, -6] ])
         sage: tt.branches()
@@ -247,6 +251,7 @@ class TrainTrack(SageObject):
 
         EXAMPLES::
 
+        sage: from macaw.train_tracks.train_track import TrainTrack
         sage: tt = TrainTrack([ [1, 2], [-2, -1] ])
         sage: tt.switches()
         [1]
@@ -265,6 +270,7 @@ class TrainTrack(SageObject):
 
         EXAMPLES:
 
+        sage: from macaw.train_tracks.train_track0 import TrainTrack
         sage: tt = TrainTrack([ [1, 3], [-3, -1] ])
         sage: tt.is_branch(3)
         True
@@ -290,6 +296,7 @@ class TrainTrack(SageObject):
 
         EXAMPLES:
 
+        sage: from macaw.train_tracks.train_track0 import TrainTrack
         sage: tt = TrainTrack([[1, 3], [-3, -1]])
         sage: tt.is_switch(1)
         True
@@ -318,6 +325,7 @@ class TrainTrack(SageObject):
 
         EXAMPLES::
 
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
             sage: tt = TrainTrack([[1, 3], [-3, -1]])
             sage: tt.num_branches()
             2
@@ -331,6 +339,7 @@ class TrainTrack(SageObject):
 
         EXAMPLES::
 
+        sage: from macaw.train_tracks.train_track0 import TrainTrack
         sage: tt = TrainTrack([ [1, 2], [-2, -1] ])
         sage: tt.num_switches()
         1
@@ -348,6 +357,7 @@ class TrainTrack(SageObject):
 
         EXAMPLES::
 
+        sage: from macaw.train_tracks.train_track0 import TrainTrack
         sage: TrainTrack._to_index(2)
         (0, 1)
         sage: TrainTrack._to_index(-2)
@@ -378,6 +388,7 @@ class TrainTrack(SageObject):
 
         EXAMPLES::
 
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
             sage: tt = TrainTrack([ [1, 2], [-2, -1] ])
             sage: tt.branch_endpoint(1)
             -1
@@ -405,7 +416,8 @@ class TrainTrack(SageObject):
 
         EXAMPLES::
 
-            sage: from sage.topology.constants import RIGHT
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
+            sage: from macaw.constants import RIGHT
             sage: tt = TrainTrack([[1, 2], [-1, -2]])
             sage: tt.outgoing_branches(1)
             array([1, 2])
@@ -439,7 +451,8 @@ class TrainTrack(SageObject):
 
         EXAMPLES::
 
-            sage: from sage.topology.constants import RIGHT
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
+            sage: from macaw.constants import RIGHT
             sage: tt = TrainTrack([[1, 2], [-1, -2]])
             sage: tt.outgoing_branch(1, 0)
             1
@@ -468,7 +481,8 @@ class TrainTrack(SageObject):
 
         EXAMPLES::
 
-            sage: from sage.topology.constants import RIGHT
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
+            sage: from macaw.constants import RIGHT
             sage: tt = TrainTrack([[1, 2], [-1, -2]])
             sage: tt.outgoing_branch_index(1, 1)
             0
@@ -500,6 +514,7 @@ class TrainTrack(SageObject):
 
         EXAMPLES::
 
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
             sage: tt = TrainTrack([[1, -1], [2], [-2, -3], [5], [6, -6], [-5],
             ....: [4, -4], [3]])
             sage: tt.num_outgoing_branches(3)
@@ -530,6 +545,7 @@ class TrainTrack(SageObject):
 
         EXAMPLES::
 
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
             sage: tt = TrainTrack([[1, 2], [-1, -2]])
             sage: tt.switch_valence(1)
             4
@@ -552,6 +568,7 @@ class TrainTrack(SageObject):
 
         EXAMPLES::
 
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
             sage: tt = TrainTrack([ [1, 2], [-2, -1] ])
             sage: tt.is_trivalent()
             False
@@ -602,6 +619,7 @@ class TrainTrack(SageObject):
 
         EXAMPLES::
 
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
             sage: tt = TrainTrack([[1, 3], [-3, -1]], [3, 5])
             sage: tt.branch_measure(1)
             3
@@ -625,6 +643,7 @@ class TrainTrack(SageObject):
 
         EXAMPLES::
 
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
             sage: tt = TrainTrack([[1, 2], [-2, -1]], [3, 5])
             sage: tt.measure_on_switch(1)
             8
@@ -637,9 +656,10 @@ class TrainTrack(SageObject):
 
         TESTS:
 
-        sage: tt = TrainTrack([[1, 2, 3, 4], [-1, -2, -3, -4]])
-        sage: tt._extra_valence()
-        5
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
+            sage: tt = TrainTrack([[1, 2, 3, 4], [-1, -2, -3, -4]])
+            sage: tt._extra_valence()
+            5
 
         """
         extra_valence = 0
@@ -657,6 +677,7 @@ class TrainTrack(SageObject):
 
         TESTS:
 
+        sage: from macaw.train_tracks.train_track0 import TrainTrack
         sage: tt = TrainTrack([[1, 2], [-1, -2]])
         sage: tt.num_switches_if_made_trivalent()
         2
@@ -676,6 +697,7 @@ class TrainTrack(SageObject):
 
         TESTS:
 
+        sage: from macaw.train_tracks.train_track0 import TrainTrack
         sage: tt = TrainTrack([[1, 2], [-1, -2]])
         sage: tt.num_branches_if_made_trivalent()
         3
@@ -699,20 +721,21 @@ class TrainTrack(SageObject):
 
         EXAMPLES:
 
-        sage: from sage.topology.constants import LEFT, RIGHT
-        sage: tt = TrainTrack([[1, 2], [-1, -2]])
-        sage: tt.adjacent_cusp(1, RIGHT)
-        1
-        sage: tt.adjacent_cusp(2, LEFT)
-        1
-        sage: tt.adjacent_cusp(-1, RIGHT)
-        2
-        sage: tt.adjacent_cusp(-2, LEFT)
-        2
-        sage: tt.adjacent_cusp(1, LEFT)
-        Traceback (most recent call last):
-        ...
-        ValueError: Branch 1 is the left-most or right-most branch. There is no cusp on the specified side of it.
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
+            sage: from macaw.constants import LEFT, RIGHT
+            sage: tt = TrainTrack([[1, 2], [-1, -2]])
+            sage: tt.adjacent_cusp(1, RIGHT)
+            1
+            sage: tt.adjacent_cusp(2, LEFT)
+            1
+            sage: tt.adjacent_cusp(-1, RIGHT)
+            2
+            sage: tt.adjacent_cusp(-2, LEFT)
+            2
+            sage: tt.adjacent_cusp(1, LEFT)
+            Traceback (most recent call last):
+            ...
+            ValueError: Branch 1 is the left-most or right-most branch. There is no cusp on the specified side of it.
 
         """
         orientation = 0 if branch > 0 else 1
@@ -728,15 +751,16 @@ class TrainTrack(SageObject):
 
         EXAMPLES:
 
-        sage: tt = TrainTrack([[1, 2], [-1, -2]])
-        sage: tt.outgoing_cusps(1)
-        [1]
-        sage: tt.outgoing_cusps(-1)
-        [2]
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
+            sage: tt = TrainTrack([[1, 2], [-1, -2]])
+            sage: tt.outgoing_cusps(1)
+            [1]
+            sage: tt.outgoing_cusps(-1)
+            [2]
 
         """
         ls = []
-        for i in range(self.num_outgoing_branches()-1):
+        for i in range(self.num_outgoing_branches(switch)-1):
             br = self.outgoing_branch(switch, i)
             ls.append(self.adjacent_cusp(br, RIGHT))
         return ls
@@ -746,16 +770,17 @@ class TrainTrack(SageObject):
 
         EXAMPLES::
 
-        sage: from sage.topology.constants import LEFT, RIGHT
-        sage: tt = TrainTrack([[1, 2], [-1, -2]])
-        sage: tt.branch_next_to_cusp(1, LEFT)
-        1
-        sage: tt.branch_next_to_cusp(1, RIGHT)
-        2
-        sage: tt.branch_next_to_cusp(2, LEFT)
-        -1
-        sage: tt.branch_next_to_cusp(2, RIGHT)
-        -2
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
+            sage: from macaw.constants import LEFT, RIGHT
+            sage: tt = TrainTrack([[1, 2], [-1, -2]])
+            sage: tt.branch_next_to_cusp(1, LEFT)
+            1
+            sage: tt.branch_next_to_cusp(1, RIGHT)
+            2
+            sage: tt.branch_next_to_cusp(2, LEFT)
+            -1
+            sage: tt.branch_next_to_cusp(2, RIGHT)
+            -2
 
         """
         # TODO: With extra storage, this can be made more efficient if
@@ -781,6 +806,7 @@ class TrainTrack(SageObject):
 
         EXAMPLES::
 
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
             sage: tt = TrainTrack([[1, -1], [2], [-2, 3], [5], [4, -4], [-3],
             ....: [-5], [6, -6]])
             sage: tt.gluing_list()
@@ -814,7 +840,8 @@ class TrainTrack(SageObject):
 
         TESTS::
 
-            sage: from sage.topology.constants import START, END
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
+            sage: from macaw.constants import START, END
             sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
             sage: tt._branch_endpoint[END]
             array([-2, -1, -1])
@@ -840,6 +867,7 @@ class TrainTrack(SageObject):
 
         TESTS::
 
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
             sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [8, 3, 5])
             sage: tt._measure
             array([8, 3, 5], dtype=object)
@@ -858,18 +886,19 @@ class TrainTrack(SageObject):
 
         TESTS::
 
-        sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [8, 3, 5])
-        sage: tt._measure
-        array([8, 3, 5], dtype=object)
-        sage: tt._branch_endpoint
-        array([[ 1,  2,  2],
-               [-2, -1, -1]])
-        sage: tt._allocate_more_branches(5)
-        sage: tt._measure
-        array([8, 3, 5, 0, 0, 0, 0, 0], dtype=object)
-        sage: tt._branch_endpoint
-        array([[ 1,  2,  2,  0,  0,  0,  0,  0],
-               [-2, -1, -1,  0,  0,  0,  0,  0]])
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
+            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [8, 3, 5])
+            sage: tt._measure
+            array([8, 3, 5], dtype=object)
+            sage: tt._branch_endpoint
+            array([[ 1,  2,  2],
+                   [-2, -1, -1]])
+            sage: tt._allocate_more_branches(5)
+            sage: tt._measure
+            array([8, 3, 5, 0, 0, 0, 0, 0], dtype=object)
+            sage: tt._branch_endpoint
+            array([[ 1,  2,  2,  0,  0,  0,  0,  0],
+                   [-2, -1, -1,  0,  0,  0,  0,  0]])
 
 
         """
@@ -893,6 +922,7 @@ class TrainTrack(SageObject):
 
         TESTS::
 
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
             sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
             sage: tt._num_outgoing_branches
             array([[1, 2],
@@ -932,6 +962,7 @@ class TrainTrack(SageObject):
 
         TESTS::
 
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
             sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
             sage: tt._outgoing_branches
             array([[[ 1,  0],
@@ -964,6 +995,7 @@ class TrainTrack(SageObject):
 
         TESTS::
 
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
             sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
             sage: tt._switch_buffer_length()
             2
@@ -980,6 +1012,7 @@ class TrainTrack(SageObject):
 
         TESTS::
 
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
             sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
             sage: tt._branch_buffer_length()
             3
@@ -996,6 +1029,7 @@ class TrainTrack(SageObject):
 
         TESTS::
 
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
             sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
             sage: tt._outgoing_branch_buffer_length()
             2
@@ -1018,6 +1052,7 @@ class TrainTrack(SageObject):
 
         TESTS::
 
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
             sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
             sage: tt._num_outgoing_branches
             array([[1, 2],
@@ -1041,7 +1076,7 @@ class TrainTrack(SageObject):
 
         If there necessary, new space is allocated:
 
-            sage: from sage.topology.constants import RIGHT
+            sage: from macaw.constants import RIGHT
             sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
             sage: tt.insert_branch(2, 2, -4, start_side=RIGHT)
             sage: tt._num_outgoing_branches
@@ -1096,6 +1131,7 @@ class TrainTrack(SageObject):
 
         TESTS::
 
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
             sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
             sage: tt._switch_buffer_length()
             2
@@ -1138,6 +1174,7 @@ class TrainTrack(SageObject):
 
         TESTS::
 
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
             sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
             sage: tt._branch_buffer_length()
             3
@@ -1185,6 +1222,7 @@ class TrainTrack(SageObject):
 
         TESTS::
 
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
             sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
             sage: tt.create_branch(1, 0, 1, 1)
             4
@@ -1220,6 +1258,7 @@ class TrainTrack(SageObject):
 
         TESTS::
 
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
             sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
             sage: new_switch = tt.add_switch_on_branch(1)
             sage: new_switch
@@ -1266,6 +1305,7 @@ class TrainTrack(SageObject):
 
         TESTS:
 
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
             sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
             sage: tt._pop_outgoing_branch(-1, 1)
             sage: tt._num_outgoing_branches
@@ -1313,6 +1353,7 @@ class TrainTrack(SageObject):
 
         TESTS::
 
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
             sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
             sage: tt._delete_branch(-2)
             sage: tt._branch_endpoint
@@ -1356,20 +1397,21 @@ class TrainTrack(SageObject):
 
         EXAMPLES::
 
-        sage: tt = TrainTrack([[1, 2], [-1, -3], [-2], [3]])
-        sage: tt.delete_switch(-2)
-        sage: tt._outgoing_branches
-        array([[[ 1,  3],
-                [ 0,  0]],
-        <BLANKLINE>
-               [[-1, -3],
-                [ 0,  0]]])
-        sage: tt._num_outgoing_branches
-        array([[2, 0],
-               [2, 0]])
-        sage: tt._branch_endpoint
-        array([[ 1,  0,  1],
-               [-1,  0, -1]])
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
+            sage: tt = TrainTrack([[1, 2], [-1, -3], [-2], [3]])
+            sage: tt.delete_switch(-2)
+            sage: tt._outgoing_branches
+            array([[[ 1,  3],
+                    [ 0,  0]],
+            <BLANKLINE>
+                   [[-1, -3],
+                    [ 0,  0]]])
+            sage: tt._num_outgoing_branches
+            array([[2, 0],
+                   [2, 0]])
+            sage: tt._branch_endpoint
+            array([[ 1,  0,  1],
+                   [-1,  0, -1]])
 
         """
         if self.switch_valence(switch) != 2:
@@ -1415,7 +1457,8 @@ class TrainTrack(SageObject):
 
         TESTS::
 
-            sage: from sage.topology.constants import RIGHT
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
+            sage: from macaw.constants import RIGHT
             sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
             sage: tt.reglue_endpoint(3, -2, 1, start_side=RIGHT)
             sage: tt._branch_endpoint
@@ -1453,6 +1496,7 @@ class TrainTrack(SageObject):
 
         EXAMPLES::
 
+            sage: from macaw.train_tracks.train_track0 import TrainTrack
             sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
             sage: tt.change_switch_orientation(-1)
             sage: tt._branch_endpoint
@@ -1490,6 +1534,7 @@ class TrainTrack(SageObject):
 
         EXAMPLES::
 
+            sage: from macaw.train_tracks.train_track import TrainTrack
             sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [8, 3, 5])
             sage: tt.swap_branch_numbers(2, 3)
             sage: tt._branch_endpoint

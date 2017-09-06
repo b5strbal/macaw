@@ -1,3 +1,2 @@
-import all
-
-__all__ = ["all"]
+from train_tracks.all import *
+from .all import *

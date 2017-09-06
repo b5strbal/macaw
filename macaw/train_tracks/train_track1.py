@@ -23,7 +23,7 @@ EXAMPLES::
 #                  http://www.gnu.org/licenses/
 # *****************************************************************************
 
-from macaw.train_track.train_track0 import TrainTrack as TrainTrack0
+from .train_track0 import TrainTrack as TrainTrack0
 from macaw.surface import Surface
 from sage.graphs.graph import Graph
 from sage.graphs.digraph import DiGraph
@@ -36,6 +36,7 @@ class TrainTrack(TrainTrack0):
 
         EXAMPLES::
 
+        sage: from macaw.train_tracks.train_track1 import TrainTrack
         sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
         sage: tt._repr_()
         'Train track on the torus with 1 puncture'
@@ -76,6 +77,7 @@ class TrainTrack(TrainTrack0):
 
         EXAMPLES::
 
+            sage: from macaw.train_tracks.train_track1 import TrainTrack
             sage: tt = TrainTrack([ [1, 2], [-1, -2] ])
             sage: G = tt._get_puncturefinder_graph()
             sage: set(G.neighbors(1)) == {2, -2}
@@ -127,6 +129,8 @@ class TrainTrack(TrainTrack0):
         Return number of complementary regions of train track.
 
         EXAMPLES::
+
+        sage: from macaw.train_tracks.train_track1 import TrainTrack
         sage: tt = TrainTrack([[-2, 1], [2, -1]])
         sage: tt.num_complementary_regions()
         1
@@ -147,6 +151,7 @@ class TrainTrack(TrainTrack0):
 
         EXAMPLES::
 
+            sage: from macaw.train_tracks.train_track1 import TrainTrack
             sage: tt = TrainTrack([ [1, 2], [-1, -2] ])
             sage: c = tt.complementary_regions()
             sage: len(c)
@@ -177,6 +182,7 @@ class TrainTrack(TrainTrack0):
 
         EXAMPLES::
 
+            sage: from macaw.train_tracks.train_track1 import TrainTrack
             sage: tt = TrainTrack([ [1, 2], [-1, -2] ])
             sage: tt.regular_neighborhood()
             Torus with 1 puncture
@@ -205,6 +211,7 @@ class TrainTrack(TrainTrack0):
 
         EXAMPLES::
 
+            sage: from macaw.train_tracks.train_track1 import TrainTrack
             sage: tt = TrainTrack([[1, -1], [-2, 2]])
             sage: tt.num_cusps_of_regions()
             [0, 1, 1]
@@ -235,6 +242,7 @@ class TrainTrack(TrainTrack0):
 
         EXAMPLES:
 
+            sage: from macaw.train_tracks.train_track1 import TrainTrack
             sage: tt = TrainTrack([ [1, -1], [2, -2] ])
             sage: G = tt._get_recurrence_graph()
             sage: G.edges()
@@ -301,6 +309,7 @@ class TrainTrack(TrainTrack0):
 
         EXAMPLES::
 
+            sage: from macaw.train_tracks.train_track1 import TrainTrack
             sage: tt = TrainTrack([ [1, 2], [-1, -2] ])
             sage: tt.is_recurrent()
             True

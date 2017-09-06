@@ -20,9 +20,9 @@ AUTHORS:
 # *****************************************************************************
 
 
-from macaw.train_track.train_track import TrainTrack, FoldError
+from macaw.train_tracks.train_track import TrainTrack, FoldError
 from macaw.constants import LEFT, RIGHT
-from macaw.train_track.dehn_thurston.branch_map import BranchMap
+from .branch_map import BranchMap
 
 UP = 0
 TWO_SIDED = 1
@@ -68,7 +68,7 @@ class DehnThurstonTT(TrainTrack):
 
         TESTS:
 
-            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
+            sage: from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
             sage: tt = DehnThurstonTT([[8, 6, 5], [-8, 2, -6], [-5, -2, 4],
             ....: [-1, -3, -4], [3, 9, 7], [-9, 1, -7]])
             sage: tt.get_turning(1)
@@ -102,7 +102,7 @@ class DehnThurstonTT(TrainTrack):
         """
         TESTS:
 
-            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
+            sage: from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
             sage: tt = DehnThurstonTT([[10, 6, 5], [-10, 4, -6], [-5, -4, 2],
             ....: [-8, -7, -2], [7, 9, 13], [-9, 8, -13]])
             sage: tt.pants_branch_on_switch(1)
@@ -130,7 +130,7 @@ class DehnThurstonTT(TrainTrack):
 
         TESTS:
 
-            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
+            sage: from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
             sage: tt = DehnThurstonTT([[8, 6, 5], [-8, 2, -6], [-5, -2, 4],
             ....: [-1, -3, -4], [3, 9, 7], [-9, 1, -7]])
             sage: tt.elem_move_type(1)
@@ -183,7 +183,7 @@ class DehnThurstonTT(TrainTrack):
 
         We only twist in the good direction::
 
-            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
+            sage: from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
             sage: tt = DehnThurstonTT([[4, 1], [6, -1], [-2, -6, 7, -4, -7],
             ....: [2, 9, -5, 8, 5], [-8, 3], [-9, -3]], [1, 2, 8, 11, 7, 11, 5,
             ....: 9, 9])
@@ -222,7 +222,7 @@ class DehnThurstonTT(TrainTrack):
         left but more bad twist on the right. Now the unzip goes across and the
         orientation of the switch changes.
 
-            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
+            sage: from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
             sage: tt = DehnThurstonTT([[4, 1], [6, -1], [-6, 7, -4, -7, -2],
             ....: [9, -5, 8, 5, 2], [-8, 3], [-9, -3]], [1, 2, 8, 11, 7, 11,
             ....: 5, 9, 9])
@@ -235,7 +235,7 @@ class DehnThurstonTT(TrainTrack):
         The next one is a right-turning train track which has a bad twist on
         both sides. The unzips also go across.
 
-            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
+            sage: from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
             sage: tt = DehnThurstonTT([[4, 1], [6, -1], [-6, 7, -4, -7, -2],
             ....: [9, -5, 8, 5, 2], [-8, 3], [-9, -3]], [1, 2, 8, 11, 7, 11,
             ....: 5, 9, 9])
@@ -374,7 +374,7 @@ class DehnThurstonTT(TrainTrack):
 
         Twisting in the good direction:
 
-            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
+            sage: from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
             sage: tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4,
             ....: -2, 3, 9, -3], [-8, -5], [-6, 5]], [1, 2, 8, 8, 14, 6, 4, 6,
             ....: 2])
@@ -386,7 +386,7 @@ class DehnThurstonTT(TrainTrack):
 
         Twisting in the bad direction, train track remains left-turning:
 
-            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
+            sage: from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
             sage: tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4,
             ....: -2, 3, 9, -3], [-8, -5], [-6, 5]], [1, 2, 8, 100, 14, 6, 4,
             ....: 6, 2])
@@ -399,7 +399,7 @@ class DehnThurstonTT(TrainTrack):
 
         Twisting in the bad direction, train track becomes right-turning:
 
-            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
+            sage: from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
             sage: tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4,
             ....: -2, 3, 9, -3], [-8, -5], [-6, 5]], [1, 2, 8, 1, 14, 6, 4,
             ....: 6, 2])
@@ -463,7 +463,7 @@ class DehnThurstonTT(TrainTrack):
         boundary of the torus. At switch 3, unzipping goes into the pants
         curves, at switch 1 it goes across.
 
-            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
+            sage: from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
             sage: tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4,
             ....: -2, 3, 9, -3], [-8, -5], [-6, 5]], [1, 2, 8, 1, 14, 6, 4,
             ....: 6, 2])
@@ -678,7 +678,7 @@ class DehnThurstonTT(TrainTrack):
 
         TESTS:
 
-            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
+            sage: from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
             sage: tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2],
             ....: [-8, -7, -2], [7, 9, 3], [-9, 8, -3]])
             sage: d = tt.standardize_neighboring_branches(2)
@@ -806,7 +806,7 @@ class DehnThurstonTT(TrainTrack):
 
         A right-turning example and its inverse which is left-turning:
 
-            sage: from sage.topology.dehn_thurston_tt import DehnThurstonTT
+            sage: from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
             sage: tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2],
             ....: [-8, -7, -2], [7, 9, 3], [-9, 8, -3]], [100, 20, 30, 7, 7, 4,
             ....: 7, 7, 1])

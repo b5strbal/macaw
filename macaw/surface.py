@@ -46,6 +46,7 @@ class Surface(SageObject):
 
     #. Specifying the genus and the number of punctures::
 
+        sage: from macaw.surface import Surface
         sage: Surface(3, 1)
         Surface of genus 3 with 1 puncture
         sage: Surface(2, 2, False)
@@ -72,6 +73,7 @@ class Surface(SageObject):
         """
         TESTS::
 
+            sage: from macaw.surface import Surface
             sage: Surface()
             Traceback (most recent call last):
             ...
@@ -152,12 +154,14 @@ class Surface(SageObject):
 
         EXAMPLES::
 
-        sage: S = Surface(2)
-        sage: S._repr_()
-        'Closed surface of genus 2'
+            sage: from macaw.surface import Surface
+            sage: S = Surface(2)
+            sage: S._repr_()
+            'Closed surface of genus 2'
 
         TESTS::
 
+            sage: from macaw.surface import Surface
             sage: Surface(0)
             Sphere
 
@@ -239,6 +243,7 @@ class Surface(SageObject):
 
         EXAMPLES::
 
+            sage: from macaw.surface import Surface
             sage: S = Surface(0)
             sage: S.is_orientable()
             True
@@ -256,6 +261,7 @@ class Surface(SageObject):
 
         EXAMPLES::
 
+            sage: from macaw.surface import Surface
             sage: S = Surface(0, 0)
             sage: S.num_punctures()
             0
@@ -272,6 +278,7 @@ class Surface(SageObject):
 
         EXAMPLES::
 
+            sage: from macaw.surface import Surface
             sage: S = Surface(5)
             sage: S.genus()
             5
@@ -295,6 +302,7 @@ class Surface(SageObject):
 
         EXAMPLES::
 
+            sage: from macaw.surface import Surface
             sage: S = Surface(0, 0)
             sage: S.euler_char()
             2
@@ -318,6 +326,7 @@ class Surface(SageObject):
 
         TESTS::
 
+            sage: from macaw.surface import Surface
             sage: Surface(2).homology_dimension()
             4
 
@@ -366,6 +375,7 @@ class Surface(SageObject):
 
         EXAMPLES::
 
+            sage: from macaw.surface import Surface
             sage: Surface(0,4).teich_space_dim()
             2
             sage: Surface(1).teich_space_dim()

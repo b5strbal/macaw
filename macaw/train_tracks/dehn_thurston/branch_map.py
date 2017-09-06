@@ -47,7 +47,7 @@ class BranchMap(SageObject):
         """
         EXAMPLES:
 
-        sage: from sage.topology.dehn_thurston_tt import BranchMap
+        sage: from macaw.train_tracks.dehn_thurston.branch_map import BranchMap
         sage: bm = BranchMap([2, -4, 5, -6, 1])
         sage: bm._branch_map[4]
         [4]
@@ -62,7 +62,7 @@ class BranchMap(SageObject):
         """
         EXAMPLES:
 
-        sage: from sage.topology.dehn_thurston_tt import BranchMap
+        sage: from macaw.train_tracks.dehn_thurston.branch_map import BranchMap
         sage: bm = BranchMap([2, -4, 5, -6, 1])
         sage: bm.branch_list(4)
         [4]
@@ -82,7 +82,7 @@ class BranchMap(SageObject):
         """
         EXAMPLES:
 
-        sage: from sage.topology.dehn_thurston_tt import BranchMap
+        sage: from macaw.train_tracks.dehn_thurston.branch_map import BranchMap
         sage: bm = BranchMap([2, -4, 5, -6, 1])
         sage: bm.append(2, -4)
         sage: bm.branch_list(2)

@@ -25,8 +25,8 @@ from sage.structure.sage_object import SageObject
 from macaw.constants import LEFT, RIGHT, START, END
 from sage.all import vector
 import numpy as np
-from macaw.train_track.train_track import SMALL_COLLAPSIBLE
-from macaw.train_track.train_track0 import TrainTrack
+from .train_track import SMALL_COLLAPSIBLE
+from .train_track0 import TrainTrack
 
 # TODO: make this an inline function in Cython.
 to_index = TrainTrack._to_index
@@ -138,8 +138,8 @@ class CarryingMap(SageObject):
         """
         append_to = self._path_index(typ1, -append_to_num)
         appended = self._path_index(typ2, -appended_path_num)
-        self.train_path(typ1, append_to_num) += \
-            self.train_path(typ2, appended_path_num)
+        path = self.train_path(typ1, append_to_num)
+        path += self.train_path(typ2, appended_path_num)
 
         large_hb = self.image_of_half_branch(typ2, -appended_path_num)
         self.set_image_of_half_branch(typ1, -append_to_num, large_hb)
@@ -158,8 +158,8 @@ class CarryingMap(SageObject):
         """
         trim_from = self._path_index(typ1, -trim_from_num)
         trimmed = self._path_index(typ2, -trimmed_path_num)
-        self.train_path(typ1, trim_from_num) -= \
-            self.train_path(typ2, trimmed_path_num)
+        path = self.train_path(typ1, trim_from_num)
+        path -= self.train_path(typ2, trimmed_path_num)
         # self._half_branch_map is difficult to update. We have to do it
         # elsewhere.
         self._hb_between_branches[:, :, trim_from[1]] -= \
@@ -406,7 +406,7 @@ class CarryingMap(SageObject):
                 # we set it to zero.
                 self.zero_out_strands_on_the_left(typ(idx), num)
 
-            else side == RIGHT:
+            elif side == RIGHT:
                 # the paths to the right-most short path need to be updated
                 # from the left to right.
 
@@ -507,7 +507,8 @@ class CarryingMap(SageObject):
 
             self._train_paths[abs(b_left)-1] -= shortest_path
             self._train_paths[abs(b_right)-1] -= shortest_path
-            self.cusp_path(switch, 0) -= shortest_path
+            path = self.cusp_path(switch, 0)
+            path -= shortest_path
             self._train_paths[abs(neg_branch)-1] += shortest_path
 
             end_hb = self.end_hb_of_cusp_path(switch, 0)
@@ -526,6 +527,7 @@ class CarryingMap(SageObject):
                 # the isotopy goes all the way to the cusp of the large train
                 # track. So the values of the new half-branch maps are the two
                 # half-branches next to that cusp of the large branch.
+                pass
             self._half_branch_map[to_index(b_left)]
 
             if isotopy_side == LEFT and cusp_path == branch_path_left or\

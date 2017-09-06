@@ -205,6 +205,7 @@ class PantsMappingClass(MappingClass):
         """
         TESTS::
 
+            sage: from macaw.pants_mapping_class import humphries_generators
             sage: A, B, c = humphries_generators(2)
             sage: A[0]*A[1] == A[1]*A[0]
             True
@@ -256,6 +257,7 @@ class PantsMappingClass(MappingClass):
         """
         TESTS::
 
+        sage: from macaw.pants_mapping_class import humphries_generators
         sage: A, B, c = humphries_generators(2)
         sage: f = A[0]*B[0]^(-1)
         sage: n(f.stretch_factor(), digits=4)
@@ -304,6 +306,7 @@ class PantsMappingClass(MappingClass):
 
         EXAMPLES:
 
+            sage: from macaw.pants_mapping_class import hyperelliptic_involution
             sage: f = hyperelliptic_involution(2)
             sage: f.is_in_torelli()
             False
@@ -320,11 +323,14 @@ class PantsMappingClass(MappingClass):
 
         TESTS::
 
+        sage: from macaw.pants_mapping_class import humphries_generators
         sage: A, B, c = humphries_generators(4)
         sage: A[0].order()
         0
         sage: (A[0]*B[0]^(-1)).order()
         0
+
+        sage: from macaw.pants_mapping_class import hyperelliptic_involution
         sage: g = hyperelliptic_involution(3)
         sage: g.order()
         2
@@ -450,17 +456,18 @@ def hyperelliptic_involution(genus):
 
     TESTS::
 
-    sage: g = hyperelliptic_involution(3)
-    sage: g.order()
-    2
-    sage: g.action_on_homology() == -matrix.identity(6)
-    True
+        sage: from macaw.pants_mapping_class import hyperelliptic_involution
+        sage: g = hyperelliptic_involution(3)
+        sage: g.order()
+        2
+        sage: g.action_on_homology() == -matrix.identity(6)
+        True
 
-    sage: g = hyperelliptic_involution(4)
-    sage: g.order()
-    2
-    sage: g.action_on_homology() == -matrix.identity(8)
-    True
+        sage: g = hyperelliptic_involution(4)
+        sage: g.order()
+        2
+        sage: g.action_on_homology() == -matrix.identity(8)
+        True
 
     """
     g = genus
@@ -484,7 +491,7 @@ def hyperelliptic_involution(genus):
 A, B, c = humphries_generators(2)
 f = A[0]*A[1]*B[0]*B[1]
 p = f._pants_decomposition
-lam = PantsLamination.from_pants_curve(p, 1)
+# lam = PantsLamination.from_pants_curve(p, 1)
 # f.nielsen_thurston_type()
 
 
