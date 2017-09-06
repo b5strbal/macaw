@@ -21,9 +21,9 @@ AUTHORS:
 # *****************************************************************************
 
 
-from train_track1 import TrainTrack as TrainTrack1
-from train_track0 import DeleteSwitchError
-from constants import LEFT, RIGHT, BRANCH, CUSP
+from macaw.train_track.train_track1 import TrainTrack as TrainTrack1
+from macaw.train_track.train_track0 import DeleteSwitchError
+from macaw.constants import LEFT, RIGHT, BRANCH, CUSP
 
 
 LARGE = 0

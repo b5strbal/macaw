@@ -22,8 +22,8 @@ AUTHORS:
 
 from sage.structure.sage_object import SageObject
 from sage.all import vector, sign, Integer
-from dehn_thurston_tt import DehnThurstonTT
-from constants import LEFT, RIGHT
+from macaw.train_track.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
+from macaw.constants import LEFT, RIGHT
 
 
 def a(n):

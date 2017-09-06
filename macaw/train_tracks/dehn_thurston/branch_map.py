@@ -19,7 +19,7 @@ AUTHORS:
 # *****************************************************************************
 
 
-from constants import LEFT, RIGHT
+from macaw.constants import LEFT, RIGHT
 from sage.structure.sage_object import SageObject
 from sage.all import sign
 

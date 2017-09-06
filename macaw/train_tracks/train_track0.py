@@ -25,7 +25,7 @@ EXAMPLES::
 
 
 from sage.structure.sage_object import SageObject
-from constants import LEFT, RIGHT, START, END
+from macaw.constants import LEFT, RIGHT, START, END
 import numpy as np
 
 
@@ -693,7 +693,7 @@ class TrainTrack(SageObject):
         INPUT:
 
         - ``branch`` -- an oriented branch of the train track
-        
+
         - ``side`` -- LEFT or RIGHT. The cusp is looked up on the specified
         side of the starting half-branch of branch.
 
@@ -926,7 +926,7 @@ class TrainTrack(SageObject):
         num_ob = self._num_outgoing_branches
         ext = np.zeros((2, k), dtype=num_ob.dtype)
         self._num_outgoing_branches = np.concatenate((num_ob, ext), axis=1)
-        
+
     def _allocate_more_outgoing_branches(self, k=1):
         """Allocate a larger array to accomodate more outgoing branches.
 
@@ -957,7 +957,7 @@ class TrainTrack(SageObject):
         ob = self._outgoing_branches
         ext = np.zeros((2, ob.shape[1], k), dtype=ob.dtype)
         self._outgoing_branches = np.concatenate((ob, ext), axis=2)
-        
+
     def _switch_buffer_length(self):
         """Return the maximum number of switches the current allocation can
         handle.
@@ -1040,7 +1040,7 @@ class TrainTrack(SageObject):
                     [ 5, -1]]])
 
         If there necessary, new space is allocated:
-        
+
             sage: from sage.topology.constants import RIGHT
             sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
             sage: tt.insert_branch(2, 2, -4, start_side=RIGHT)
@@ -1388,7 +1388,7 @@ class TrainTrack(SageObject):
             # and pos_branch
             cm._carrying_data.isotope_switch_into_branch(
                 -switch, neg_branch)
-        
+
         self._delete_branch(
             neg_branch,
             carrying_maps_self_large=carrying_maps_self_large,
@@ -1399,7 +1399,7 @@ class TrainTrack(SageObject):
 
         for cm in carrying_maps_self_large:
             raise NotImplementedError
-        
+
     # ------------------------------
     # MODIFYING THE TRAIN TRACK
     # ------------------------------
@@ -1415,7 +1415,7 @@ class TrainTrack(SageObject):
 
         TESTS::
 
-            sage: from sage.topology.constants import RIGHT        
+            sage: from sage.topology.constants import RIGHT
             sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
             sage: tt.reglue_endpoint(3, -2, 1, start_side=RIGHT)
             sage: tt._branch_endpoint
@@ -1627,4 +1627,4 @@ class TrainTrack(SageObject):
     #                         (end1, -branch2)]:
     #         self._set_endpoint(-new_br, sw)
     #         index = indices.pop()
-    #         self.outgoing_branches(sw)[index] = new_br 
+    #         self.outgoing_branches(sw)[index] = new_br

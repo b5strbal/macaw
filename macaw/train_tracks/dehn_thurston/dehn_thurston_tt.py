@@ -20,9 +20,9 @@ AUTHORS:
 # *****************************************************************************
 
 
-from train_track import TrainTrack, FoldError
-from constants import LEFT, RIGHT
-from branch_map import BranchMap
+from macaw.train_track.train_track import TrainTrack, FoldError
+from macaw.constants import LEFT, RIGHT
+from macaw.train_track.dehn_thurston.branch_map import BranchMap
 
 UP = 0
 TWO_SIDED = 1
@@ -672,7 +672,7 @@ class DehnThurstonTT(TrainTrack):
     # --------------------------------------
     # SECOND MOVE
     # --------------------------------------
-    
+
     def standardize_neighboring_branches(self, switch):
         """
 

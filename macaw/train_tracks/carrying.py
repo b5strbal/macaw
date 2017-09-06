@@ -22,11 +22,11 @@ AUTHORS:
 
 # from train_track import TrainTrack
 from sage.structure.sage_object import SageObject
-from constants import LEFT, RIGHT, START, END
+from macaw.constants import LEFT, RIGHT, START, END
 from sage.all import vector
 import numpy as np
-from train_track import SMALL_COLLAPSIBLE
-from train_track0 import TrainTrack
+from macaw.train_track.train_track import SMALL_COLLAPSIBLE
+from macaw.train_track.train_track0 import TrainTrack
 
 # TODO: make this an inline function in Cython.
 to_index = TrainTrack._to_index

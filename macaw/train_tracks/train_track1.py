@@ -23,8 +23,8 @@ EXAMPLES::
 #                  http://www.gnu.org/licenses/
 # *****************************************************************************
 
-from train_track0 import TrainTrack as TrainTrack0
-from surface import Surface
+from macaw.train_track.train_track0 import TrainTrack as TrainTrack0
+from macaw.surface import Surface
 from sage.graphs.graph import Graph
 from sage.graphs.digraph import DiGraph
 
@@ -43,7 +43,7 @@ class TrainTrack(TrainTrack0):
         """
         s = self.regular_neighborhood()
         return 'Train track on the ' + repr(s).lower()
-    
+
     def is_connected(self):
         pass
 
