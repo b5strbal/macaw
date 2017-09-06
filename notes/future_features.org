@@ -1,0 +1,8 @@
+- website for the code (Mathbook, Tom Trotter)
+- pictures
+- pure braid group, braid group,
+- torelli group generators (Johnson’s - nice naming system, Putman’s)
+- action on homology in general
+- Ahara: How draw a simple closed curve on a Riemann surface.
+- Teruaki, game: start curve, goal curve, apply Humpries generators.
+- Maybe using mathbox to draw surfaces?

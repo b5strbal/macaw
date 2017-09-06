@@ -1,0 +1,103 @@
+381661 function calls (381296 primitive calls) in 0.385 seconds
+
+   Ordered by: internal time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+      364    0.045    0.000    0.309    0.001 pants_lamination.py:350(apply_
+elementary_move)
+     1242    0.035    0.000    0.087    0.000 pants_lamination.py:47(from_m_i)
+     2462    0.026    0.000    0.029    0.000 matrix_space.py:1317(matrix)
+    28947    0.022    0.000    0.032    0.000 pants_decomposition.py:297(is_inner)
+     1242    0.015    0.000    0.045    0.000 pants_lamination.py:38(__init__)
+      364    0.014    0.000    0.037    0.000 generic_graph.py:1298(networkx_graph)
+      364    0.010    0.000    0.017    0.000 generic_graph.py:2476(has_multiple_edges)
+     6552    0.010    0.000    0.011    0.000 graph.py:733(add_edge)
+      364    0.010    0.000    0.013    0.000 cycles.py:27(cycle_basis)
+      364    0.009    0.000    0.043    0.000 graph.py:912(__init__)
+       9649    0.009    0.000    0.061    0.000 pants_decomposition.py:281(inner_pants_curves)
+     9649    0.008    0.000    0.041    0.000 {filter}
+      621    0.008    0.000    0.124    0.000 pants_lamination.py:121(_compute_l)
+      364    0.008    0.000    0.138    0.000 pants_decomposition.py:74(__init__)
+    32747    0.008    0.000    0.008    0.000 pants_decomposition.py:189(adjacent_pants)
+     9716    0.008    0.000    0.008    0.000 {max}
+    21602    0.008    0.000    0.008    0.000 {range}
+     2462    0.007    0.000    0.007    0.000 matrix_space.py:145(__classcall__)
+    11127    0.007    0.000    0.013    0.000 pants_decomposition.py:263(pants_curves)
+      621    0.007    0.000    0.140    0.000 pants_lamination.py:97(__init__)
+    79339    0.006    0.000    0.006    0.000 {len}
+     3276    0.005    0.000    0.005    0.000 {method 'add_edge' of
+      'sage.graphs.base.sparse_graph.SparseGraphBackend' objects}
+          3726    0.004    0.000    0.027    0.000 pants_lamination.py:134(m)
+       91    0.004    0.000    0.251    0.003 pants_lamination.py:565(apply_elementary_move_inverse)
+      364    0.003    0.000    0.049    0.000 pants_decomposition.py:135(dual_graph)
+      364    0.003    0.000    0.004    0.000 generic_graph.py:10678(edges)
+     3276    0.003    0.000    0.006    0.000 generic_graph.py:10839(edge_iterator)
+      728    0.003    0.000    0.006    0.000 generic_graph.py:4018(vertices_to_edges)
+       86    0.003    0.000    0.368    0.004 pants_mapping_class.py:74(__mul__)
+    12913    0.003    0.000    0.003    0.000 {isinstance}
+      364    0.003    0.000    0.063    0.000 generic_graph.py:3883(cycle_basis)
+      364    0.003    0.000    0.003    0.000 graph.py:466(add_nodes_from)
+  728/364    0.002    0.000    0.016    0.000 decorators.py:50(_not_implemented_for)
+      364    0.002    0.000    0.008    0.000 generic_graph.py:10226(add_edges)
+     1842    0.002    0.000    0.002    0.000 {sorted}
+      2912    0.002    0.000    0.003    0.000 generic_graph.py:9522(has_vertex)
+      221    0.002    0.000    0.050    0.000 pants_lamination.py:332(apply_twist)
+      364    0.002    0.000    0.145    0.000 pants_decomposition.py:387(apply_elementary_move)
+    10960    0.002    0.000    0.002    0.000 {method 'append' of 'list' objects}
+      364    0.002    0.000    0.115    0.000 pants_decomposition.py:152(_compute_orientable)
+       72    0.002    0.000    0.002    0.000 sequence.py:88(Sequence)
+     2568    0.002    0.000    0.002    0.000 {method 'get_edge_label' of 'sage.graphs.base.sparse_graph.SparseGraphBackend' objects}
+      364    0.002    0.000    0.004    0.000 generic_graph.py:2278(has_loops)
+     2462    0.002    0.000    0.031    0.000 matrix_space.py:429(__call__)
+     1114    0.002    0.000    0.015    0.000 pants_decomposition.py:379(elementary_move_type)
+       72    0.002    0.000    0.006    0.000 {sage.modules.free_module_element.vector}    1112    0.002    0.000    0.009    0.000 pants_lamination.py:157(t)
+    14365    0.002    0.000    0.002    0.000 {abs}
+      364    0.001    0.000    0.002    0.000 generic_graph.py:9989(vertices)
+     2912    0.001    0.000    0.002    0.000 generic_graph.py:10645(has_edge)
+     2912    0.001    0.000    0.001    0.000 {method 'has_edge' of 'sage.graphs.base.sparse_graph.SparseGraphBackend' objects}
+     3640    0.001    0.000    0.001    0.000 {method 'update' of 'dict' objects}
+      985    0.001    0.000    0.008    0.000 pants_decomposition.py:341(num_inner_pants_curves)
+     2568    0.001    0.000    0.003    0.000 generic_graph.py:10947(edge_label)
+      728    0.001    0.000    0.002    0.000 generic_graph.py:2611(allow_multiple_edges)
+      295    0.001    0.000    0.005    0.000 pants_decomposition.py:466(_torus_boundary_curve)
+     2184    0.001    0.000    0.001    0.000 generic_graph.py:2567(allows_multiple_edges)
+      364    0.001    0.000    0.001    0.000 surface.py:71(__init__)
+          364    0.001    0.000    0.001    0.000 graph.py:258(__init__)
+      102    0.001    0.000    0.001    0.000 free_module.py:967(_element_constructor_)
+     1092    0.001    0.000    0.001    0.000 {getattr}
+      364    0.001    0.000    0.001    0.000 {method 'sort' of 'list' objects}
+     2912    0.001    0.000    0.001    0.000 graph.py:379(__getitem__)
+      364    0.001    0.000    0.001    0.000 graph.py:645(nodes)
+     7280    0.001    0.000    0.001    0.000 {method 'add' of 'set' objects}
+      364    0.001    0.000    0.001    0.000 pants_lamination.py:448(sg)
+     3296    0.001    0.000    0.001    0.000 pants_decomposition.py:155(<genexpr>)
+     2569    0.001    0.000    0.001    0.000 pants_decomposition.py:233(adjacent_curves)
+      728    0.001    0.000    0.001    0.000 {sum}
+     2912    0.001    0.000    0.001    0.000 {method 'pop' of 'list' objects}
+       14    0.001    0.000    0.385    0.028 pants_mapping_class.py:183(is_identity)
+     2462    0.001    0.000    0.001    0.000 matrix_space.py:1566(nrows)
+     1516    0.001    0.000    0.001    0.000 {min}
+     3640    0.001    0.000    0.001    0.000 {method 'get' of 'dict' objects}
+     4428    0.001    0.000    0.001    0.000 pants_lamination.py:179(l)
+     2912    0.001    0.000    0.001    0.000 {method 'has_vertex' of 'sage.graphs.base.c_graph.CGraphBackend' objects}
+      738    0.000    0.000    0.000    0.000 {hasattr}
+      364    0.000    0.000    0.001    0.000 copy.py:66(copy)
+     1092    0.000    0.000    0.001    0.000 generic_graph.py:9909(vertex_iterator)
+     1112    0.000    0.000    0.001    0.000 pants_decomposition.py:302(index_of_inner_pants_curve)
+      728    0.000    0.000    0.001    0.000 generic_graph.py:2370(allow_loops)
+     3276    0.000    0.000    0.000    0.000 {method 'iterator_edges' of 'sage.graphs.base.sparse_graph.SparseGraphBackend' objects}
+     2184    0.000    0.000    0.000    0.000 {method 'keys' of 'dict' objects}
+      728    0.000    0.000    0.000    0.000 {zip}
+       36    0.000    0.000    0.007    0.000 pants_lamination.py:274(__eq__)
+     2462    0.000    0.000    0.000    0.000 matrix_space.py:1554(ncols)
+      985    0.000    0.000    0.000    0.000 pants_decomposition.py:245(num_pants)
+       72    0.000    0.000    0.000    0.000 sequence.py:413(__init__)
+      364    0.000    0.000    0.016    0.000 <decorator-gen-206>:1(cycle_basis)
+      728    0.000    0.000    0.000    0.000 generic_graph.py:2326(allows_loops)
+     2912    0.000    0.000    0.000    0.000 {hash}
+      364    0.000    0.000    0.015    0.000 <decorator-gen-205>:1(cycle_basis)
+     2912    0.000    0.000    0.000    0.000 {method 'copy' of 'dict' objects}
+      728    0.000    0.000    0.001    0.000 generic_graph.py:2781(name)
+      964    0.000    0.000    0.000    0.000 {method 'extend' of 'list' objects}
+     2912    0.000    0.000    0.000    0.000 {method 'multiple_edges' of 'sage.graphs.base.sparse_graph.SparseGraphBackend' objects}
+     1242    0.000    0.000    0.000    0.000 {sage.groups.matrix_gps.group_element.is_MatrixGroupElement}     

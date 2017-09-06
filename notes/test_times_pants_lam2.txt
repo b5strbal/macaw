@@ -1,0 +1,131 @@
+         1155397 function calls (1152853 primitive calls) in 0.657 seconds
+
+   Ordered by: internal time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+    53278    0.071    0.000    0.071    0.000 branch_map.py:125(reversed_path)
+    49180    0.063    0.000    0.173    0.000 branch_map.py:347(is_subpath)
+     6094    0.042    0.000    0.043    0.000 branch_map.py:129(opposite_branch)
+   110690    0.036    0.000    0.056    0.000 train_track.py:458(outgoing_branches)
+     1520    0.035    0.000    0.238    0.000 dehn_thurston_tt.py:1692(pop_fold)
+   105326    0.031    0.000    0.098    0.000 branch_map.py:65(branch_list)
+6994/5426    0.027    0.000    0.059    0.000 train_track.py:1197(fold)
+   112166    0.020    0.000    0.020    0.000 train_track.py:442(_a)
+3404/2428    0.020    0.000    0.047    0.000 train_track.py:1107(peel)
+     5960    0.017    0.000    0.032    0.000 dehn_thurston_tt.py:105(elem_move_type)
+    40778    0.016    0.000    0.036    0.000 train_track.py:280(outgoing_branch)
+   210362    0.014    0.000    0.014    0.000 {len}
+    58770    0.013    0.000    0.013    0.000 {range}
+    52206    0.013    0.000    0.013    0.000 train_track.py:211(branch_endpoint)
+    12816    0.011    0.000    0.024    0.000 dehn_thurston_tt.py:71(get_turning)
+      264    0.010    0.000    0.065    0.000 branch_map.py:201(transform)
+      264    0.010    0.000    0.397    0.002 dehn_thurston_tt.py:1066(unzip_fold_second_move)
+     2118    0.009    0.000    0.092    0.000 dehn_thurston_tt.py:792(unzip_fold_general_twist)
+   128099    0.009    0.000    0.009    0.000 {abs}
+    24747    0.009    0.000    0.010    0.000 train_track.py:520(branch_measure)
+      204    0.008    0.000    0.022    0.000 pants_lamination.py:620(__init__)
+     1088    0.008    0.000    0.015    0.000 train_track.py:974(unzip_pos)
+      264    0.008    0.000    0.013    0.000 branch_map.py:298(chop_paths)
+     2720    0.007    0.000    0.007    0.000 {sum}
+     9544    0.007    0.000    0.015    0.000 train_track.py:284(outgoing_branch_index)
+     1088    0.006    0.000    0.022    0.000 dehn_thurston_tt.py:439(unzip_with_collapse_no_measure)
+      204    0.006    0.000    0.022    0.000 train_track.py:140(__init__)
+     1088    0.006    0.000    0.129    0.000 dehn_thurston_tt.py:1417(unzip_fold_first_move)
+    10350    0.005    0.000    0.006    0.000 train_track.py:912(_set_measure)
+     2448    0.005    0.000    0.023    0.000 dehn_thurston_tt.py:228(torus_boundary_switch)
+    16066    0.005    0.000    0.005    0.000 train_track.py:902(_set_endpoint)
+      204    0.005    0.000    0.006    0.000 flatten.py:4(flatten)
+     1088    0.004    0.000    0.046    0.000 dehn_thurston_tt.py:277(unzip_with_collapse)
+     3030    0.004    0.000    0.013    0.000 dehn_thurston_tt.py:262(num_curves_on_sides)
+      330    0.004    0.000    0.006    0.000 train_track.py:415(swap_branch_numbers)
+     1926    0.004    0.000    0.030    0.000 train_track.py:1188(fold_by_branch_labels)
+      136    0.003    0.000    0.005    0.000 sequence.py:88(Sequence)
+     3530    0.003    0.000    0.004    0.000 branch_map.py:288(_branch_side)
+     3724    0.003    0.000    0.046    0.000 branch_map.py:138(path_on_other_side)
+      136    0.003    0.000    0.011    0.000 {sage.modules.free_module_element.vector}
+    11316    0.003    0.000    0.003    0.000 {method 'keys' of 'dict' objects}
+     9768    0.003    0.000    0.003    0.000 {method 'index' of 'list' objects}
+     2364    0.003    0.000    0.006    0.000 branch_map.py:142(which_side_to_start)
+     3516    0.003    0.000    0.006    0.000 train_track.py:289(insert_branch)
+    11132    0.003    0.000    0.003    0.000 train_track.py:512(is_measured)
+     3516    0.002    0.000    0.005    0.000 train_track.py:307(pop_outgoing_branch)
+     9554    0.002    0.000    0.002    0.000 {method 'pop' of 'list' objects}
+     1088    0.002    0.000    0.022    0.000 dehn_thurston_tt.py:244(orientation_of_switch_first_move)
+     1088    0.002    0.000    0.003    0.000 train_track.py:315(pop_outgoing_branches)
+      186    0.002    0.000    0.613    0.003 pants_mapping_class.py:74(__mul__)
+      264    0.002    0.000    0.006    0.000 dehn_thurston_tt.py:141(standardize_neighboring_branches)
+     1256    0.002    0.000    0.009    0.000 branch_map.py:357(subtract)
+      264    0.002    0.000    0.002    0.000 branch_map.py:233(perform_cancellations)
+      264    0.002    0.000    0.003    0.000 branch_map.py:278(standardize_values)
+      912    0.002    0.000    0.057    0.000 dehn_thurston_tt.py:970(unzip_fold_pants_twist)
+     7476    0.002    0.000    0.002    0.000 {isinstance}
+     7212    0.002    0.000    0.002    0.000 {method 'insert' of 'list' objects}
+      264    0.002    0.000    0.002    0.000 branch_map.py:365(find_boundary_folds)
+      808    0.002    0.000    0.555    0.001 pants_lamination.py:921(apply_elementary_move)
+      264    0.002    0.000    0.004    0.000 dehn_thurston_tt.py:1026(construct_general_twist_data)
+      264    0.002    0.000    0.002    0.000 branch_map.py:61(<dictcomp>)
+      136    0.002    0.000    0.017    0.000 pants_lamination.py:907(to_vector)
+      264    0.001    0.000    0.002    0.000 branch_map.py:253(replace_type_2_3)
+      330    0.001    0.000    0.003    0.000 train_track.py:270(change_switch_orientation)
+     1088    0.001    0.000    0.002    0.000 train_track.py:297(insert_branches)
+     1496    0.001    0.000    0.002    0.000 {map}
+      136    0.001    0.000    0.002    0.000 free_module.py:967(_element_constructor_)
+    10034    0.001    0.000    0.001    0.000 {method 'append' of 'list' objects}
+     1707    0.001    0.000    0.002    0.000
+     pants_decomposition.py:297(is_inner)
+     1020    0.001    0.000    0.002    0.000 {max}
+      351    0.001    0.000    0.004    0.000 pants_decomposition.py:305(boundary_pants_curves)
+       14    0.001    0.000    0.656    0.047 pants_mapping_class.py:210(is_identity2)
+     3876    0.001    0.000    0.001    0.000 train_track.py:156(<genexpr>)
+      272    0.001    0.000    0.109    0.000 dehn_thurston_tt.py:1354(unzip_fold_first_move_inverse)
+      938    0.001    0.000    0.003    0.000 branch_map.py:85(append)
+      408    0.001    0.000    0.004    0.000 dehn_thurston_tt.py:273(transverse_measure)
+     3436    0.001    0.000    0.001    0.000 {method 'extend' of 'list' objects}
+       68    0.001    0.000    0.018    0.000 pants_lamination.py:845(__eq__)
+     1990    0.001    0.000    0.001    0.000 pants_decomposition.py:189(adjacent_pants)
+      136    0.001    0.000    0.016    0.000 dehn_thurston_tt.py:62(copy)
+      136    0.001    0.000    0.001    0.000 sequence.py:413(__init__)
+      204    0.001    0.000    0.022    0.000 dehn_thurston_tt.py:36(__init__)
+      920    0.001    0.000    0.001    0.000 pants_decomposition.py:263(pants_curves)
+      264    0.001    0.000    0.003    0.000 branch_map.py:50(__init__)
+      569    0.001    0.000    0.002    0.000 {filter}
+      569    0.000    0.000    0.003    0.000 pants_decomposition.py:281(inner_pants_curves)
+      408    0.000    0.000    0.003    0.000 train_track.py:969(measure_on_switch)
+      640    0.000    0.000    0.040    0.000 pants_lamination.py:945(apply_twist)
+      816    0.000    0.000    0.001    0.000 sequence.py:512(__getitem__)
+      283    0.000    0.000    0.004    0.000 pants_decomposition.py:379(elementary_move_type)
+      352    0.000    0.000    0.005    0.000 dehn_thurston_tt.py:1665(fold_left_of_pants_curve)
+      136    0.000    0.000    0.003    0.000 free_module.py:5106(_element_constructor_)
+      136    0.000    0.000    0.016    0.000 pants_lamination.py:834(copy)
+      816    0.000    0.000    0.000    0.000 dehn_thurston_tt.py:1388(pants_branch_on_switch)
+       35    0.000    0.000    0.013    0.000 pants_lamination.py:866(from_pants_curve)
+      340    0.000    0.000    0.000    0.000 train_track.py:254(num_switches)
+       33    0.000    0.000    0.011    0.000 pants_lamination.py:885(from_transversal)
+      136    0.000    0.000    0.000    0.000 free_module.py:323(create_key)
+      351    0.000    0.000    0.000    0.000 {sorted}
+      680    0.000    0.000    0.000    0.000 {sage.structure.element.canonical_coercion}
+       14    0.000    0.000    0.657    0.047 pants_mapping_class.py:243(__eq__)
+      816    0.000    0.000    0.000    0.000 {sage.structure.coerce.py_scalar_to_element}
+      136    0.000    0.000    0.000    0.000 quotient_ring.py:309(is_QuotientRing)
+      340    0.000    0.000    0.000    0.000 train_track.py:207(gluing_list)
+       68    0.000    0.000    0.000    0.000
+     pants_decomposition.py:341(num_inner_pants_curves)
+        1    0.000    0.000    0.657    0.657 pants_mapping_class.py:367(test)
+       14    0.000    0.000    0.000    0.000 pants_mapping_class.py:170(__pow__)
+       68    0.000    0.000    0.018    0.000 pants_lamination.py:856(__ne__)
+      136    0.000    0.000    0.000    0.000 {sage.rings.polynomial.multi_polynomial_ring_generic.is_MPolynomialRing}
+      136    0.000    0.000    0.000    0.000 sequence.py:731(universe)
+      136    0.000    0.000    0.000    0.000 free_module.py:1516(degree)
+      136    0.000    0.000    0.000    0.000 pants_decomposition.py:233(adjacent_curves)
+      136    0.000    0.000    0.000    0.000 free_module.py:1579(coordinate_ring)
+      136    0.000    0.000    0.000    0.000 {sage.structure.element.parent}
+       32    0.000    0.000    0.000    0.000 pants_mapping_class.py:57(inverse)
+      136    0.000    0.000    0.000    0.000 {sage.rings.finite_rings.finite_field_base.is_FiniteField}
+       68    0.000    0.000    0.000    0.000 pants_decomposition.py:245(num_pants)
+       64    0.000    0.000    0.000    0.000 pants_mapping_class.py:63(__init__)
+      136    0.000    0.000    0.000    0.000 {method 'parent' of 'sage.structure.sage_object.SageObject' objects}
+      136    0.000    0.000    0.000    0.000 {method 'is_exact' of 'sage.rings.ring.Ring' objects}
+       14    0.000    0.000    0.000    0.000 pants_mapping_class.py:180(inverse)
+       32    0.000    0.000    0.000    0.000 pants_mapping_class.py:44(__init__)
+        1    0.000    0.000    0.657    0.657 <string>:1(<module>)
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}

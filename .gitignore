@@ -1,4 +1,5 @@
 *.pyc
 *.py#
-*.py~
-train_track_flymake.py
+*~
+*flymake.py
+.DS_Store
