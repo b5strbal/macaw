@@ -26,6 +26,47 @@ EXAMPLES::
 from pants_mapping_class import humphries_generators
 from sage.all import Integer
 
+
+def hyperelliptic_involution(genus):
+    """Construct the hyperelliptic involution on a closed surface.
+
+    INPUT:
+
+    - ``genus`` -- the genus of the closed surface
+
+    TESTS::
+
+        sage: from macaw.pants_mapping_class import hyperelliptic_involution
+        sage: g = hyperelliptic_involution(3)
+        sage: g.order()
+        2
+        sage: g.action_on_homology() == -matrix.identity(6)
+        True
+
+        sage: g = hyperelliptic_involution(4)
+        sage: g.order()
+        2
+        sage: g.action_on_homology() == -matrix.identity(8)
+        True
+
+    """
+    g = genus
+    A, B, c = humphries_generators(g, right_most_included=True)
+
+    f = A[0]
+    # print c
+    # print A[-1]
+    # print c == A[-1]
+    for i in range(g):
+        f = f * B[i]
+        f = f * A[i+1]
+    for i in range(g):
+        f = f * A[g-i]
+        f = f * B[g-i-1]
+    f *= A[0]
+    return f
+
+
 # Finite order elements from `Hirose: Presentations of periodic maps on oriented
 # closed surfaces of genera up to 4`, pp. 389-390. In the paper, words are read
 # from left to right. In our program, words are read from right to left, so we
@@ -41,7 +82,7 @@ def map_from_list(genus, ls):
         curves.append(B[i])
         curves.append(A[i+1])
     curves.append(c)
-        
+
     f = curves[ls[0]-1]
     for i in ls[1:]:
         f = f * curves[i-1]
