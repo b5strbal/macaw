@@ -293,6 +293,11 @@ class PantsDecomposition(Surface):
 
     def adjacent_pants(self, pants_curve):
         """
+        Return the pants adjacent to the pants curve.
+
+        For each adjacent pair of pants, the index of the pants curve is also
+        returned.
+
         EXAMPLES::
 
             sage: from macaw import PantsDecomposition
@@ -488,15 +493,11 @@ class PantsDecomposition(Surface):
         """
         return len(self.boundary_pants_curves())
 
-
-
     def elementary_move_type(self, pants_curve):
         if pants_curve in self.boundary_pants_curves():
             return BOUNDARY
         left, right = self.adjacent_pants(pants_curve)
         return TYPE_1 if left[0][PANT] == right[0][PANT] else TYPE_2
-
-
 
     def apply_elementary_move(self, pants_curve):
         """Create a new pants decomposition by changing one pants curve.
@@ -574,10 +575,6 @@ class PantsDecomposition(Surface):
 
         return PantsDecomposition(gl)
 
-
-
-
-
     def _torus_boundary_curve(self, pants_curve):
         """
 
@@ -589,132 +586,6 @@ class PantsDecomposition(Surface):
             if abs(self.adjacent_curves(pant)[k]) != pants_curve:
                 torus_boundary_curve = abs(self.adjacent_curves(pant)[k])
                 return torus_boundary_curve, k
-
-    def _l_ij_left_of(self, pants_curve):
-        """
-        Return the arcs `l_{ij}` on the left side of an oriented pants curve.
-
-        They are listed from bottom to top.
-        """
-        # side = LEFT if pants_curve > 0 else RIGHT
-        pant, bdy_index = self.adjacent_pants(pants_curve)[LEFT][0]
-        # print "Pant: ", pant
-        # print "Bdy index: ", bdy_index
-        return [((bdy_index+2)%3, bdy_index, pant, IN),
-                (bdy_index, bdy_index, pant, IN),
-                (bdy_index, (bdy_index+1)%3, pant, OUT),
-                (bdy_index, bdy_index, pant, OUT)]
-
-    @staticmethod
-    def l_ij_encoding(pant, bdy_index1, bdy_index2, sgn):
-        """
-        EXAMPLES::
-
-        sage: from macaw import PantsDecomposition
-        sage: p = PantsDecomposition
-        sage: p.l_ij_encoding(0, 0, 0, 1)
-        1
-        sage: p.l_ij_encoding(0, 0, 1, 1)
-        2
-        sage: p.l_ij_encoding(0, 1, 0, 1)
-        2
-        sage: p.l_ij_encoding(0, 0, 2, 1)
-        3
-        sage: p.l_ij_encoding(0, 2, 0, 1)
-        3
-        sage: p.l_ij_encoding(0, 1, 1, 1)
-        4
-        sage: p.l_ij_encoding(0, 1, 2, 1)
-        5
-        sage: p.l_ij_encoding(0, 2, 1, 1)
-        5
-        sage: p.l_ij_encoding(0, 2, 2, 1)
-        6
-        sage: p.l_ij_encoding(1, 0, 0, 1)
-        7
-        sage: p.l_ij_encoding(1, 2, 2, 1)
-        12
-
-        sage: p.l_ij_encoding(0, 0, 0, -1)
-        -1
-        sage: p.l_ij_encoding(1, 2, 2, -1)
-        -12
-        """
-        x = 1 + 6*pant + bdy_index1 + bdy_index2
-        y = x if bdy_index1 == 0 or bdy_index2 == 0 else x + 1
-        return sgn * y
-
-    def l_ij_encoding_inv(self, branch_number):
-        # print branch_number
-        pant = (abs(branch_number) - 1)//6
-        rem = (abs(branch_number) - 1) % 6
-        s = sign(branch_number)
-        if rem == 0:
-            return (pant, 0, 0, s)
-        elif rem == 1:
-            return (pant, 0, 1, s)
-        elif rem == 2:
-            return (pant, 2, 0, s)
-        elif rem == 3:
-            return (pant, 1, 1, s)
-        elif rem == 4:
-            return (pant, 1, 2, s)
-        elif rem == 5:
-            return (pant, 2, 2, s)
-
-
-
-    def t_encoding(self, pants_curve):
-        """
-        EXAMPLES:
-
-            sage: from macaw import PantsDecomposition
-            sage: p = PantsDecomposition([[1, 2, 3], [-3, -2, -1]])
-            sage: p.t_encoding(1)
-            13
-            sage: p.t_encoding(2)
-            14
-            sage: p.t_encoding(-1)
-            -13
-            sage: p.t_encoding(-2)
-            -14
-        """
-        return sign(pants_curve)*(6*self.num_pants() + abs(pants_curve))
-
-    def t_encoding_inv(self, branch_number):
-        return sign(branch_number)*(abs(branch_number) - 6*self.num_pants())
-
-    @staticmethod
-    def branches_next_to_curve(pant, bdy_index):
-        """
-        EXAMPLES:
-
-            sage: from macaw import PantsDecomposition
-            sage: p = PantsDecomposition
-            sage: p.branches_next_to_curve(0, 0)
-            [-3, -1, 2, 1]
-            sage: p.branches_next_to_curve(0, 1)
-            [-2, -4, 5, 4]
-            sage: p.branches_next_to_curve(0, 2)
-            [-5, -6, 3, 6]
-            sage: p.branches_next_to_curve(1, 0)
-            [-9, -7, 8, 7]
-            sage: p.branches_next_to_curve(1, 1)
-            [-8, -10, 11, 10]
-            sage: p.branches_next_to_curve(1, 2)
-            [-11, -12, 9, 12]
-
-        """
-        return [PantsDecomposition.l_ij_encoding(*x) for x in
-                (pant, (bdy_index+2) % 3, bdy_index, -1),
-                (pant, bdy_index, bdy_index, -1),
-                (pant, bdy_index, (bdy_index+1) % 3, 1),
-                (pant, bdy_index, bdy_index, 1)]
-
-    # @staticmethod
-    # def _create_label(tup):
-    #     sg = '-' if tup[3] == IN else ''
-    #     return sg + 'l_' + str(tup[0]+1) + str(tup[1]+1) + '_' + str(tup[2])
 
     @classmethod
     def humphries(cls, genus):
