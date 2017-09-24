@@ -20,7 +20,7 @@ AUTHORS:
 # *****************************************************************************
 
 
-from sage.all import elementary_matrix, Integer
+from sage.all import elementary_matrix, Integer, matrix
 from pants_decomposition import PantsDecomposition
 from pants_mapping_class import PantsMappingClass, PantsTwist
 

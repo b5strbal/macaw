@@ -34,13 +34,11 @@ def a(n):
 
 
 class DehnThurstonTT(TrainTrack):
-    def __init__(self, pants_decomposition,
-                 gluing_list, measure=None, pants_branches=None):
+    def __init__(self, gluing_list, measure=None, pants_branches=None):
         """
         """
         super(DehnThurstonTT, self).__init__(gluing_list, measure)
 
-        self._pants_decomposition = pants_decomposition
         self._pants_branches = []
         if pants_branches is None:
             # trying to determine the pants branches
@@ -64,7 +62,7 @@ class DehnThurstonTT(TrainTrack):
             self._pants_branches = pants_branches
 
     @classmethod
-    def form_dehn_thurston_coordiantes(cls, pants_decomposition, coordinates,
+    def from_dehn_thurston_coordinates(cls, pants_decomposition, coordinates,
                                        debug=False):
         p = pants_decomposition
         # print coordinates
@@ -228,22 +226,17 @@ class DehnThurstonTT(TrainTrack):
             print "Gluing list", gluing_list
             print "Measure", measure
 
-        return cls(p, gluing_list, measure, range(1, n+1))
+        return cls(gluing_list, measure, range(1, n+1))
 
 
     def copy(self):
         if self.is_measured():
-            return DehnThurstonTT(self.pants_decomposition(),
-                                  self.gluing_list(),
+            return DehnThurstonTT(self.gluing_list(),
                                   list(self.measure()),
                                   list(self._pants_branches))
         else:
-            return DehnThurstonTT(self.pants_decomposition(),
-                                  self.gluing_list()(),
+            return DehnThurstonTT(self.gluing_list()(),
                                   pants_branches=list(self._pants_branches))
-
-    def get_pants_decomposition(self):
-        return self._pants_decomposition
 
     def get_turning(self, switch):
         """

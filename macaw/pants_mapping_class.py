@@ -202,7 +202,7 @@ class PantsMappingClass(MappingClass):
         """
         TESTS::
 
-            sage: from macaw.pants_mapping_class import humphries_generators
+            sage: from macaw.generating_sets import humphries_generators
             sage: A, B, c = humphries_generators(2)
             sage: A[0]*A[1] == A[1]*A[0]
             True
@@ -254,7 +254,7 @@ class PantsMappingClass(MappingClass):
         """
         TESTS::
 
-        sage: from macaw.pants_mapping_class import humphries_generators
+        sage: from macaw.generating_sets import humphries_generators
         sage: A, B, c = humphries_generators(2)
         sage: f = A[0]*B[0]^(-1)
         sage: n(f.stretch_factor(), digits=4)
@@ -303,7 +303,7 @@ class PantsMappingClass(MappingClass):
 
         EXAMPLES:
 
-            sage: from macaw.pants_mapping_class import hyperelliptic_involution
+            sage: from macaw.examples import hyperelliptic_involution
             sage: f = hyperelliptic_involution(2)
             sage: f.is_in_torelli()
             False
@@ -320,14 +320,14 @@ class PantsMappingClass(MappingClass):
 
         TESTS::
 
-        sage: from macaw.pants_mapping_class import humphries_generators
+        sage: from macaw.generating_sets import humphries_generators
         sage: A, B, c = humphries_generators(4)
         sage: A[0].order()
         0
         sage: (A[0]*B[0]^(-1)).order()
         0
 
-        sage: from macaw.pants_mapping_class import hyperelliptic_involution
+        sage: from macaw.examples import hyperelliptic_involution
         sage: g = hyperelliptic_involution(3)
         sage: g.order()
         2

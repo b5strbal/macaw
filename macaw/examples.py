@@ -23,7 +23,7 @@ EXAMPLES::
 # *****************************************************************************
 
 
-from pants_mapping_class import humphries_generators
+from generating_sets import humphries_generators
 from sage.all import Integer
 
 
@@ -36,7 +36,7 @@ def hyperelliptic_involution(genus):
 
     TESTS::
 
-        sage: from macaw.pants_mapping_class import hyperelliptic_involution
+        sage: from macaw.examples import hyperelliptic_involution
         sage: g = hyperelliptic_involution(3)
         sage: g.order()
         2
