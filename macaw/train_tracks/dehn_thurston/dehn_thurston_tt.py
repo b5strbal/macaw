@@ -20,6 +20,7 @@ AUTHORS:
 # *****************************************************************************
 
 
+from sage.all import sign
 from macaw.train_tracks.train_track import TrainTrack, FoldError
 from macaw.constants import LEFT, RIGHT
 from .branch_map import BranchMap
@@ -28,10 +29,18 @@ UP = 0
 TWO_SIDED = 1
 
 
+def a(n):
+    return 2*n-2 if n > 0 else -2*n-1
+
+
 class DehnThurstonTT(TrainTrack):
-    def __init__(self, gluing_list, measure=None, pants_branches=None):
+    def __init__(self, pants_decomposition,
+                 gluing_list, measure=None, pants_branches=None):
+        """
+        """
         super(DehnThurstonTT, self).__init__(gluing_list, measure)
 
+        self._pants_decomposition = pants_decomposition
         self._pants_branches = []
         if pants_branches is None:
             # trying to determine the pants branches
@@ -54,14 +63,187 @@ class DehnThurstonTT(TrainTrack):
         else:
             self._pants_branches = pants_branches
 
+    @classmethod
+    def form_dehn_thurston_coordiantes(cls, pants_decomposition, coordinates,
+                                       debug=False):
+        p = pants_decomposition
+        # print coordinates
+        n = p.num_inner_pants_curves()
+        ipc = p.inner_pants_curves()
+        bpc = p.boundary_pants_curves()
+        if isinstance(coordinates, dict):
+            pass
+        elif isinstance(coordinates, list):
+            for i in range(n):
+                if coordinates[2*i] < 0:
+                    raise ValueError("The m_i have to be nonnegative")
+                if coordinates[2*i] == 0 and coordinates[2*i+1] < 0:
+                    raise ValueError("If m_i = 0, then t_i has to be "
+                                     "nonnegative")
+            # creating a dictionary for the measures form the list
+            if len(coordinates) != 2*n:
+                raise ValueError("The number of the coordinates should be "
+                                 "twice the number of inner pants curves.")
+            d = {}
+            for i in range(n):
+                d[ipc[i]] = [coordinates[2*i], coordinates[2*i+1]]
+            coordinates = d
+
+        # boundary pants curves have measure zero
+        for c in bpc:
+            coordinates[c] = [0, 0]
+
+        # creating n switches
+        gluing_list = []
+        for i in range(n):
+            gluing_list.extend([[i+1], [-i-1]])
+        next_branch = n+1
+
+        measure = [abs(coordinates[c][1]) for c in ipc]
+
+        for pant in range(p.num_pants()):
+            if debug:
+                print "---------------------------------"
+                print "Moving on to pants number ", pant
+                print "Current gluing_list:", gluing_list
+                print "Current measure", measure
+                print "Coordinates", coordinates
+
+            # the three pants curves bounding the pair of pants
+            # the number of the switch on each pants curve coincides with the
+            # number of the pants curve
+            curves = p.adjacent_curves(pant)
+            m = [coordinates[abs(c)][0] for c in curves]
+
+            # self-connecting branches: lambda_11, lambda_22, lambda_33
+            self_conn = [max(m[i] - m[(i+1) % 3] - m[(i+2) % 3], 0) / 2 for i
+                         in range(3)]
+            # take out the self-connecting strands, now the triangle ineq. is
+            # satisfied
+            m = [m[i] - 2*self_conn[i] for i in range(3)]
+
+            # lambda_12, lambda_23, lambda_31
+            pairs = [max(m[i] + m[(i+1) % 3] - m[(i+2) % 3], 0) / 2 for i in
+                     range(3)]
+            if debug:
+                print "m:", m
+                print "self_conn:", self_conn
+                print "pairs:", pairs
+
+            # NOT_DECIDED = -2
+            # NO_SELF_CONN = -1
+
+            self_conn_idx = -1
+            # if at all possible, we include a self-connecting curve
+            # first we check if there is a positive self-connecting measure in
+            # which case the choice is obvious
+            for i in range(3):
+                c = curves[i]
+                if self_conn[i] > 0:
+                    self_conn_idx = i
+                    break
+
+            # If there is no obvious choice, we see if the pairing measures
+            # allow including a self-connecting branch
+            if self_conn_idx == -1:
+                for i in range(3):
+                    if debug:
+                        print i, c
+                    if pairs[(i+1) % 3] == 0 and abs(c) in ipc and \
+                       p.elementary_move_type(c) == 2:
+                        # if the type is first move, then the self-connecting
+                        # branch would make the train track not recurrent
+                        self_conn_idx = i
+                        break
+
+            if debug:
+                print "self_conn_idx:", self_conn_idx
+
+            added_branches = []
+
+            # Adding pairing branches
+            for i in range(3):
+                # connecting pants curve i with i+1
+                c1 = curves[i]
+                c2 = curves[(i+1) % 3]
+                if debug:
+                    print
+                    print "Adding pairing branches..."
+                    print "i:", i
+                    print "c1:", c1
+                    print "c2:", c2
+                if c1 in bpc or c2 in bpc or self_conn_idx != -1 and \
+                   i == (self_conn_idx+1) % 3:
+                    # no branches if one of the curves in a boundary or there
+                    # is a blocking self-connecting branch
+                    if debug:
+                        print "Not adding it."
+                    continue
+
+                if coordinates[abs(c1)][1] >= 0:
+                    # c1 is right-twisting
+                    gluing_list[a(c1)].insert(-1, next_branch)
+                else:
+                    # c1 is left-twisting
+                    gluing_list[a(-c1)].append(next_branch)
+
+                if coordinates[abs(c2)][1] >= 0:
+                    # c2 is right-twisting
+                    gluing_list[a(c2)].insert(0, -next_branch)
+                else:
+                    # c2 is left-twisting
+                    gluing_list[a(-c2)].insert(1, -next_branch)
+
+                next_branch += 1
+                added_branches.append(i)
+                measure.append(pairs[i])
+
+            # Adding the self-connecting branch if exists
+            if self_conn_idx != -1:
+                if debug:
+                    print
+                    print "Adding self-connecting branch..."
+                c = curves[self_conn_idx]
+                switch = sign(c)*(ipc.index(abs(c))+1)
+                if coordinates[abs(c)][1] >= 0:
+                    gluing_list[a(switch)].\
+                        insert(-1, -next_branch)
+                    if self_conn_idx in added_branches:
+                        insert_pos = -3
+                    else:
+                        insert_pos = -2
+                    gluing_list[a(switch)].insert(insert_pos, next_branch)
+                else:
+                    gluing_list[a(-switch)].\
+                        append(-next_branch)
+                    if self_conn_idx in added_branches:
+                        insert_pos = -2
+                    else:
+                        insert_pos = -1
+                    gluing_list[a(-switch)].insert(insert_pos, next_branch)
+                next_branch += 1
+                measure.append(abs(self_conn[self_conn_idx]))
+
+        if debug:
+            print "Gluing list", gluing_list
+            print "Measure", measure
+
+        return cls(p, gluing_list, measure, range(1, n+1))
+
+
     def copy(self):
         if self.is_measured():
-            return DehnThurstonTT(self.gluing_list(),
+            return DehnThurstonTT(self.pants_decomposition(),
+                                  self.gluing_list(),
                                   list(self.measure()),
                                   list(self._pants_branches))
         else:
-            return DehnThurstonTT(self.gluing_list()(),
+            return DehnThurstonTT(self.pants_decomposition(),
+                                  self.gluing_list()(),
                                   pants_branches=list(self._pants_branches))
+
+    def get_pants_decomposition(self):
+        return self._pants_decomposition
 
     def get_turning(self, switch):
         """
