@@ -379,11 +379,3 @@ class PantsLamination(SageObject):
 
     def apply_twist(self, pants_curve, power=1):
         self._tt.unzip_fold_pants_twist(pants_curve, power)
-
-# tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7,
-#                                                                          9,
-#                                                                          3],
-#                      [-9, 8, -3]], [100, 20, 30, 1, 1, 4, 2, 2, 1])
-# lam = PantsLamination(tt)
-# f = PantsMappingClass(None, [PantsTwist([], 1)])
-# g = PantsMappingClass(None, [PantsTwist([1], 1)])

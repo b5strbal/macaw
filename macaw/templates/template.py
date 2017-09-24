@@ -26,6 +26,103 @@ EXAMPLES::
 
 from sage.all import Graph
 from .. import TrainTrack
+from constant import LEFT, RIGHT
+
+class Edge:
+    def __init__(self, starting_gate, ending_gate, orientation=None,
+                 is_neutral=False):
+        self.starting_gate = starting_gate
+        self.ending_gate = ending_gate
+        self.orientation = orientation  # in case of a self-connecting branch
+        self.is_neutral = is_neutral  # True for pants branches
+
+
+class TrainTrackToTemplate:
+    def __init__(self, train_track, edge_map):
+        """
+
+        Conventions:
+
+        - right side of switches is the positive gate, the left side is the
+          negative gate
+        - for a second elementary move, we rotate the pants curve to the left.
+          So the positive side of the original switch will become the right
+          side of the new switch.
+
+        EXAMPLES:
+
+        A train track in the square torus:
+
+        sage: tt = TrainTrack([[1, 2], [-1,-3], [3], [-2]])
+        sage: ttt = TrainTrackToTemplate(tt, {1: [Edge(1, -1)], 2: [Edge(1, -2)], 3:[Edge(2, -1)]})
+
+        """
+        self._tt = train_track
+        self._edge_map = edge_map
+
+    @classmethod
+    def from_dehn_thurston_tt(cls, dehn_thurston_tt, switch, move_type):
+        """Create a map from the neighborhood of the pants_curve to a template.
+        """
+        tt = dehn_thurston_tt
+        edge_map = {}
+
+        turning = self.get_turning(switch)
+        pants_curve = self.outgoing_branch(switch, 0, turning)
+
+        if move_type == 'twist':
+            # for twists, the center curve stays put
+            edge_map[pants_curve] = [Edge(switch, -switch, is_neutral=True)]
+        if move_type == 'second move':
+            # for the second move, we pull the center curve behind the surface
+            # on both sides
+            edge_map[pants_curve] = [Edge(switch, switch, orientation=1),
+                                     Edge(-switch, switch, is_neutral=True),
+                                     Edge(-switch, -switch, orientation=-1)]
+        if move_type == 'first move':
+            # for the first move, the center curve becomes a transversal for
+            # the new pants curve
+            edge_map[pants_curve] = [Edge(switch, -switch)]
+
+        # changing the orientation of the switch so the left side can be
+        # accessed in the positive direction
+        or_switch = switch if turning == RIGHT else -switch
+
+        for side in [LEFT, RIGHT]:
+            if side == LEFT:
+                side_branches = tt.outgoing_branches(or_switch)
+            else:
+                side_branches = tt.outgoing_branches(-or_switch)
+            if turning == LEFT:
+                side_branches = side_branches[1:]
+            else:
+                side_branches = side_branches[:-1]
+
+            # now `side_branches` contains the branches going to `side`
+
+
+
+        def edge_of_branch(br):
+            start = tt.branch_endpoint(-br)
+            end = tt.branch_endpoint(br)
+            is_neutral = False
+            orientation = None
+            if start == -end:
+                assert(tt.pants_branch_on_switch(start) == abs(br))
+                is_neutral = True
+            if start == end:
+                start_ind = tt.outgoing_branch_index(start, br)
+                end_ind = tt.outgoing_branch_index(start, -br)
+                # the edge is oriented positively if it cycles clockwise
+                orientation = 1 if start_ind < end_ind else -1
+
+            return Edge(start, end, orientation, is_neutral)
+
+        if tt.elem_move_type(switch) == 2:
+            for br in tt.outgoing_branches(switch):
+                edge_map[br] = [Edge()]
+
+
 
 
 class Template(Graph):
