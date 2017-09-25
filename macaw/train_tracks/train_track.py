@@ -175,38 +175,10 @@ class TrainTrack(TrainTrack1):
             print "-------------------------------"
 
         for cm in carrying_maps_self_small:
-            cm.append(BRANCH, -branches[sm_idx], BRANCH, branches[lg_idx])
-            cusp_to_append_to = self.adjacent_cusp(
-                branches[sm_idx],
-                side=sm_idx
-            )
-            cm.append(CUSP, -cusp_to_append_to, BRANCH, branches[lg_idx])
-            if sm_idx == LEFT:
-                # The peeled branch ends up on the right of the branch we
-                # peeled it off. So we need to add the latter branch (and also
-                # the cusp path) to the _hb_between_branches array of the
-                # peeled branch.
-                cm.add_to_hb_between_branches(BRANCH, branches[sm_idx],
-                                              BRANCH, -branches[lg_idx], 1)
-                cm.add_to_hb_between_branches(BRANCH, branches[sm_idx],
-                                              CUSP, cusp_to_append_to, 1)
-                # We also need to add the latter branch to the
-                # _hb_between_branches array of the cusp_path
-                cm.add_to_hb_between_branches(CUSP, cusp_to_append_to,
-                                              BRANCH, -branches[lg_idx], 1)
-            else:
-                # The peeled branch ends up on the left of the branch we
-                # peeled it off. So we need to add the peeled branch (and also
-                # the cusp path) to the
-                # _hb_between_branches array of the other branch.
-                cm.add_to_hb_between_branches(BRANCH, -branches[lg_idx],
-                                              BRANCH, branches[sm_idx], 1)
-                cm.add_to_hb_between_branches(BRANCH, -branches[lg_idx],
-                                              CUSP, cusp_to_append_to, 1)
-                # We also need to add the peeled branch to the array of the
-                # cusp path.
-                cm.add_to_hb_between_branches(CUSP, cusp_to_append_to,
-                                              BRANCH, branches[sm_idx], 10)
+            cm.peel_in_small(peeled_branch=branches[sm_idx],
+                             peel_off_of=branches[lg_idx],
+                             peeled_side=sm_idx,
+                             switch=switch)
 
         for cm in carrying_maps_self_large:
             raise NotImplementedError
