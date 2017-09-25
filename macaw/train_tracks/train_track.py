@@ -51,7 +51,7 @@ class TrainTrack(TrainTrack1):
 
     def peel(self, switch, side, branch_map=None, debug=False,
              preferred_peeled_side=RIGHT,
-             carrying_maps_self_small=[],  # DONE (up to cusps)
+             carrying_maps_self_small=[],  # DONE
              carrying_maps_self_large=[]):  # TODO
         """
 
@@ -300,7 +300,6 @@ class TrainTrack(TrainTrack1):
         if self.is_measured():
             self._set_measure(fold_onto_br, self.branch_measure(fold_onto_br) +
                               self.branch_measure(folded_br))
-
 
         for cm in carrying_maps_self_small:
             #

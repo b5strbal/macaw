@@ -155,36 +155,22 @@ class CarryingMap(SageObject):
         self._switch_intersections[large_switch][pos][
             CUSP][cusp_to_append_to] += 1
 
-    def append(self, typ1, append_to_num, typ2, appended_path_num):
+    def append(self, typ1, append_to_num, typ2, appended_path_num,
+               with_sign=1):
         """Update the carrying data when a train path is appended to another.
 
         """
         # updating the paths
-        self._paths[typ1][append_to_num-1] += \
-            self._paths[typ2][appended_path_num-1]
+        path1 = self.train_path(typ1, append_to_num)
+        path2 = self.train_path(typ2, appended_path_num)
+        path1 += with_sign*path2
 
         # updating the intersection numbers at the switches
         for large_switch in self._switch_intersections.keys():
-            switch_data = self._switch_intersections[large_switch]
-            for paths in switch_data[0]:
-                paths[typ1][append_to_num-1] += \
-                            paths[typ2][appended_path_num-1]
-
-    def trim(self, typ1, trim_from_num, typ2, trimmed_path_num):
-        """Update the carrying data when a train path is trimmed off of
-        another.
-
-        self._half_branch_map is not updated and self._hb_between_branches is
-        only half-way updated.
-        """
-        trim_from = self._path_index(typ1, -trim_from_num)
-        trimmed = self._path_index(typ2, -trimmed_path_num)
-        path = self.train_path(typ1, trim_from_num)
-        path -= self.train_path(typ2, trimmed_path_num)
-        # self._half_branch_map is difficult to update. We have to do it
-        # elsewhere.
-        self._hb_between_branches[:, :, trim_from[1]] -= \
-            self._hb_between_branches[:, :, trimmed[1]]
+            intersection_data = self._switch_intersections[large_switch][0]
+            for data in intersection_data:
+                data[typ1][append_to_num-1] += \
+                                    with_sign*data[typ2][appended_path_num-1]
 
     def add_to_hb_between_branches(self, typ1, add_to_num,
                                    typ2, added_num, amount):
@@ -372,7 +358,8 @@ class CarryingMap(SageObject):
             # be available for trimming.
             if i != min_path_indices[0]:
                 num = outgoing_path_numbers[i]
-                self.trim(typ(i), -num, min_path_typ, -min_path_num)
+                self.append(typ(i), -num, min_path_typ, -min_path_num,
+                          with_sign=-1)
 
         # -------------------------------------------------------------
         # Next, we fix the half-branch maps.
@@ -475,8 +462,8 @@ class CarryingMap(SageObject):
         update_data(len(min_path_indices)-1, RIGHT)
         # ------------------------------------------------------------
 
-        self.trim(min_path_typ, -min_path_num,
-                  min_path_typ, -min_path_num)
+        self.append(min_path_typ, -min_path_num,
+                  min_path_typ, -min_path_num, with_sign=-1)
         # TODO: or self.delete_branch_from_small(br)?
 
         outgoing_path_numbers_neg = merge_lists(
@@ -497,8 +484,7 @@ class CarryingMap(SageObject):
     def train_path(self, typ, branch_or_cusp):
         """Return the train path correponding to a branch or cusp.
         """
-        a = self._path_index(typ, branch_or_cusp)
-        return self._train_paths[a]
+        return self._paths[typ][abs(branch_or_cusp)-1]
 
     def image_of_half_branch(self, typ, branch_or_cusp):
         """Return the image of a half-branch in the small train track in the
