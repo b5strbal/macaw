@@ -22,51 +22,14 @@ AUTHORS:
 
 # from train_track import TrainTrack
 from sage.structure.sage_object import SageObject
-from macaw.constants import LEFT, RIGHT, START, END
-from sage.all import vector
+from macaw.constants import LEFT, RIGHT, START, END, BRANCH, CUSP
+# from sage.all import vector
 import numpy as np
 from .train_track import SMALL_COLLAPSIBLE
 from .train_track0 import TrainTrack
 
 # TODO: make this an inline function in Cython.
 to_index = TrainTrack._to_index
-
-
-def is_smaller_or_equal(array1, array2):
-    """Decide if all entries of the first array are less than or equal the
-    corresponding entries of the second array.
-    """
-    assert(array1.size == array2.size)
-    return all(array2-array1 >= 0)
-    # for i in range(array1.size):
-    #     if array1[i] > array2:
-    #         return False
-    # return True
-
-
-def is_smaller(array1, array2):
-    """Decide if all entries of the first array are less than the
-    corresponding entries of the second array.
-    """
-    assert(array1.size == array2.size)
-    return all(array2-array1 > 0)
-    # for i in range(array1.size):
-    #     if array1[i] > array2:
-    #         return False
-    # return True
-
-
-def is_equal(array1, array2):
-    """Decide if all entries of the first array equal corresponding entries of the
-    second array.
-
-    """
-    assert(array1.size == array2.size)
-    return all(array2 == array1)
-    # for i in range(array1.size):
-    #     if array1[i] > array2:
-    #         return False
-    # return True
 
 
 class CarryingMap(SageObject):
@@ -307,25 +270,39 @@ class CarryingMap(SageObject):
             count += 1
 
     def isotope_switch_as_far_as_possible(self, switch):
-        """Isotopes a switch of the small train track in the positive direction
+        """Isotope a switch of the small train track in the positive direction
         as far as possible.
         """
         small_tt = self._small_tt
 
+        # a list containing outgoing branches at even positions and cusps at
+        # odd poisitions
         outgoing_path_numbers = merge_lists(
             small_tt.outgoing_branches(switch),
             small_tt.outgoing_cusps(switch)
         )
 
-        def typ(i):
-            return BRANCH if i % 2 == 0 else CUSP
+        def typ(pos):
+            """Return the type of the branch at a position.
+            """
+            return BRANCH if pos % 2 == 0 else CUSP
 
-        # These are indices for the list outgoing_path_indices, not elements of
-        # the list!
-        min_path_indices = self.shortest_paths(outgoing_path_numbers)
-        min_path_num = outgoing_path_numbers[min_path_indices[0]]
+        def get_path(pos):
+            """Return the outgoing path at a specified position
+            """
+            return self.train_path(typ(pos), outgoing_path_numbers[pos])
+
+        # The indices of minimal paths in outgoing_path_numbers
+        min_path_indices = shortest_path_indices(
+            [get_path(pos) for pos in range(len(outgoing_path_numbers))])
+
+        # The type of the first minimal path (BRANCH or CUSP)
         min_path_typ = typ(min_path_indices[0])
-        min_path = self.train_path(min_path_typ, min_path_num)
+
+        # The number of the first minimal path
+        min_path_num = outgoing_path_numbers[min_path_indices[0]]
+
+        # min_path = self.train_path(min_path_typ, min_path_num)
 
         # We need to trim first on the positive side, and then append on the
         # negative side. This is because otherwise we would add a lot of junk
@@ -534,44 +511,6 @@ class CarryingMap(SageObject):
                isotopy_side == RIGHT and cusp_path == branch_path_right:
                 pass
 
-    def shortest_paths(self, branches_and_cusps):
-        """Return the shortest paths of the paths provided.
-
-        If there is no shortest path (this is possible, since paths are arrays
-        of integers, so the relation is a partial order, not an order), then it
-        returns an error. But in our applications, this should not happen.
-
-        INPUT:
-
-        - ``branches_and_cusps`` -- a list with branch and cusp numbers. We
-          assume that even positions contain branches, odd positions contain
-          cusps.
-
-        OUTPUT:
-
-        the list of indices (between 0 and ``len(branches_and_cusps)-1``) of
-        the shortest paths
-
-        """
-        def get_path(k):
-            num = branches_and_cusps[k]
-            path = self.train_path(BRANCH if k % 2 == 0 else CUSP, num)
-            return path
-
-        for i in range(len(branches_and_cusps)):
-            path = get_path(i)
-            if all(is_smaller_or_equal(path, get_path(j))
-                   for j in range(len(branches_and_cusps))):
-                break
-        else:
-            raise ValueError("There is no shortest path!")
-
-        ls = [i]
-        for k in range(i+1, len(indices)):
-            if is_equal(path, get_path(k)):
-                ls.append(k)
-        return ls
-
     def train_path(self, typ, branch_or_cusp):
         """Return the train path correponding to a branch or cusp.
         """
@@ -722,4 +661,61 @@ def merge_lists(a, b):
     for i in range(len(b)):
         ls.append(b[i])
         ls.append(a[i+1])
+    return ls
+
+
+def is_smaller_or_equal(array1, array2):
+    """Decide if all entries of the first array are less than or equal the
+    corresponding entries of the second array.
+    """
+    assert(array1.size == array2.size)
+    return all(array2-array1 >= 0)
+
+
+def is_smaller(array1, array2):
+    """Decide if all entries of the first array are less than the
+    corresponding entries of the second array.
+    """
+    assert(array1.size == array2.size)
+    return all(array2-array1 > 0)
+
+
+def is_equal(array1, array2):
+    """Decide if all entries of the first array equal corresponding entries of the
+    second array.
+
+    """
+    assert(array1.size == array2.size)
+    return all(array2 == array1)
+
+
+def shortest_path_indices(self, paths):
+    """Return the indices of shortest paths of the paths provided.
+
+    If there is no shortest path (this is possible, since paths are arrays
+    of integers, so the relation is a partial order, not an order), then it
+    returns an error. But in our applications, this should not happen.
+
+    INPUT:
+
+    - ``paths`` -- a list of paths (arrays of integers)
+
+    OUTPUT:
+
+    the list of indices (between 0 and ``len(paths)-1``) of
+    the shortest paths
+
+    """
+
+    for i in range(len(paths)):
+        if all(is_smaller_or_equal(paths[i], path) for path in paths):
+            break
+    else:
+        raise ValueError("There is no shortest path!")
+
+    ls = [i]
+    min_path = paths[i]
+    for k in range(i+1, len(paths)):
+        if is_equal(min_path, paths[k]):
+            ls.append(k)
     return ls
