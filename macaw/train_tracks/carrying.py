@@ -91,9 +91,13 @@ class CarryingMap(SageObject):
         self._large_tt = large_tt
         self._small_tt = small_tt
         self._paths = [branch_paths, cusp_paths]
-        self._switch_intersections = {large_switch:
-            [[branch_preimage1,cusp_preimage1,small_switches_on_right1],
-             [branch_preimage2,cusp_preimage2,small_switches_on_right2]]}
+        self._switch_intersections = {large_switch: (
+            [[branch_preimage1,cusp_preimage1],
+             [branch_preimage2,cusp_preimage2],
+             [branch_preimage3,cusp_preimage3]],
+            [small_switches_on_right1, small_switches_on_right2]
+        )
+        }
         self._position_data = position_data
 
         # self._train_paths = train_paths
@@ -138,27 +142,18 @@ class CarryingMap(SageObject):
 
         large_switch, pos = self.image_of_switch(small_switch)
 
-        if large_switch > 0:
-            # The small switch maps into the large switch in an
-            # orientation-preserving way. Since the peeling occurs on the left
+        if large_switch < 0:
+            # If the small switch maps into the large switch in an
+            # orientation-preserving way, then the peeling occurs on the left
             # side, the new intersections are created at position `pos`.
-            self._switch_intersections[large_switch][pos][
-                BRANCH][peeled_branch] += 1
-            self._switch_intersections[large_switch][pos][
-                CUSP][cusp_to_append_to] += 1
+            # Otherwise the peeling occurs on the right side, and the new
+            # intersections are created at position `pos`+1.
+            pos += 1
 
-        else:
-            # The small switch maps into the large switch in an
-            # orientation-reversing way. Since the peeling occurs on the left
-            # side, the new intersections are created at position `pos`+1. If
-            # `pos`+1 represents the right-most section, there is nothing to
-            # do, since the intersections with the rightmost section are not
-            # stored.
-            if pos < len(self._switch_intersections[large_switch])-1:
-                self._switch_intersections[large_switch][pos+1][
-                    BRANCH][peeled_branch] += 1
-                self._switch_intersections[large_switch][pos+1][
-                    CUSP][cusp_to_append_to] += 1
+        self._switch_intersections[large_switch][pos][
+            BRANCH][peeled_branch] += 1
+        self._switch_intersections[large_switch][pos][
+            CUSP][cusp_to_append_to] += 1
 
     def append(self, typ1, append_to_num, typ2, appended_path_num):
         """Update the carrying data when a train path is appended to another.
@@ -171,8 +166,9 @@ class CarryingMap(SageObject):
         # updating the intersection numbers at the switches
         for large_switch in self._switch_intersections.keys():
             switch_data = self._switch_intersections[large_switch]
-            for data in switch_data:
-                data[typ1][append_to_num-1] += data[typ2][appended_path_num-1]
+            for paths in switch_data[0]:
+                paths[typ1][append_to_num-1] += \
+                            paths[typ2][appended_path_num-1]
 
     def trim(self, typ1, trim_from_num, typ2, trimmed_path_num):
         """Update the carrying data when a train path is trimmed off of
