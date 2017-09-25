@@ -111,9 +111,24 @@ class CarryingMap(SageObject):
         elif typ == CUSP:
             return (a, abs(index) - 1 + self._cusp_index_offset)
 
-    def peel_in_small(self, peeled_branch, peel_off_of, peeled_side):
+    def image_of_switch(self, small_switch):
+        """Return the large switch the specified switch of the small train
+        track maps to and the position of the switch from the left (according
+        to the orientation of the large switch).
+
+        OUTPUT: (large_switch, position).
+        """
+        pass
+
+    def peel_in_small(self, peeled_branch, peel_off_of, peeled_side,
+                      small_switch):
         """Update the carrying map after peeling in the small train track
         """
+        if np.all(self._paths[BRANCH][peel_off_of-1] == 0):
+            # the peel_off_of branch is collapsed, so the peeling is
+            # infinitesimal and there is nothing to update
+            return
+
         self.append(BRANCH, -peeled_branch, BRANCH, peel_off_of)
         cusp_to_append_to = self._small_tt.adjacent_cusp(
             peeled_branch,
@@ -121,32 +136,29 @@ class CarryingMap(SageObject):
         )
         self.append(CUSP, -cusp_to_append_to, BRANCH, peel_off_of)
 
-        if peeled_side == LEFT:
-            # The peeled branch ends up on the right of the branch we
-            # peeled it off. So we need to add the latter branch (and also
-            # the cusp path) to the _hb_between_branches array of the
-            # peeled branch.
-            self.add_to_hb_between_branches(BRANCH, peeled_branch,
-                                            BRANCH, -peel_off_of, 1)
-            self.add_to_hb_between_branches(BRANCH, peeled_branch,
-                                            CUSP, cusp_to_append_to, 1)
-            # We also need to add the latter branch to the
-            # _hb_between_branches array of the cusp_path
-            self.add_to_hb_between_branches(CUSP, cusp_to_append_to,
-                                            BRANCH, -peel_off_of, 1)
+        large_switch, pos = self.image_of_switch(small_switch)
+
+        if large_switch > 0:
+            # The small switch maps into the large switch in an
+            # orientation-preserving way. Since the peeling occurs on the left
+            # side, the new intersections are created at position `pos`.
+            self._switch_intersections[large_switch][pos][
+                BRANCH][peeled_branch] += 1
+            self._switch_intersections[large_switch][pos][
+                CUSP][cusp_to_append_to] += 1
+
         else:
-            # The peeled branch ends up on the left of the branch we
-            # peeled it off. So we need to add the peeled branch (and also
-            # the cusp path) to the
-            # _hb_between_branches array of the other branch.
-            self.add_to_hb_between_branches(BRANCH, -peel_off_of,
-                                            BRANCH, peeled_branch, 1)
-            self.add_to_hb_between_branches(BRANCH, -peel_off_of,
-                                            CUSP, cusp_to_append_to, 1)
-            # We also need to add the peeled branch to the array of the
-            # cusp path.
-            self.add_to_hb_between_branches(CUSP, cusp_to_append_to,
-                                            BRANCH, peeled_branch, 10)
+            # The small switch maps into the large switch in an
+            # orientation-reversing way. Since the peeling occurs on the left
+            # side, the new intersections are created at position `pos`+1. If
+            # `pos`+1 represents the right-most section, there is nothing to
+            # do, since the intersections with the rightmost section are not
+            # stored.
+            if pos < len(self._switch_intersections[large_switch])-1:
+                self._switch_intersections[large_switch][pos+1][
+                    BRANCH][peeled_branch] += 1
+                self._switch_intersections[large_switch][pos+1][
+                    CUSP][cusp_to_append_to] += 1
 
     def append(self, typ1, append_to_num, typ2, appended_path_num):
         """Update the carrying data when a train path is appended to another.
