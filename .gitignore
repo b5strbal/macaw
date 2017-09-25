@@ -4,3 +4,4 @@
 *flymake.py
 .DS_Store
 build/
+.*
