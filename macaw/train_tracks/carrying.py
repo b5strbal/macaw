@@ -37,7 +37,7 @@ class CarryingMap(SageObject):
     A carrying relationship between two train tracks.
     """
     def __init__(self, large_tt, small_tt,
-                 train_paths,
+                 paths,
                  half_branch_map,
                  hb_between_branches,
                  cusp_index_offset,
@@ -52,11 +52,12 @@ class CarryingMap(SageObject):
 
         - ``small_tt`` -- the carried train track
 
-        - ``branch_paths`` -- A 2D array whose rows are (almost) measures
-        corresponding to the branches of the small train track. Shape: (s, l).
+        - ``paths`` -- [branch_paths, cusp_paths]: Two 2D arrays whose rows
+        contain the branch and cusp paths of the small train
+        track in the large train track. Shape: [(s, l), (c,l)].
 
-        - ``cusp_paths`` -- A 2D array whose rows are (almost) measures
-        corresponding to the cusps of the small train track. Shape: (c, l).
+        # - ``cusp_paths`` -- A 2D array whose rows are (almost) measures
+        # corresponding to the cusps of the small train track. Shape: (c, l).
 
         - ``position_data`` -- a dictionary whose keys are switches of the
           large train track
@@ -90,6 +91,9 @@ class CarryingMap(SageObject):
         self._large_tt = large_tt
         self._small_tt = small_tt
         self._paths = [branch_paths, cusp_paths]
+        self._switch_intersections = {large_switch:
+            [[branch_preimage1,cusp_preimage1,small_switches_on_right1],
+             [branch_preimage2,cusp_preimage2,small_switches_on_right2]]}
         self._position_data = position_data
 
         # self._train_paths = train_paths
@@ -144,24 +148,19 @@ class CarryingMap(SageObject):
             self.add_to_hb_between_branches(CUSP, cusp_to_append_to,
                                             BRANCH, peeled_branch, 10)
 
-
-
     def append(self, typ1, append_to_num, typ2, appended_path_num):
         """Update the carrying data when a train path is appended to another.
 
         """
-        append_to = self._path_index(typ1, -append_to_num)
-        appended = self._path_index(typ2, -appended_path_num)
-        path = self.train_path(typ1, append_to_num)
-        path += self.train_path(typ2, appended_path_num)
+        # updating the paths
+        self._paths[typ1][append_to_num-1] += \
+            self._paths[typ2][appended_path_num-1]
 
-        large_hb = self.image_of_half_branch(typ2, -appended_path_num)
-        self.set_image_of_half_branch(typ1, -append_to_num, large_hb)
-
-        self._hb_between_branches[:, :, append_to[1]] += \
-            self._hb_between_branches[:, :, appended[1]]
-        self._hb_between_branches[append_to] = \
-            self._hb_between_branches[appended]
+        # updating the intersection numbers at the switches
+        for large_switch in self._switch_intersections.keys():
+            switch_data = self._switch_intersections[large_switch]
+            for data in switch_data:
+                data[typ1][append_to_num-1] += data[typ2][appended_path_num-1]
 
     def trim(self, typ1, trim_from_num, typ2, trimmed_path_num):
         """Update the carrying data when a train path is trimmed off of
