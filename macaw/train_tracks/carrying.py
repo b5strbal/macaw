@@ -56,34 +56,6 @@ class CarryingMap(SageObject):
         contain the branch and cusp paths of the small train
         track in the large train track. Shape: [(s, l), (c,l)].
 
-        # - ``cusp_paths`` -- A 2D array whose rows are (almost) measures
-        # corresponding to the cusps of the small train track. Shape: (c, l).
-
-        - ``position_data`` -- a dictionary whose keys are switches of the
-          large train track
-
-        # - ``train_paths`` -- A 2D array whose rows are (almost) measures
-        # corresponding to the branches of the small train track and the cusp
-        # paths. Shape: (s+c, l).
-
-        # - ``half_branch_map`` -- A 2D array with two rows. The first row
-        # contains the image half-branches (in the large train track) of
-        # startings of the branches and cusp paths of the small train track. The
-        # second row contains the images of the endings of the branches and cusp
-        # paths the small train track. Shape: (2, s+c).
-
-        # - ``hb_between_branches`` -- A 3D array consisting of two 2D arrays.
-        # The first one is for starting half-branches, the second is for ending
-        # half-branches. For each, rows correspond to half-branches of the train
-        # paths and the entries of the row store the position of the half-branch
-        # all branches and cusp paths. Shape: (2, s+c, s+c).
-
-        # - ``cusp_index_offset`` -- a positive integer, usually ``s``. The paths
-        # in ``train_paths`` correspond to branch paths for indices less than
-        # ``cusp_index_offset`` and to cusp paths for indices at least
-        # ``cusp_index_offset``. Similarly for ``half_branch_map`` and the 2nd
-        # and 3rd axes of ``hb_between_branches``.
-
         - ``cusp_map`` -- A 1D array specifying the image of any cusp in the
           small train track in the large train track.
 
@@ -91,19 +63,15 @@ class CarryingMap(SageObject):
         self._large_tt = large_tt
         self._small_tt = small_tt
         self._paths = [branch_paths, cusp_paths]
-        self._switch_intersections = {large_switch: (
+        self._switch_intersections = {large_switch:
             [[branch_preimage1,cusp_preimage1],
              [branch_preimage2,cusp_preimage2],
              [branch_preimage3,cusp_preimage3]],
-            [small_switches_on_right1, small_switches_on_right2]
-        )
         }
-        self._position_data = position_data
+        self._switch_clicks = {
+            large_switch: [small_switch_click1, small_switch_click2]
+        }
 
-        # self._train_paths = train_paths
-        # self._half_branch_map = half_branch_map
-        # self._hb_between_branches = hb_between_branches
-        # self._cusp_index_offset = cusp_index_offset
         self._cusp_map = cusp_map
 
     def _path_index(self, typ, index):
@@ -167,7 +135,7 @@ class CarryingMap(SageObject):
 
         # updating the intersection numbers at the switches
         for large_switch in self._switch_intersections.keys():
-            intersection_data = self._switch_intersections[large_switch][0]
+            intersection_data = self._switch_intersections[large_switch]
             for data in intersection_data:
                 data[typ1][append_to_num-1] += \
                                     with_sign*data[typ2][appended_path_num-1]
@@ -319,26 +287,23 @@ class CarryingMap(SageObject):
         """
         small_tt = self._small_tt
 
-        # a list containing outgoing branches at even positions and cusps at
-        # odd poisitions
-        outgoing_path_numbers = merge_lists(
-            small_tt.outgoing_branches(switch),
-            small_tt.outgoing_cusps(switch)
-        )
-
         def typ(pos):
             """Return the type of the branch at a position.
             """
             return BRANCH if pos % 2 == 0 else CUSP
 
-        def get_path(pos):
-            """Return the outgoing path at a specified position
-            """
-            return self.train_path(typ(pos), outgoing_path_numbers[pos])
+        # a list containing outgoing branches at even positions and cusps at
+        # odd positions
+        outgoing_path_numbers = merge_lists(
+            small_tt.outgoing_branches(switch),
+            small_tt.outgoing_cusps(switch)
+        )
 
         # The indices of minimal paths in outgoing_path_numbers
         min_path_indices = shortest_path_indices(
-            [get_path(pos) for pos in range(len(outgoing_path_numbers))])
+            [self.train_path(typ(pos), outgoing_path_numbers[pos])
+             for pos in range(len(outgoing_path_numbers))]
+        )
 
         # The type of the first minimal path (BRANCH or CUSP)
         min_path_typ = typ(min_path_indices[0])
@@ -346,7 +311,10 @@ class CarryingMap(SageObject):
         # The number of the first minimal path
         min_path_num = outgoing_path_numbers[min_path_indices[0]]
 
-        # min_path = self.train_path(min_path_typ, min_path_num)
+        min_path = self.train_path(min_path_typ, min_path_num)
+        if np.all(min_path == 0):
+            # If no isotopy can be performed, there is nothing to do
+            return
 
         # We need to trim first on the positive side, and then append on the
         # negative side. This is because otherwise we would add a lot of junk
@@ -359,7 +327,28 @@ class CarryingMap(SageObject):
             if i != min_path_indices[0]:
                 num = outgoing_path_numbers[i]
                 self.append(typ(i), -num, min_path_typ, -min_path_num,
-                          with_sign=-1)
+                            with_sign=-1)
+
+        # Since we move the switch from the current position, the intervals on
+        # the left and right of it have to be joined and the trailing branches
+        # added to the intersection. Only the trailing branches that were not
+        # collapsed are added. If the click does not go away, then some
+        # trailing branches might be added on the left, some might be added on
+        # the right. It can also happen that the click breaks apart to separate
+        # clicks.
+
+        large_switch, pos = self.image_of_switch(switch)
+        self.remove_switch_from_click(switch)
+        if self.is_click_empty(large_switch, pos):
+            self.merge_intervals_next_to_click(large_switch, pos)
+        else:
+            # a list containing outgoing branches at even positions and cusps at
+            # odd positions in the negative direction
+            outgoing_path_numbers_neg = merge_lists(
+                small_tt.outgoing_branches(-switch),
+                small_tt.outgoing_cusps(-switch)
+            )
+
 
         # -------------------------------------------------------------
         # Next, we fix the half-branch maps.
@@ -480,6 +469,43 @@ class CarryingMap(SageObject):
             self.append(typ(i), -num, min_path_typ, min_path_num)
             # TODO: we need to fix _hb_between_branches, since append() assigns
             # the same array for all of these.
+
+    def is_branch_or_cusp_collapsed(self, typ, branch_or_cusp):
+        """Decide if a branch or cusp of the small train track is collapsed.
+        """
+        return np.all(self.train_path(typ, small_branch) == 0)
+
+    def is_click_empty(self, large_branch, pos):
+        """Decide is the specified click is empty.
+        """
+        x = self.small_switches_at_click(large_switch, pos)
+        return len(x) == 0
+
+    def remove_switch_from_click(self, switch):
+        """Remove a small switch from its current click.
+        """
+        large_switch, pos = self.image_of_switch(switch)
+        x = self.small_switches_at_click(large_switch, pos)
+        x.pop(switch)
+
+    def merge_intervals_next_to_click(self, large_switch, pos):
+        """Merge the two intervals next to a click if the click is empty.
+        """
+        if len(self.small_switches_at_click(large_switch, pos)) == 0:
+            # removing the click
+            self._switch_clicks[large_switch].pop(pos)
+            # adding pos+1 to pos
+            for typ in [BRANCH, CUSP]:
+                self._switch_intersections[large_switch][pos][typ] += \
+                    self._switch_intersections[large_switch][pos+1][typ]
+            # removing pos+1
+            self._switch_intersections[large_switch][pos].pop(pos+1)
+
+    def small_switches_at_click(self, large_switch, pos):
+        """Return the set of switches at a click at a large switch and at
+        specified position.
+        """
+        return self._switch_clicks[large_switch][pos]
 
     def train_path(self, typ, branch_or_cusp):
         """Return the train path correponding to a branch or cusp.
