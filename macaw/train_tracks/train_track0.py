@@ -797,6 +797,12 @@ class TrainTrack(SageObject):
                     pass
         assert(False)
 
+    def cusp_to_switch(self, cusp):
+        """Return the switch corresponding to a cusp.
+        """
+        br = self.branch_next_to_cusp(cusp, LEFT)
+        return self.branch_endpoint(-br)
+
     # ----------------------------------------------------------------
     # COPYING
     # ----------------------------------------------------------------
