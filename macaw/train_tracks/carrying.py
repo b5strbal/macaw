@@ -104,20 +104,18 @@ class CarryingMap(SageObject):
         """
         self._large_tt = large_tt
         self._small_tt = small_tt
-        self._paths = [branch_paths, cusp_paths]
+        self._paths = paths
 
-        # 2D arrays representing intersections of the paths with intervals
-        # rows correspond to paths, columns to intervals
-        self._interval_intersections = [branch_matrix, cusp_matrix]
+        # 2D arrays representing intersections of the paths with intervals.
+        # Rows correspond to paths, columns to intervals.
+        self._interval_intersections = interval_intersections
         self._unused_interval_indices = range(10)
-        # self._switch_intersections = {large_switch:
-        #     [[branch_preimage1,cusp_preimage1],
-        #      [branch_preimage2,cusp_preimage2],
-        #      [branch_preimage3,cusp_preimage3]],
-        # }
-        # self._switch_clicks = {
-        #     large_switch: [small_switch_click1, small_switch_click2]
-        # }
+
+        # The first ``cusp_index_offset`` rows of self._paths and
+        # self._interval_intersections correspond to branches, the rest
+        # correspond to cusps
+        self._cusp_index_offset = cusp_index_offset
+
         self._switch_nodes = {small_switch : node}
         self._large_switch_to_interval = {large_switch: leftmost_interval}
 
@@ -138,7 +136,7 @@ class CarryingMap(SageObject):
                       small_switch):
         """Update the carrying map after peeling in the small train track
         """
-        if np.all(self._paths[BRANCH][peel_off_of-1] == 0):
+        if self.is_branch_or_cusp_collapsed(BRANCH, peel_off_of):
             # the peel_off_of branch is collapsed, so the peeling is
             # infinitesimal and there is nothing to update
             return
@@ -177,8 +175,10 @@ class CarryingMap(SageObject):
         path1 += with_sign*path2
 
         # updating the intersection numbers at the switches
-        path1 = self._interval_intersections[BRANCH][abs(append_to_num)-1]
-        path2 = self._interval_intersections[CUSP][abs(appended_path_num)-1]
+        path1 = self.get_intersections_of_path_with_intervals(BRANCH,
+                                                              append_to_num)
+        path2 = self.get_intersections_of_path_with_intervals(
+            CUSP, appended_path_num)
         path1 += with_sign*path2
 
     @classmethod
@@ -400,7 +400,7 @@ class CarryingMap(SageObject):
                 prev_click = cl
 
                 # setting the clicks of the nodes of a broken off subtree
-                for node in clild.get_nodes_in_click():
+                for node in child.get_nodes_in_click():
                     node.click = cl
 
             # adding intersections on the left
@@ -506,7 +506,7 @@ class CarryingMap(SageObject):
             idx = min_path_indices[0]
             small_cusp = outgoing_path_numbers[idx]
             large_cusp = self.image_of_small_cusp(small_cusp)
-            interval, diff1, diff2 = self.find_interval_containing_large_cusp(
+            interval, diff = self.find_interval_containing_large_cusp(
                 large_cusp)
 
             # adding an interval and a click to the chain
@@ -519,12 +519,9 @@ class CarryingMap(SageObject):
             interval.right_click = click
 
             # setting the updated interval intersections
-            self.set_intersections_with_interval(BRANCH, new_interval, diff1)
-            self.set_intersections_with_interval(CUSP, new_interval, diff2)
-            x1 = self.get_intersections_with_interval(BRANCH, interval)
-            x2 = self.get_intersections_with_interval(CUSP, interval)
-            self.set_intersections_with_interval(BRANCH, interval, x1-diff1)
-            self.set_intersections_with_interval(CUSP, interval, x2-diff2)
+            self.set_intersections_with_interval(new_interval, diff)
+            x = self.get_intersections_with_interval(interval)
+            self.set_intersections_with_interval(interval, x-diff)
 
             # small updates on the left...
             add_multiple_intersections(outgoing_path_numbers,
@@ -543,8 +540,8 @@ class CarryingMap(SageObject):
 
         Three things are returned:
         - the interval
-        - the branch-intersections in this interval, to the right of the cusp
-        - the cusp-intersections in this interval, to the right of the cusp
+        - the intersection data in the right half of the interval
+
         """
         large_tt = self._large_tt
         small_tt = self._small_tt
@@ -554,14 +551,11 @@ class CarryingMap(SageObject):
         # branches of the large train track
         count = 0
         for br in large_tt.outgoing_branches(large_switch):
-            x1 = self.branch_or_cusp_paths_in_large_branch(BRANCH, br)
-            x2 = self.branch_or_cusp_paths_in_large_branch(CUSP, br)
+            x = self.paths_in_large_branch(br)
             if count == 0:
-                branch_total = x1
-                cusp_total = x2
+                total = x
             else:
-                branch_total += x1
-                cusp_total += x2
+                total += x
 
             if large_tt.branch_next_to_cusp(large_cusp, LEFT) == br:
                 break
@@ -570,36 +564,45 @@ class CarryingMap(SageObject):
         # we reach the previously counted total
         interval = self.large_switch_to_left_interval(large_switch)
         count = 0
-        interval_total = [None, None]
         while True:
-            for typ in [BRANCH, CUSP]:
-                x = self.get_intersections_with_interval(typ, interval)
-                if count == 0:
-                    interval_total[typ] = x
-                else:
-                    interval_total[typ] += x
+            x = self.get_intersections_with_interval(interval)
+            if count == 0:
+                interval_total = x
+            else:
+                interval_total += x
 
-            if all(interval_total[BRANCH] >= branch_total) and \
-               all(interval_total[CUSP] >= cusp_total):
+            if all(interval_total >= total):
                 # we have found the right interval
                 break
 
             click = interval.right_click
             node = click.sample_node
+
+            def add(typ, branch_or_cusp):
+                if not self.is_branch_or_cusp_collapsed(typ, branch_or_cusp):
+                    idx = self._path_idx(BRANCH, br)
+                    interval_total[idx] += 1
+
             for x in node.get_nodes_in_click():
                 sw = x.small_switch
                 for br in small_tt.outgoing_branches(sw):
-                    if not self.is_branch_or_cusp_collapsed(BRANCH, br):
-                        interval_total[BRANCH][abs(br)-1] += 1
+                    add(BRANCH, br)
                 for cusp in small_tt.outgoing_cusps(sw):
-                    if not self.is_branch_or_cusp_collapsed(CUSP, cusp):
-                        interval_total[CUSP][abs(cusp)-1] += 1
+                    add(CUSP, cusp)
 
             interval = click.right_interval
 
-        diff1 = interval_total[BRANCH]-branch_total
-        diff2 = interval_total[CUSP]-cusp_total
-        return interval, diff1, diff2
+        diff = interval_total-total
+        return interval, diff
+
+    def _path_idx(self, typ, branch_or_cusp):
+        """Return the index of a branch or cusp path for the self._paths and
+        self._interval_intersections arrays.
+        """
+        idx = abs(branch_or_cusp)-1
+        if typ == CUSP:
+            idx += self._cusp_index_offset
+        return idx
 
     def large_switch_to_left_interval(self, large_switch):
         """Return the leftmost interval corresponding to a switch of the large
@@ -608,25 +611,32 @@ class CarryingMap(SageObject):
         # TODO: sign should be taken to account as well
         return self._large_switch_to_interval[abs(large_switch)-1]
 
-    def branch_or_cusp_paths_in_large_branch(self, typ, large_branch):
-        """Return the array of branch of cusp strands in a branch of the large
-        train track.
+    def paths_in_large_branch(self, large_branch):
+        """Return the array of paths in a branch of the large train track.
         """
-        return self._paths[typ][:][abs(large_branch)-1]
+        return self._paths[:][abs(large_branch)-1]
 
     def get_unused_interval_index(self):
         """Return an unused interval index for a new interval.
         """
         return self._unused_interval_indices.pop()
 
-    def get_intersections_with_interval(self, typ, interval):
-        """Return the intersection data of branch paths of cusp paths with a
+    def get_intersections_with_interval(self, interval):
+        """Return the intersection data of paths with a
         specified interval.
         """
-        return self._interval_intersections[typ][:][interval.index]
+        return self._interval_intersections[:][interval.index]
 
-    def set_intersections_with_interval(self, typ, interval, new_data):
-        x = self.get_intersections_with_interval(typ, interval)
+    def get_intersections_of_path_with_intervals(self, typ, branch_or_cusp):
+        """Return the intersection data of a path with all the intervals.
+        """
+        idx = self._path_idx(typ, branch_or_cusp)
+        return self._interval_intersections[idx][:]
+
+    def set_intersections_with_interval(self, interval, new_data):
+        """Set the intersection data an interval to the specified data.
+        """
+        x = self.get_intersections_with_interval(interval)
         x[:] = new_data
 
     def add_intersection_with_interval(self, typ, branch_or_cusp, interval,
@@ -634,25 +644,24 @@ class CarryingMap(SageObject):
         """Add an intersection of a branch or cusp with an interval (or
         subtract if ``with_sign`` is -1).
         """
-        x = self.get_intersections_with_interval(typ, interval)
-        x[abs(branch_or_cusp)-1] += with_sign
+        x = self.get_intersections_with_interval(interval)
+        idx = self._path_idx(typ, branch_or_cusp)
+        x[idx] += with_sign
 
     def add_interval_to_other_interval(self, added_interval, add_to_interval,
                                        with_sign=1):
         """Add the intersection data of one interval to that of another
         interval.
         """
-        for typ in [BRANCH, CUSP]:
-            x1 = self.get_intersections_with_interval(typ, add_to_interval)
-            x2 = self.get_intersections_with_interval(typ, added_interval)
-            x1 += with_sign * x2
+        x1 = self.get_intersections_with_interval(add_to_interval)
+        x2 = self.get_intersections_with_interval(added_interval)
+        x1 += with_sign * x2
 
     def erase_interval_intersections(self, interval):
         """Zero out the intersection data of an interval.
         """
-        for typ in [BRANCH, CUSP]:
-            x = self.get_intersections_with_interval(typ, interval)
-            x.fill(0)
+        x = self.get_intersections_with_interval(interval)
+        x.fill(0)
 
     def delete_interval(self, interval):
         """Delete an interval.
@@ -710,7 +719,8 @@ class CarryingMap(SageObject):
     def train_path(self, typ, branch_or_cusp):
         """Return the train path correponding to a branch or cusp.
         """
-        return self._paths[typ][abs(branch_or_cusp)-1]
+        idx = self._path_idx(typ, branch_or_cusp)
+        return self._paths[idx]
 
     def image_of_half_branch(self, typ, branch_or_cusp):
         """Return the image of a half-branch in the small train track in the
