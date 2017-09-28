@@ -22,7 +22,8 @@ AUTHORS:
 
 # from train_track import TrainTrack
 from sage.structure.sage_object import SageObject
-from macaw.constants import LEFT, RIGHT, START, END, BRANCH, CUSP
+from macaw.constants import LEFT, RIGHT, START, END, BRANCH, CUSP, \
+    FORWARD, BACKWARD
 # from sage.all import vector
 import numpy as np
 from .train_track import SMALL_COLLAPSIBLE
@@ -33,30 +34,51 @@ to_index = TrainTrack._to_index
 
 
 class Node:
+    """An element of a Click.
+
+    Nodes are always oriented so that the forward direction is the positive
+    side of the switch of the corresponding switch of the large train track.
+    """
     def __init__(self):
-        self.children = []
-        self.parents = []
+        self.neighbors = [[], []]  # positive and negative directions
         self.click = None
         self.small_switch = None
-        # self.large_branch = None
-        # self.pos = None
 
     def get_nodes_in_click(self, coming_from=None):
         """Return a generator for the nodes contained in the click.
         """
         yield self
-        for idx, node in self.children + self.parents:
+        for idx, node in self.neighbors[FORWARD] + self.neighbors[BACKWARD]:
             if node is not coming_from:
                 for x in node.get_nodes_in_click(coming_from=self):
                     yield x
 
+    def neighbors(self, forward_or_backward):
+        if forward_or_backward == FORWARD:
+            return self.neighbors[0]
+        elif forward_or_backward == BACKWARD:
+            return self.neighbors[1]
+
+    def get_large_switch(self):
+        """Return the switch of the large train track where the node is at.
+
+        OUTPUT: a positive number.
+        """
+        return self.click.large_branch
+
 
 class Click:
+    """A bunch of switches of the small train track connected by infinitesimal
+    branches.
+
+    Click are always oriented so that the forward direction is the positive
+    side of the switch of the corresponding switch of the large train track.
+
+    Clicks and Intervals are linked together in a linked list.
+    """
     def __init__(self):
         self.large_branch = None
-        # self.pos = None
-        self.left_interval = None
-        self.right_interval = None
+        self._nb_intervals = [None, None]
         self.sample_node = None
 
     def get_nodes(self, coming_from=None):
@@ -66,12 +88,34 @@ class Click:
         for x in node.get_nodes_in_click():
             yield x
 
+    def get_interval(self, side):
+        """Return the interval on the left or right.
+        """
+        return self._nb_intervals[side]
+
+    def set_interval(self, side, interval):
+        """Set the interval on the left or right.
+        """
+        self._nb_intervals[side] = interval
+
 
 class Interval:
+    """An interval between two Clicks in the same switch of the large train
+    track.
+    """
     def __init__(self):
         self.index = None
-        self.left_click = None
-        self.right_click = None
+        self._nb_clicks = None
+
+    def get_click(self, side):
+        """Return the click on the left or right.
+        """
+        return self._nb_clicks[side]
+
+    def set_click(self, side, click):
+        """Set the click on the left or right.
+        """
+        self._nb_clicks[side] = click
 
 
 class CarryingMap(SageObject):
@@ -121,24 +165,16 @@ class CarryingMap(SageObject):
 
         self._cusp_map = cusp_map
 
-    def image_of_switch(self, small_switch, node):
-        """Return
-        - large switch the specified switch of the small train track maps to
-        - the position of the switch from the left (according to the
-        orientation of the large switch).
-        - the node correnponding to the switch
-
-        OUTPUT: (large_switch, position).
-        """
-        pass
-
     def peel_in_small(self, peeled_branch, peel_off_of, peeled_side,
                       small_switch):
         """Update the carrying map after peeling in the small train track
         """
+
         if self.is_branch_or_cusp_collapsed(BRANCH, peel_off_of):
             # the peel_off_of branch is collapsed, so the peeling is
-            # infinitesimal and there is nothing to update
+            # infinitesimal
+            if self.is_branch_or_cusp_collapsed(BRANCH, peeled_branch):
+                pass
             return
 
         self.append(BRANCH, -peeled_branch, BRANCH, peel_off_of)
@@ -378,25 +414,32 @@ class CarryingMap(SageObject):
                 )
 
         node = self.node_of_small_switch(switch)
+        large_switch = self.small_switch_to_large_switch(switch)
+        if large_switch > 0:
+            offset = 0
+        else:
+            offset = 1
+
         prev_click = node.click
         count = 0
         prev_idx = len(small_tt.num_outgoing_branches(-switch))
-        for idx, child in reversed(node.children):
+        for idx, child in reversed(node.neighbors((BACKWARD+offset) % 2)):
             # remove this node from the parents of the child. This has to be
             # done before we call apply_to_tree() later.
-            child.parents.remove(node)
+            child.neighbors((FORWARD+offset) % 2).remove(node)
 
             if count == 0:
-                interval = prev_click.left_interval
+                interval = prev_click.get_interval((LEFT+offset) % 2)
             if count > 0:
                 # creating new interval and new click
                 interval = Interval()
                 cl = Click()
                 cl.index = self.get_unused_interval_index()
                 cl.large_branch = prev_click.large_branch
-                cl.left_interval = interval
-                cl.right_interval = prev_click.right_interval
-                prev_click.right_interval = interval
+                cl.set_interval((LEFT+offset) % 2, interval)
+                cl.set_interval((RIGHT+offset) % 2,
+                                prev_click.get_interval((RIGHT+offset) % 2))
+                prev_click.set_interval((RIGHT+offset) % 2, interval)
                 prev_click = cl
 
                 # setting the clicks of the nodes of a broken off subtree
@@ -411,20 +454,24 @@ class CarryingMap(SageObject):
 
         if len(node.children) != 0:
             # finally, add intersections on the rightmost interval
-            add_multiple_intersections(outgoing_path_numbers_neg,
-                                       range(2*idx), prev_click.right_interval)
+            add_multiple_intersections(
+                outgoing_path_numbers_neg,
+                range(2*idx),
+                prev_click.get_interval((RIGHT+offset) % 2)
+            )
         else:
             # it there were no children, then the left and right intervals get
             # identified. We keep the left interval an delete the right
             # interval
-            left_int = node.click.left_interval
-            right_int = node.click.right_interval
-            self.add_interval_to_other_interval()
-            right_click = right_int.right_click
-            right_click.left_interval = left_int
+            left_int = node.click.get_interval((LEFT+offset) % 2)
+            right_int = node.click.get_interval((RIGHT+offset) % 2)
+            self.add_interval_to_other_interval(right_int, left_int)
+            right_click = right_int.get_click((RIGHT+offset) % 2)
+            right_click.set_interval((LEFT+offset) % 2, left_int)
 
-        node.children = []
-        assert(len(node.parents) == 0)
+        bn = node.neighbors((BACKWARD+offset) % 2)
+        bn[:] = []
+        assert(len(node.get_neighbors((FORWARD+offset) % 2)) == 0)
 
         # ---------------------------------------------------------------------
         # Setting paths and intersections
@@ -459,21 +506,34 @@ class CarryingMap(SageObject):
                 # if it is a branch, then we join the node to the click
                 br = outgoing_path_numbers[idx]
                 next_sw = small_tt.branch_endpoint(br)
-                next_node = self.node_of_small_switch(-next_sw)
+                next_node = self.node_of_small_switch(next_sw)
+
                 if branch_count == 0:
+                    large_switch = self.small_switch_to_large_switch(
+                        -next_sw)
+                    if large_switch > 0:
+                        offset = 0
+                    else:
+                        offset = 1
+
                     # our node is added to the first click
                     node.click = next_node.click
                     # removing intersections with the leftmost interval
-                    add_multiple_intersections(outgoing_path_numbers,
-                                               range(idx),
-                                               node.click.left_interval,
-                                               with_sign=-1)
+                    add_multiple_intersections(
+                        outgoing_path_numbers,
+                        range(idx),
+                        node.click.get_interval((LEFT+offset) % 2),
+                        with_sign=-1
+                    )
                 else:
                     # all subsequent clicks are deleted and merged to the above
                     # click
                     next_click = next_node.click
-                    interval = next_click.left_interval
-                    node.click.right_interval = next_click.right_interval
+                    interval = next_click.get_interval((LEFT+offset) % 2)
+                    node.click.set_interval(
+                        (RIGHT+offset) % 2,
+                        next_click.get_interval((RIGHT+offset) % 2)
+                    )
 
                     # merging clicks
                     for x in next_node.get_nodes_in_click():
@@ -486,19 +546,20 @@ class CarryingMap(SageObject):
                     # indices
                     self.delete_interval(interval)
 
-                node.parents.append(next_node)
-                next_node.children.append(node)
+                node.neighbors((FORWARD+offset) % 2).append(next_node)
+                next_node.neighbors((BACKWARD+offset) % 2).append(node)
                 branch_count += 1
                 last_idx = idx
 
         if branch_count > 0:
             # There is a branch that got collapsed.
             # Removing intersections with the rightmost interval
-            add_multiple_intersections(outgoing_path_numbers,
-                                       range(last_idx,
-                                             len(outgoing_path_numbers)),
-                                       node.click.right_interval,
-                                       with_sign=-1)
+            add_multiple_intersections(
+                outgoing_path_numbers,
+                range(last_idx, len(outgoing_path_numbers)),
+                node.click.get_interval((RIGHT+offset) % 2),
+                with_sign=-1
+            )
         else:
             # No branches got collapsed, so there must be a cusp path that is
             # collapsed. This path has to be used to determine the position of
@@ -512,11 +573,12 @@ class CarryingMap(SageObject):
             # adding an interval and a click to the chain
             new_interval = Interval()
             click = Click()
-            click.left_interval = interval
-            click.right_interval = new_interval
-            new_interval.right_click = interval.right_click
-            new_interval.left_click = click
-            interval.right_click = click
+            click.set_interval((LEFT+offset) % 2, interval)
+            click.set_interval((RIGHT+offset) % 2, new_interval)
+            new_interval.set_click((RIGHT+offset) % 2,
+                                   interval.get_click((RIGHT+offset) % 2))
+            new_interval.set_click((LEFT+offset) % 2, click)
+            interval.set_click((RIGHT+offset) % 2, click)
 
             # setting the updated interval intersections
             self.set_intersections_with_interval(new_interval, diff)
@@ -529,11 +591,12 @@ class CarryingMap(SageObject):
                                        interval,
                                        with_sign=-1)
             # ... and on the right
-            add_multiple_intersections(outgoing_path_numbers,
-                                       range(idx+1,
-                                             len(outgoing_path_numbers)),
-                                       new_interval,
-                                       with_sign=-1)
+            add_multiple_intersections(
+                outgoing_path_numbers,
+                range(idx+1, len(outgoing_path_numbers)),
+                new_interval,
+                with_sign=-1
+            )
 
     def find_interval_containing_large_cusp(self, large_cusp):
         """Find the interval containing a cusp of the large train track.
@@ -575,7 +638,7 @@ class CarryingMap(SageObject):
                 # we have found the right interval
                 break
 
-            click = interval.right_click
+            click = interval.get_click((RIGHT+offset) % 2)
             node = click.sample_node
 
             def add(typ, branch_or_cusp):
@@ -590,7 +653,7 @@ class CarryingMap(SageObject):
                 for cusp in small_tt.outgoing_cusps(sw):
                     add(CUSP, cusp)
 
-            interval = click.right_interval
+            interval = click.get_interval((RIGHT+offset) % 2)
 
         diff = interval_total-total
         return interval, diff
@@ -677,12 +740,23 @@ class CarryingMap(SageObject):
     def node_of_small_switch(self, small_switch):
         """Return the node corresponding to a switch of the small train track.
         """
-        return self._switch_nodes[small_switch]
+        return self._switch_nodes[abs(small_switch)]
+
+    def small_switch_to_large_switch(self, small_switch):
+        """Return the image of a switch of the small train track in the large
+        train track.
+        """
+        node = self.node_of_small_switch(small_switch)
+        large_switch = node.get_large_switch()  # always positive
+        if node.small_switch > 0:
+            return large_switch
+        else:
+            return -large_switch
 
     def is_branch_or_cusp_collapsed(self, typ, branch_or_cusp):
         """Decide if a branch or cusp of the small train track is collapsed.
         """
-        return np.all(self.train_path(typ, small_branch) == 0)
+        return np.all(self.train_path(typ, branch_or_cusp) == 0)
 
     # def is_click_empty(self, large_branch, pos):
     #     """Decide is the specified click is empty.

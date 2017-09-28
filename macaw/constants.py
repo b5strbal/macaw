@@ -26,3 +26,6 @@ END = 1
 
 BRANCH = 0
 CUSP = 1
+
+FORWARD = 0
+BACKWARD = 1
