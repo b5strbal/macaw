@@ -733,17 +733,13 @@ class TrainTrack(SageObject):
             sage: tt.adjacent_cusp(-2, LEFT)
             2
             sage: tt.adjacent_cusp(1, LEFT)
-            Traceback (most recent call last):
-            ...
-            ValueError: Branch 1 is the left-most or right-most branch. There is no cusp on the specified side of it.
+            None
 
         """
         orientation = 0 if branch > 0 else 1
         cusp = self._adjacent_cusp[side, orientation, abs(branch)-1]
         if cusp == 0:
-            raise ValueError("Branch %d is the left-most or right-most "
-                             "branch. There is no cusp on the "
-                             "specified side of it." % branch)
+            return None
         return cusp
 
     def outgoing_cusps(self, switch):
@@ -788,13 +784,9 @@ class TrainTrack(SageObject):
         for b in self.branches():
             for sg in [-1, 1]:
                 sb = sg*b
-                try:
-                    if self.adjacent_cusp(sb, (side+1) % 2) == cusp:
-                        return sb
-                except:
-                    # We get here when adjacent_cusp() looks to the left of a
-                    # left-most branch, for instance.
-                    pass
+                if self.adjacent_cusp(sb, (side+1) % 2) == cusp:
+                    return sb
+
         assert(False)
 
     def cusp_to_switch(self, cusp):
