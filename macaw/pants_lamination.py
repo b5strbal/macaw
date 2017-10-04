@@ -24,6 +24,7 @@ from sage.structure.sage_object import SageObject
 from sage.all import vector, Integer
 from .train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
 from .constants import LEFT, RIGHT
+from bisect import insort
 
 
 
@@ -124,6 +125,9 @@ class PantsLamination(SageObject):
         # print 'c'
         return self.to_vector() == other.to_vector()
 
+    def __lt__(self, other):
+        return self.cost() < other.cost()
+
     def __ne__(self, other):
         return not self.__eq__(other)
 
@@ -216,3 +220,53 @@ class PantsLamination(SageObject):
 
     def apply_twist(self, pants_curve, power=1):
         self._tt.unzip_fold_pants_twist(pants_curve, power)
+
+    def cost(self):
+        return sum(abs(x) for x in self.to_vector())
+
+    def simplify_twist(self):
+        vec = self.to_vector()
+        curve = 1
+        for x,y in zip(vec[0::2], vec[1::2]):
+            if x != 0:
+                self.apply_twist(curve, -int(y/x))
+            else:
+                self.apply_twist(curve, -y)
+            curve += 1
+
+    def get_simplified_twist(self):
+        tt = self.copy()
+        tt.simplify_twist()
+        return tt
+
+    def get_elementary_move(self, pants_curve, inverse=False, debug=False):
+        tt = self.copy()
+        tt.apply_elementary_move(pants_curve, inverse, debug)
+        return tt
+
+    def get_simplified(self, visited=[]):
+        lam = self.copy()
+        lam.simplify_twist()
+        if lam.cost() == 1 or lam in visited:
+            return lam
+        insort(visited, lam)
+        vec = lam.to_vector()
+        curve = 2
+        inv = False
+        moves = []
+        for i in range(len(vec)):
+            curr = lam.get_elementary_move(int(curve/2), inv)
+            insort(moves, curr)
+            inv = curve%2 == 0
+            curve += 1
+        final_lams = []
+        for m in moves:
+            branch = m.get_simplified(visited)
+            if branch.cost() == 1:
+                return branch
+            else:
+                insort(final_lams, branch)
+        return final_lams[0]
+
+    def simplify(self):
+        self._tt = self.get_simplified()._tt
