@@ -164,19 +164,8 @@ class CarryingMap(SageObject):
                     BRANCH, peeled_branch, interval)
                 self.add_intersection_with_interval(
                     CUSP, cusp_to_append_to, interval)
-        else:
-            if is_small_br_collapsed:
-                # If both are collapsed, then we rewire the nodes
-                node1 = self.node_of_small_switch(small_switch)
-                sw2 = self._small_tt.branch_endpoint(peeled_branch)
-                node2 = self.node_of_small_switch(sw2)
-                sw3 = self._small_tt.branch_endpoint(peel_off_of)
-                node2 = self.node_of_small_switch(sw3)
-                direction = FORWARD if node1.small_switch == small_switch else\
-                            BACKWARD
-                idx = node2.get_neighbors((direction+1)%2).index(node1)
-                node1.get_neighbors(direction).remove(node2)
 
+        # If the large branch is collapsed, there is nothing to do, because the peeling does not change how long the small branch is. If the small branch is also collapsed, the clicks still do not change.
 
     def append(self, typ1, append_to_num, typ2, appended_path_num,
                with_sign=1):
