@@ -309,7 +309,7 @@ class CarryingMap(SageObject):
         The specified branch is not allowed to use as a connection. Hence the outcome is a component of a click minus a switch.
         
         The returned switches all look in the same direction as ``branch``.
-        
+
         INPUT:
         - ``branch`` -- a branch of the small train track
         - ``reversed_direction`` -- leave it as False; it is only used for the recursion
@@ -331,6 +331,16 @@ class CarryingMap(SageObject):
                     br, not reversed_direction
                 ):
                     yield sw
+
+    def switches_in_click(self, click):
+        """Return the switches of the small train track in the specified click.
+
+        The switches will all face in the same direction as the click.
+        """
+        # TODO: fix orientation issue.
+        for sw in self._small_tt.switches():
+            if self.small_switch_to_click(sw) == click:
+                return sw
 
     # ----------------------------------------------------------------
     # UTILITY METHODS / SETTERS
@@ -495,9 +505,11 @@ class CarryingMap(SageObject):
         INPUT:
         - ``large_cusp`` -- a cusp of the large train track
 
-        OUTPUT:
+        OUTPUT: 
+        If it is contained in an interval, then a 2-tuple is returned.
         - the interval
         - the intersection data in the right half of the interval
+        If it is contained in a click, then an error is raised.
 
         """
         large_tt = self._large_tt
@@ -530,33 +542,33 @@ class CarryingMap(SageObject):
 
             if all(interval_total >= total):
                 # we have found the right interval
-                break
-
-            click = interval.get_click((RIGHT+offset) % 2)
-            node = click.sample_node
+                diff = interval_total-total
+                return interval, diff
 
             def add(typ, branch_or_cusp):
                 if not self.is_branch_or_cusp_collapsed(typ, branch_or_cusp):
-                    idx = self._path_idx(BRANCH, br)
+                    idx = self._path_idx(typ, br)
                     interval_total[idx] += 1
 
-            for x in node.get_nodes_in_click():
-                sw = x.small_switch
+            click = interval.get_click((RIGHT+offset) % 2)
+            # TODO: fix orientation issue.
+            for sw in self.switches_in_click(click):
                 for br in small_tt.outgoing_branches(sw):
                     add(BRANCH, br)
                 for cusp in small_tt.outgoing_cusps(sw):
                     add(CUSP, cusp)
 
-            interval = click.get_interval((RIGHT+offset) % 2)
+            if all(interval_total >= total) and any(interval_total > total):
+                # the cusp is not in an interval but in a click
+                raise ValueError("The large cusp is contained in a click, not in an interval!")
 
-        diff = interval_total-total
-        return interval, diff
+            interval = click.get_interval((RIGHT+offset) % 2)
 
     def large_switch_to_extremal_interval(self, large_switch, side):
         """Return the leftmost or rightmost interval corresponding to a switch of the large train track.
         """
         offset = 0 is large_switch > 0 else 1
-        return self._large_switch_to_extermal_interval[(side+1) % 2][
+        return self._large_switch_to_extremal_interval[(side+1) % 2][
             abs(large_switch)-1]
 
     # ----------------------------------------------------------------
