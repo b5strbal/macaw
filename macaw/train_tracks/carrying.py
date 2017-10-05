@@ -23,7 +23,7 @@ AUTHORS:
 # from train_track import TrainTrack
 from sage.structure.sage_object import SageObject
 from macaw.constants import LEFT, RIGHT, START, END, BRANCH, CUSP, \
-    FORWARD, BACKWARD
+    FORWARD, BACKWARD, INTERVAL
 # from sage.all import vector
 import numpy as np
 from .train_track import SMALL_COLLAPSIBLE, FoldError
@@ -252,23 +252,39 @@ class CarryingMap(SageObject):
         small train track shows up in this branch.
 
         """
-        return self._path_coordinates[:, abs(branch)-1]
+        return self.get_intersections(BRANCH, branch)
 
     def get_intersections_with_interval(self, interval):
         """Return the intersection data of paths with a
         specified interval.
         """
-        return self._path_coordinates[:][
-            self._interval_index_offset+interval.index]
+        return self.get_intersections(INTERVAL, interval)
 
     def _path_idx(self, typ, branch_or_cusp):
-        """Return the index of a branch or cusp path for the self._paths and
-        self._interval_intersections arrays.
+        """Return the index of a branch or cusp path.
         """
         idx = abs(branch_or_cusp)-1
         if typ == CUSP:
             idx += self._cusp_index_offset
-        return idx
+        elif typ == BRANCH:
+            return idx
+        assert(False)
+
+    def _branch_or_interval_idx(self, typ, branch_or_interval):
+        """Return the index of a branch of the large train track of an interval.
+        """
+        idx = abs(branch_or_interval)-1
+        if typ == INTERVAL:
+            idx += self._interval_index_offset
+        elif typ == BRANCH:
+            return idx
+        assert(False)
+
+    def get_intersections(self, typ, branch_or_interval):
+        """Return the intersection data with large branch or and interval.
+        """
+        idx = self._branch_or_interval_idx(typ, branch_or_interval)
+        return self._path_coordinates[:, idx]
 
     def path_coordinates(self, typ, branch_or_cusp):
         """Return the path coordinates (intersection with branches and intervals) of a branch or cusp of the small train track.
@@ -346,12 +362,12 @@ class CarryingMap(SageObject):
     # UTILITY METHODS / SETTERS
     # ----------------------------------------------------------------
     
-    def append(self, typ1, append_to_num, typ2, appended_path_num,
+    def append(self, typ1, append_to_num, typ2, appended_num,
                with_sign=1):
         """Update the carrying data when a train path is appended to another.
         """
         path1 = self.path_coordinates(typ1, append_to_num)
-        path2 = self.path_coordinates(typ2, appended_path_num)
+        path2 = self.path_coordinates(typ2, appended_num)
         path1 += with_sign*path2
     
     def append_path(self, typ, append_to_num, path,
@@ -362,6 +378,14 @@ class CarryingMap(SageObject):
         # updating the paths
         old_path = self.path_coordinates(typ, append_to_num)
         old_path += with_sign * path
+
+    def append_in_large(self, typ1, append_to_num, typ2, appended_num, 
+                                     with_sign=1):
+        """Add the paths in a branch of the large train track to another branch.
+        """
+        x1 = self.paths_in_large_branch(add_to_branch)
+        x2 = self.paths_in_large_branch(added_branch)
+        x1 += with_sign * x2
 
     def insert_click_next_to_switch(self, small_switch, side):
         """Insert a click in the interval on the specified side of a switch of the small train track.
@@ -482,6 +506,14 @@ class CarryingMap(SageObject):
         idx = self._path_idx(typ, branch_or_cusp)
         x[idx] += with_sign
 
+    def add_intersection(self, typ1, branch_or_cusp, typ2, branch_or_interval,
+                          with_sign=1):
+        """Add an intersection of a small branch or cusp with a large branch or interval (or subtract if ``with_sign`` is -1).
+        """
+        x = self.get_intersections(typ2, branch_or_interval)
+        idx = self._path_idx(typ, branch_or_cusp)
+        x[idx] += with_sign
+
     def add_interval_to_other_interval(self, added_interval, add_to_interval,
                                        with_sign=1):
         """Add the intersection data of one interval to that of another
@@ -509,8 +541,8 @@ class CarryingMap(SageObject):
         If it is contained in an interval, then a 2-tuple is returned.
         - the interval
         - the intersection data in the right half of the interval
-        If it is contained in a click, then an error is raised.
 
+        If it is contained in a click, then an error is raised.
         """
         large_tt = self._large_tt
         small_tt = self._small_tt
@@ -654,6 +686,31 @@ class CarryingMap(SageObject):
         else:
             raise FoldError("The folded small train track is not carried on the large train track!")
 
+    def peel_in_large(self, peeled_branch, peel_off_of, peeled_side):
+        """Update the carrying map after peeling in the large train track.
+
+        The small train track has to be a measured train track. If there is a way to peel the large train track so that the small train track is carried, then the small train track is not changed. (In this case, the measure on the small train track does not play a role.) If there is no way to peel the large train track so that the small train track is carried, then the small train track is peeled according to the measure to make it carried. 
+        """
+        self.append_in_large(BRANCH, peel_off_of, BRANCH, peeled_branch, -1)
+
+    def fold_in_large(self, folded_branch, fold_onto_branch, fold_direction):
+        """Perform a fold in the large train track.
+        """
+        # Adding the intersections with the folded branch to fold_onto_branch.. 
+        self.append_in_large(BRANCH, fold_onto_branch, BRANCH, folded_branch)
+        # ... and also the left- or rightmost interval at a switch
+        lg_sw = self._large_tt.branch_endpoint(fold_onto_branch)
+        interval = self.large_switch_to_extremal_interval(
+            lg_sw, (fold_direction+1) % 2)
+        self.append_in_large(INTERVAL, interval, BRANCH, folded_branch)
+
+        # Also add branch and interval intersection with a cusp path, since the cusp path at between the folded branches become longer.
+        lg_cusp = self._large_tt.adjacent_cusp(folded_branch, fold_direction)
+        sm_cusp = self.large_cusp_to_small_cusp(lg_cusp)
+        self.add_intersection(CUSP, sm_cusp, BRANCH, fold_onto_branch)
+        if sm_cusp != None and not self.is_cusp_collapsed(sm_cusp):
+            other_int = self.find_interval_containing_large_cusp(lg_cusp)
+            self.add_intersection(CUSP, sm_cusp, INTERVAL, interval)
 
     def delete_collapsed_branch_from_small(self, branch):
         """Update the carrying data if a branch is deleted or contracted to a
@@ -890,16 +947,6 @@ class CarryingMap(SageObject):
  
 
 
-
-
-    def peel_in_large(self, peeled_branch, peel_off_of, peeled_side):
-        """Update the carrying map after peeling in the large train track.
-
-        The small train track has to be a measured train track. If there is a way to peel the large train track so that the small train track is carried, then the small train track is not changed. (In this case, the measure on the small train track does not play a role.) If there is no way to peel the large train track so that the small train track is carried, then the small train track is peeled according to the measure to make it carried. 
-        """
-        x1 = self.paths_in_large_branch(peel_off_of)
-        x2 = self.paths_in_large_branch(peeled_branch)
-        x1 -= x2
 
 
 
