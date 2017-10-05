@@ -121,7 +121,9 @@ class CarryingMap(SageObject):
         self._small_switch_to_click = [click1, click2]
         self._is_switch_map_orientation_preserving = [False, True]
 
-        self._large_switch_to_interval = {large_switch: leftmost_interval}
+        self._large_switch_to_extermal_interval = [
+            leftmost_array, rightmost_array
+        ]
 
         self._cusp_map = cusp_map
 
@@ -225,6 +227,16 @@ class CarryingMap(SageObject):
                 return large_cusp
         return None
     
+    def interval_to_large_switch(self, interval):
+        """Return the switch of the large train track containing the interval.
+        """
+        pass
+
+    def click_to_large_switch(self, click):
+        """Return the switch of the large train track containing the click.
+        """
+        pass
+
     def paths_in_large_branch(self, branch):
         """Return the 1D array counting the branches and cusp paths in a branch
         of the large train track.
@@ -291,17 +303,34 @@ class CarryingMap(SageObject):
             if self.is_branch_collapsed(br):
                 yield br
 
-    def get_connected_switches(self, branch):
+    def get_connected_switches(self, branch, reversed_direction=False):
         """Return an iterator for the switches connected to the endpoint of a branch by collapsed branches. 
 
-        The specified branch is not allowed to use as a connection. Hence the outcome is a component of a click minus a switch."""
+        The specified branch is not allowed to use as a connection. Hence the outcome is a component of a click minus a switch.
+        
+        The returned switches all look in the same direction as ``branch``.
+        
+        INPUT:
+        - ``branch`` -- a branch of the small train track
+        - ``reversed_direction`` -- leave it as False; it is only used for the recursion
+
+
+        """
         switch = self._small_tt.branch_endpoint(branch)
-        yield switch
-        for br in self.collapsed_branches_from_small_switch(switch) + \
-            self.collapsed_branches_from_small_switch(-switch):
+        if reversed_direction:
+            yield -switch
+        else:
+            yield switch
+        for br in self.collapsed_branches_from_small_switch(switch):
+            for sw in self.get_connected_switches(br, reversed_direction):
+                yield sw
+
+        for br in self.collapsed_branches_from_small_switch(-switch):
             if br != -branch:
-                for br in self.get_connected_switches(br):
-                    yield br
+                for sw in self.get_connected_switches(
+                    br, not reversed_direction
+                ):
+                    yield sw
 
     # ----------------------------------------------------------------
     # UTILITY METHODS / SETTERS
@@ -456,7 +485,7 @@ class CarryingMap(SageObject):
         self._small_switch_to_click[abs(small_switch)-1] = click
 
 
-     def find_interval_containing_large_cusp(self, large_cusp):
+    def find_interval_containing_large_cusp(self, large_cusp):
         """Find the interval containing a cusp of the large train track.
 
         Two things can happen:
@@ -473,7 +502,7 @@ class CarryingMap(SageObject):
         """
         large_tt = self._large_tt
         small_tt = self._small_tt
-        large_switch = large_tt.cusp_to_switch()
+        large_switch = large_tt.cusp_to_switch(large_cusp)
 
         # count the total number of strands on the left of the cusp in the
         # branches of the large train track
@@ -490,7 +519,7 @@ class CarryingMap(SageObject):
 
         # now counting the intersections with the intervals on the left until
         # we reach the previously counted total
-        interval = self.large_switch_to_left_interval(large_switch)
+        interval = self.large_switch_to_extremal_interval(large_switch, LEFT)
         count = 0
         while True:
             x = self.get_intersections_with_interval(interval)
@@ -523,13 +552,12 @@ class CarryingMap(SageObject):
         diff = interval_total-total
         return interval, diff
 
-
-    def large_switch_to_left_interval(self, large_switch):
-        """Return the leftmost interval corresponding to a switch of the large
-        train track.
+    def large_switch_to_extremal_interval(self, large_switch, side):
+        """Return the leftmost or rightmost interval corresponding to a switch of the large train track.
         """
-        # TODO: sign should be taken to account as well
-        return self._large_switch_to_interval[abs(large_switch)-1]
+        offset = 0 is large_switch > 0 else 1
+        return self._large_switch_to_extermal_interval[(side+1) % 2][
+            abs(large_switch)-1]
 
     # ----------------------------------------------------------------
     # OPERATIONS
