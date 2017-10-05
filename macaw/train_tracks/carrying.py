@@ -29,9 +29,6 @@ import numpy as np
 from .train_track import SMALL_COLLAPSIBLE, FoldError
 from .train_track0 import TrainTrack
 
-# TODO: make this an inline function in Cython.
-to_index = TrainTrack._to_index
-
 
 class Click:
     """A bunch of switches of the small train track connected by infinitesimal
@@ -211,12 +208,23 @@ class CarryingMap(SageObject):
         """
         return self._small_switch_to_click[abs(small_switch)-1]
 
-    def image_of_small_cusp(self, small_cusp):
+    def small_cusp_to_large_cusp(self, small_cusp):
         """Return the image of a cusp of the small train track in the large
         train track.
         """
         return self._cusp_map[small_cusp-1]
 
+    def large_cusp_to_small_cusp(self, large_cusp):
+        """Return the small cusp that maps to a large cusp.
+        
+        OUTPUT:
+        the corresponding small cusp or (if no small cusp maps to the large cusp) None
+        """
+        for cusp in self._small_tt.cusps():
+            if self.small_cusp_to_large_cusp(cusp) == large_cusp:
+                return large_cusp
+        return None
+    
     def paths_in_large_branch(self, branch):
         """Return the 1D array counting the branches and cusp paths in a branch
         of the large train track.
@@ -722,7 +730,7 @@ class CarryingMap(SageObject):
             # the switch.
             for cusp in small_tt.outgoing_cusps(switch):
                 if cusp is not None and self.is_cusp_collapsed(cusp):
-                    large_cusp = self.image_of_small_cusp(cusp)
+                    large_cusp = self.small_cusp_to_large_cusp(cusp)
                     interval, diff = self.find_interval_containing_large_cusp(
                         large_cusp
                     )
@@ -844,29 +852,14 @@ class CarryingMap(SageObject):
 
 
 
-    def peel_in_large(self, branch):
-        """Unzips the codomain and, if necessary, the domain, too.
+    def peel_in_large(self, peeled_branch, peel_off_of, peeled_side):
+        """Update the carrying map after peeling in the large train track.
 
-        The domain has to be a measured train track. If there is a way
-        to unzip the codomain so that the domain is carried, then that
-        unzipping is performed and the domain does not change. In this
-        case, the measure on the domain does not play a role. If there
-        is no way to split the codomain so that the domain is carried,
-        then the domain is unzipped according to the measure, and the
-        codomain is unzipped accordingly to preserve the carrying
-        relationship. If there are multiple way to unzip the domain
-        according to the measure, then one of the possible unzips is
-        performed - it is not specified which one.
-
-        Nothing is returned, all components of the carrying map are
-        changed internally.
-
-        INPUT:
-
-        - ``branch`` --
-
+        The small train track has to be a measured train track. If there is a way to peel the large train track so that the small train track is carried, then the small train track is not changed. (In this case, the measure on the small train track does not play a role.) If there is no way to peel the large train track so that the small train track is carried, then the small train track is peeled according to the measure to make it carried. 
         """
-        pass
+        x1 = self.paths_in_large_branch(peel_off_of)
+        x2 = self.paths_in_large_branch(peeled_branch)
+        x1 -= x2
 
 
 
