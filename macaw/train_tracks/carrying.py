@@ -26,7 +26,7 @@ from macaw.constants import LEFT, RIGHT, START, END, BRANCH, CUSP, \
     FORWARD, BACKWARD
 # from sage.all import vector
 import numpy as np
-from .train_track import SMALL_COLLAPSIBLE
+from .train_track import SMALL_COLLAPSIBLE, FoldError
 from .train_track0 import TrainTrack
 
 # TODO: make this an inline function in Cython.
@@ -128,59 +128,9 @@ class CarryingMap(SageObject):
 
         self._cusp_map = cusp_map
 
-    def peel_in_small(self, peeled_branch, peel_off_of, peeled_side,
-                      small_switch):
-        """Update the carrying map after peeling in the small train track
-        """
-        is_small_br_collapsed = self.is_branch_collapsed(peeled_branch)
-        is_large_br_collapsed = self.is_branch_collapsed(peel_off_of)
-
-        if not is_large_br_collapsed:
-            # if the large branch was collapsed, we could still do the appends,
-            # but they would not do anything.
-            self.append(BRANCH, peeled_branch, BRANCH, peel_off_of)
-            cusp_to_append_to = self._small_tt.adjacent_cusp(
-                peeled_branch,
-                side=peeled_side
-            )
-            self.append(CUSP, cusp_to_append_to, BRANCH, peel_off_of)
-
-            if not is_small_br_collapsed:
-                # New intersections with an interval next to the switch are
-                # only created when none of the two branches are collapsed.
-                interval = self.interval_next_to_small_switch(
-                    small_switch, LEFT)
-                self.add_intersection_with_interval(
-                    BRANCH, peeled_branch, interval)
-                self.add_intersection_with_interval(
-                    CUSP, cusp_to_append_to, interval)
-
-        # If the large branch is collapsed, there is nothing to do, because the peeling does not change how long the small branch is. If the small branch is also collapsed, the clicks still do not change.
-
-    def fold_in_small(self, folded_branch, fold_onto_branch):
-        """Perform a fold in the small train track is possible.
-        """
-        # Trying to isotope the endpoint of ``fold_onto_branch`` as close to the start point as possible.
-        small_tt = self._small_tt
-        end_sw = small_tt.branch_endpoint(fold_onto_branch)
-
-
-    def append(self, typ1, append_to_num, typ2, appended_path_num,
-               with_sign=1):
-        """Update the carrying data when a train path is appended to another.
-        """
-        path1 = self.path_coordinates(typ1, append_to_num)
-        path2 = self.path_coordinates(typ2, appended_path_num)
-        path1 += with_sign*path2
-    
-    def append_path(self, typ, append_to_num, path,
-               with_sign=1):
-        """Update the carrying data when a train path is appended to another.
-
-        """
-        # updating the paths
-        old_path = self.path_coordinates(typ, append_to_num)
-        old_path += with_sign * path
+    # ------------------------------------------------------------------
+    # CONSTRUCTORS
+    # ------------------------------------------------------------------
 
     @classmethod
     def identity_map(cls, train_track):
@@ -245,6 +195,417 @@ class CarryingMap(SageObject):
                    half_branch_map,
                    hb_between_branches,
                    branch_to_cusp_idx)
+
+    # ------------------------------------------------------------------
+    # GETTERS
+    # ------------------------------------------------------------------
+
+    def small_tt(self):
+        return self._small_tt
+
+    def large_tt(self):
+        return self._large_tt
+
+    def small_switch_to_click(self, small_switch):
+        """Return the click containing the switch of the small train track.
+        """
+        return self._small_switch_to_click[abs(small_switch)-1]
+
+    def image_of_small_cusp(self, small_cusp):
+        """Return the image of a cusp of the small train track in the large
+        train track.
+        """
+        return self._cusp_map[small_cusp-1]
+
+    def paths_in_large_branch(self, branch):
+        """Return the 1D array counting the branches and cusp paths in a branch
+        of the large train track.
+
+        INPUT:
+
+        - ``branch`` -- a branch of the large train track. Its sign does not
+        matter.
+
+        OUTPUT:
+
+        a 1D array, containing how many times each branch and cusp path of the
+        small train track shows up in this branch.
+
+        """
+        return self._path_coordinates[:, abs(branch)-1]
+
+    def get_intersections_with_interval(self, interval):
+        """Return the intersection data of paths with a
+        specified interval.
+        """
+        return self._path_coordinates[:][
+            self._interval_index_offset+interval.index]
+
+    def _path_idx(self, typ, branch_or_cusp):
+        """Return the index of a branch or cusp path for the self._paths and
+        self._interval_intersections arrays.
+        """
+        idx = abs(branch_or_cusp)-1
+        if typ == CUSP:
+            idx += self._cusp_index_offset
+        return idx
+
+    def path_coordinates(self, typ, branch_or_cusp):
+        """Return the path coordinates (intersection with branches and intervals) of a branch or cusp of the small train track.
+        """
+        idx = self._path_idx(typ, branch_or_cusp)
+        return self._path_coordinates[idx]
+
+    def is_branch_or_cusp_collapsed(self, typ, branch_or_cusp):
+        """Decide if a branch or cusp of the small train track is collapsed.
+        """
+        return np.all(self.path_coordinates(typ, branch_or_cusp) == 0)
+
+    def is_branch_collapsed(self, branch):
+        """Decide if a branch of the small train track is collapsed.
+        """
+        return self.is_branch_collapsed(branch)
+
+    def is_cusp_collapsed(self, cusp):
+        """Decide if a cusp of the small train track is collapsed.
+        """
+        return self.is_cusp_collapsed(cusp)
+
+    # def train_path(self, typ, branch_or_cusp):
+    #     """Return the train path corresponding to a branch or cusp.
+    #     """
+    #     idx = self._path_idx(typ, branch_or_cusp)
+    #     return self._paths[idx]
+
+    def collapsed_branches_from_small_switch(self, small_switch):
+        """Return the list of collapsed branches emanating from a switch of the small train track."""
+        for br in self._small_tt.outgoing_branches(small_switch):
+            if self.is_branch_collapsed(br):
+                yield br
+
+    def get_connected_switches(self, branch):
+        """Return an iterator for the switches connected to the endpoint of a branch by collapsed branches. 
+
+        The specified branch is not allowed to use as a connection. Hence the outcome is a component of a click minus a switch."""
+        switch = self._small_tt.branch_endpoint(branch)
+        yield switch
+        for br in self.collapsed_branches_from_small_switch(switch) + \
+            self.collapsed_branches_from_small_switch(-switch):
+            if br != -branch:
+                for br in self.get_connected_switches(br):
+                    yield br
+
+    # ----------------------------------------------------------------
+    # UTILITY METHODS / SETTERS
+    # ----------------------------------------------------------------
+    
+    def append(self, typ1, append_to_num, typ2, appended_path_num,
+               with_sign=1):
+        """Update the carrying data when a train path is appended to another.
+        """
+        path1 = self.path_coordinates(typ1, append_to_num)
+        path2 = self.path_coordinates(typ2, appended_path_num)
+        path1 += with_sign*path2
+    
+    def append_path(self, typ, append_to_num, path,
+               with_sign=1):
+        """Update the carrying data when a train path is appended to another.
+
+        """
+        # updating the paths
+        old_path = self.path_coordinates(typ, append_to_num)
+        old_path += with_sign * path
+
+    def insert_click_next_to_switch(self, small_switch, side):
+        """Insert a click in the interval on the specified side of a switch of the small train track.
+
+        The new interval (the one without intersections) is the one between the newly created click and the click of the switch.
+
+        OUTPUT:
+        - the new interval and the new click
+        """
+        click = self.small_switch_to_click(small_switch)
+        if self._is_switch_map_orientation_preserving[abs(small_switch)-1]:
+            offset = 0
+        else:
+            offset = 1
+        interval = click.get_interval((side+offset) % 2)
+        return self.insert_click_in_interval(interval, (side+offset+1) % 2)
+        # TODO: This duplicates code of insert_click_in_interval() in order to retrieve offset.
+
+    def insert_click_in_interval(self, interval, new_interval_side):
+        """Create a new click and insert it in the middle of an interval.
+
+        INPUT:
+        - ``interval`` -- the interval into which the new click is inserted
+        - ``new_interval_side`` -- LEFT or RIGHT, the side on which the new interval is created. ``interval`` becomes the interval on the other side
+
+        OUTPUT:
+        - the new interval and the new click
+        """
+        new_interval = self.create_interval()
+        click = Click()
+        click.set_interval((new_interval_side+1) % 2, interval)
+        click.set_interval(new_interval_side, new_interval)
+        right_click = interval.get_click(new_interval_side)
+        new_interval.set_click(new_interval_side, right_click)
+        right_click.set_interval((new_interval_side+1) % 2, new_interval)
+        new_interval.set_click((new_interval_side+1) % 2, click)
+        interval.set_click(new_interval_side, click)
+        return new_interval, click
+
+    def delete_click(self, click, deleted_interval_side):
+        """Delete a click and the interval on the specified side of it.
+
+        The intersections of the deleted interval are added to the intersections
+        with the kept interval. The changes to the linking of clicks and intervals is also made."""
+        # TODO: Wait, it should not matter which side is kept and deleted.
+        ints = [click.get_interval(LEFT), click.get_interval(RIGHT)]
+        kept_int = ints[(deleted_interval_side+1) % 2]
+        del_int = ints[deleted_interval_side]
+        self.add_interval_to_other_interval(del_int, kept_int)
+        next_click = del_int.get_click(deleted_interval_side)
+        kept_int.set_click(
+            deleted_interval_side, next_click)
+        if next_click is not None:
+            next_click.set_interval((deleted_interval_side+1) % 2, kept_int)
+        self.delete_interval(del_int)
+        del click
+
+    def erase_interval_intersections(self, interval):
+        """Zero out the intersection data of an interval.
+        """
+        x = self.get_intersections_with_interval(interval)
+        x.fill(0)
+
+    def delete_interval(self, interval):
+        """Delete an interval.
+
+        This involves zeroing out all intersections, returning its index to the
+        unused indices and deleting the interval object.
+        """
+        self.erase_interval_intersections(interval)
+        self._unused_interval_indices.append(interval.index)
+        # deleting explicitly because of possible circular references
+        del interval
+
+    def get_unused_interval_index(self):
+        """Return an unused interval index for a new interval.
+        """
+        return self._unused_interval_indices.pop()
+
+
+    def create_interval(self):
+        interval = Interval()
+        interval.index = self.get_unused_interval_index()       
+
+    def small_switch_to_large_switch(self, small_switch):
+        """Return the image of a switch of the small train track in the large
+        train track.
+        """
+        click = self.small_switch_to_click(small_switch)
+        large_switch = click.large_switch  # always positive
+        if self._is_switch_map_orientation_preserving[abs(small_switch)-1]:
+            return large_switch
+        else:
+            return -large_switch
+
+    def interval_next_to_small_switch(self, small_switch, side):
+        """Return the interval of the left of right of the small switch.
+        """
+        click = self.small_switch_to_click(small_switch)
+        if self._is_switch_map_orientation_preserving[abs(small_switch)-1]:
+            offset = 0
+        else:
+            offset = 1
+        return click.get_interval((side+offset) % 2)
+ 
+     def set_intersections_with_interval(self, interval, new_data):
+        """Set the intersection data an interval to the specified data.
+        """
+        x = self.get_intersections_with_interval(interval)
+        x[:] = new_data
+
+    def add_intersection_with_interval(self, typ, branch_or_cusp, interval,
+                                       with_sign=1):
+        """Add an intersection of a branch or cusp with an interval (or
+        subtract if ``with_sign`` is -1).
+        """
+        x = self.get_intersections_with_interval(interval)
+        idx = self._path_idx(typ, branch_or_cusp)
+        x[idx] += with_sign
+
+    def add_interval_to_other_interval(self, added_interval, add_to_interval,
+                                       with_sign=1):
+        """Add the intersection data of one interval to that of another
+        interval.
+        """
+        x1 = self.get_intersections_with_interval(add_to_interval)
+        x2 = self.get_intersections_with_interval(added_interval)
+        x1 += with_sign * x2
+
+    def set_small_switch_to_click(self, small_switch, click):
+        self._small_switch_to_click[abs(small_switch)-1] = click
+
+
+     def find_interval_containing_large_cusp(self, large_cusp):
+        """Find the interval containing a cusp of the large train track.
+
+        Two things can happen:
+        - if a cusp of the small train track is pushed onto the large cusp, then the containing interval is not defined. This happens if and only if the cusp path corresponding to the large cusp is collapsed.
+        - Otherwise there is a containing interval.
+
+        INPUT:
+        - ``large_cusp`` -- a cusp of the large train track
+
+        OUTPUT:
+        - the interval
+        - the intersection data in the right half of the interval
+
+        """
+        large_tt = self._large_tt
+        small_tt = self._small_tt
+        large_switch = large_tt.cusp_to_switch()
+
+        # count the total number of strands on the left of the cusp in the
+        # branches of the large train track
+        count = 0
+        for br in large_tt.outgoing_branches(large_switch):
+            x = self.paths_in_large_branch(br)
+            if count == 0:
+                total = x
+            else:
+                total += x
+
+            if large_tt.branch_next_to_cusp(large_cusp, LEFT) == br:
+                break
+
+        # now counting the intersections with the intervals on the left until
+        # we reach the previously counted total
+        interval = self.large_switch_to_left_interval(large_switch)
+        count = 0
+        while True:
+            x = self.get_intersections_with_interval(interval)
+            if count == 0:
+                interval_total = x
+            else:
+                interval_total += x
+
+            if all(interval_total >= total):
+                # we have found the right interval
+                break
+
+            click = interval.get_click((RIGHT+offset) % 2)
+            node = click.sample_node
+
+            def add(typ, branch_or_cusp):
+                if not self.is_branch_or_cusp_collapsed(typ, branch_or_cusp):
+                    idx = self._path_idx(BRANCH, br)
+                    interval_total[idx] += 1
+
+            for x in node.get_nodes_in_click():
+                sw = x.small_switch
+                for br in small_tt.outgoing_branches(sw):
+                    add(BRANCH, br)
+                for cusp in small_tt.outgoing_cusps(sw):
+                    add(CUSP, cusp)
+
+            interval = click.get_interval((RIGHT+offset) % 2)
+
+        diff = interval_total-total
+        return interval, diff
+
+
+    def large_switch_to_left_interval(self, large_switch):
+        """Return the leftmost interval corresponding to a switch of the large
+        train track.
+        """
+        # TODO: sign should be taken to account as well
+        return self._large_switch_to_interval[abs(large_switch)-1]
+
+    # ----------------------------------------------------------------
+    # OPERATIONS
+    # ----------------------------------------------------------------
+
+    def peel_in_small(self, peeled_branch, peel_off_of, peeled_side,
+                      small_switch):
+        """Update the carrying map after peeling in the small train track
+        """
+        is_small_br_collapsed = self.is_branch_collapsed(peeled_branch)
+        is_large_br_collapsed = self.is_branch_collapsed(peel_off_of)
+
+        if not is_large_br_collapsed:
+            # if the large branch was collapsed, we could still do the appends,
+            # but they would not do anything.
+            self.append(BRANCH, peeled_branch, BRANCH, peel_off_of)
+            cusp_to_append_to = self._small_tt.adjacent_cusp(
+                peeled_branch,
+                side=peeled_side
+            )
+            self.append(CUSP, cusp_to_append_to, BRANCH, peel_off_of)
+
+            interval = self.interval_next_to_small_switch(small_switch, LEFT)
+            if not is_small_br_collapsed:
+                # New intersections with an interval next to the switch are
+                # only created when none of the two branches are collapsed.
+                self.add_intersection_with_interval(
+                    BRANCH, peeled_branch, interval)
+                self.add_intersection_with_interval(
+                    CUSP, cusp_to_append_to, interval)
+            else:
+                # If the large branch is not collapsed, but the small branch is, then our click breaks apart after the peeling.
+                new_int, new_click = \
+                    self.insert_click_next_to_switch(interval, RIGHT)
+                for sw in self.get_connected_switches(peeled_branch):
+                    self.set_small_switch_to_click(sw, new_click)
+
+        # If the large branch is collapsed, there is nothing to do, because the peeling does not change how long the small branch is. If the small branch is also collapsed, the clicks still do not change.
+
+    def fold_in_small(self, folded_branch, fold_onto_branch, fold_direction):
+        """Perform a fold in the small train track is possible.
+        """
+        # Trying to isotope the endpoint of ``fold_onto_branch`` as close to the start point as possible...
+        small_tt = self._small_tt
+        end_sw = small_tt.branch_endpoint(fold_onto_branch)
+        start_sw = small_tt.branch_endpoint(-fold_onto_branch)
+        self.isotope_switch_recursively(end_sw, stop_switch=start_sw)
+
+        # ... and isotoping the endpoint of ``folded_branch`` as far as possible.
+        folded_end_sw = small_tt.branch_endpoint(folded_branch)
+        self.isotope_switch_recursively(-folded_end_sw)
+
+        # In order for the fold to be possible, after the isotopy, fold_onto_branch has to be shorter or equal than the cusp path between the folded and the fold_onto_branch. 
+        # Also, the folded_branch has to be at least as long as the fold_onto_branch.
+        cusp = small_tt.adjacent_cusp(folded_branch, fold_direction)
+        cusp_path = self.path_coordinates(CUSP, cusp)
+        fold_onto_path = self.path_coordinates(BRANCH, fold_onto_branch)
+        folded_path = self.path_coordinates(BRANCH, folded_branch)
+        if is_smaller_or_equal(fold_onto_path, cusp_path) and \
+                is_smaller_or_equal(fold_onto_path, folded_path):
+            self.append(BRANCH, folded_branch, BRANCH, fold_onto_branch, with_sign=-1)
+            self.append(CUSP, cusp, BRANCH, fold_onto_branch, with_sign=-1)
+
+            if not self.is_branch_collapsed(folded_branch):
+                interval = self.interval_next_to_small_switch(
+                    end_sw, fold_direction
+                )
+                self.add_intersection_with_interval(
+                    BRANCH, folded_branch, interval, -1
+                )
+                self.add_intersection_with_interval(
+                    CUSP, cusp, interval, -1
+                )
+            elif not self.self.is_branch_collapsed(fold_onto_branch):
+                # Just like in the case of peeling there is a scenario
+                # when clicks get merged. This happens when the folded and fold_onto branches where not collapsed but they had the same length.
+                fold_onto_click = self.small_switch_to_click(fold_onto_branch)
+                folded_click = self.small_switch_to_click(folded_branch)
+                for sw in self.get_connected_switches(folded_branch):
+                    self.set_small_switch_to_click(sw, fold_onto_click)
+                self.delete_click(folded_click, RIGHT)
+        else:
+            raise FoldError("The folded small train track is not carried on the large train track!")
+
 
     def delete_collapsed_branch_from_small(self, branch):
         """Update the carrying data if a branch is deleted or contracted to a
@@ -454,8 +815,12 @@ class CarryingMap(SageObject):
 
         self.end_switch_isotopy(switch)
 
-    def isotope_switch_recursively(self, switch):
+    def isotope_switch_recursively(self, switch, stop_switch=None):
         """Isotope a switch of the small train track as far as possible, by recursively isotoping other switches the original switch bumps into during the isotopy.
+
+        INPUT:
+        - ``switch`` -- the oriented switch which is isotoped forward
+        - ``stop_switch`` -- this switch is not allowed to be isotoped. If the recursive isotopy reaches this switch, the process stops.
         """
         self.isotope_switch_as_far_as_possible(switch)
         for cusp in self._small_tt.outgoing_cusps(switch):
@@ -466,401 +831,20 @@ class CarryingMap(SageObject):
         for branch in self._small_tt.outgoing_branches(switch):
             if self.is_branch_collapsed(branch):
                 next_sw = -self._small_tt.branch_endpoint(branch)
+                if abs(next_sw) == abs(stop_switch):
+                    # We bumped into the stop_switch
+                    return
                 self.isotope_switch_recursively(self, next_sw)
 
         # After all the switches are isotoped further, we isotope the original switch as far as possible one more time.
         self.isotope_switch_as_far_as_possible(switch)
         # TODO: Do we need to do more iterations? If so, is there a way to get stuck in an infinite loop?
  
-    def insert_click_in_interval(self, interval, new_interval_side):
-        """Create a new click and insert it in the middle of an interval.
 
-        INPUT:
-        - ``interval`` -- the interval into which the new click is inserted
-        - ``new_interval_side`` -- LEFT or RIGHT, the side on which the new interval is created. ``interval`` becomes the interval on the other side
 
-        OUTPUT:
-        - the new interval and the new click
-        """
-        new_interval = self.create_interval()
-        click = Click()
-        click.set_interval((new_interval_side+1) % 2, interval)
-        click.set_interval(new_interval_side, new_interval)
-        right_click = interval.get_click(new_interval_side)
-        new_interval.set_click(new_interval_side, right_click)
-        right_click.set_interval((new_interval_side+1) % 2, new_interval)
-        new_interval.set_click((new_interval_side+1) % 2, click)
-        interval.set_click(new_interval_side, click)
-        return new_interval, click
 
-    def delete_click(self, click, deleted_interval_side):
-        """Delete a click and the interval on the specified side of it.
 
-        The intersections of the deleted interval are added to the intersections
-        with the kept interval. The changes to the linking of clicks and intervals is also made."""
-        # TODO: Wait, it should not matter which side is kept and deleted.
-        ints = [click.get_interval(LEFT), click.get_interval(RIGHT)]
-        kept_int = ints[(deleted_interval_side+1) % 2]
-        del_int = ints[deleted_interval_side]
-        self.add_interval_to_other_interval(del_int, kept_int)
-        next_click = del_int.get_click(deleted_interval_side)
-        kept_int.set_click(
-            deleted_interval_side, next_click)
-        if next_click is not None:
-            next_click.set_interval((deleted_interval_side+1) % 2, kept_int)
-        self.delete_interval(del_int)
-        del click
-
-    def find_interval_containing_large_cusp(self, large_cusp):
-        """Find the interval containing a cusp of the large train track.
-
-        Two things are returned:
-        - the interval
-        - the intersection data in the right half of the interval
-
-        """
-        large_tt = self._large_tt
-        small_tt = self._small_tt
-        large_switch = large_tt.cusp_to_switch()
-
-        # count the total number of strands on the left of the cusp in the
-        # branches of the large train track
-        count = 0
-        for br in large_tt.outgoing_branches(large_switch):
-            x = self.paths_in_large_branch(br)
-            if count == 0:
-                total = x
-            else:
-                total += x
-
-            if large_tt.branch_next_to_cusp(large_cusp, LEFT) == br:
-                break
-
-        # now counting the intersections with the intervals on the left until
-        # we reach the previously counted total
-        interval = self.large_switch_to_left_interval(large_switch)
-        count = 0
-        while True:
-            x = self.get_intersections_with_interval(interval)
-            if count == 0:
-                interval_total = x
-            else:
-                interval_total += x
-
-            if all(interval_total >= total):
-                # we have found the right interval
-                break
-
-            click = interval.get_click((RIGHT+offset) % 2)
-            node = click.sample_node
-
-            def add(typ, branch_or_cusp):
-                if not self.is_branch_or_cusp_collapsed(typ, branch_or_cusp):
-                    idx = self._path_idx(BRANCH, br)
-                    interval_total[idx] += 1
-
-            for x in node.get_nodes_in_click():
-                sw = x.small_switch
-                for br in small_tt.outgoing_branches(sw):
-                    add(BRANCH, br)
-                for cusp in small_tt.outgoing_cusps(sw):
-                    add(CUSP, cusp)
-
-            interval = click.get_interval((RIGHT+offset) % 2)
-
-        diff = interval_total-total
-        return interval, diff
-
-    def _path_idx(self, typ, branch_or_cusp):
-        """Return the index of a branch or cusp path for the self._paths and
-        self._interval_intersections arrays.
-        """
-        idx = abs(branch_or_cusp)-1
-        if typ == CUSP:
-            idx += self._cusp_index_offset
-        return idx
-
-    def large_switch_to_left_interval(self, large_switch):
-        """Return the leftmost interval corresponding to a switch of the large
-        train track.
-        """
-        # TODO: sign should be taken to account as well
-        return self._large_switch_to_interval[abs(large_switch)-1]
-
-    def paths_in_large_branch(self, large_branch):
-        """Return the array of paths in a branch of the large train track.
-        """
-        return self._path_coordinates[:][abs(large_branch)-1]
-
-    def get_unused_interval_index(self):
-        """Return an unused interval index for a new interval.
-        """
-        return self._unused_interval_indices.pop()
-
-    def get_intersections_with_interval(self, interval):
-        """Return the intersection data of paths with a
-        specified interval.
-        """
-        return self._interval_intersections[:][
-            self._interval_index_offset+interval.index]
-
-    # def get_intersections_of_path_with_intervals(self, typ, branch_or_cusp):
-    #     """Return the intersection data of a path with all the intervals.
-    #     """
-    #     idx = self._path_idx(typ, branch_or_cusp)
-    #     return self._interval_intersections[idx][:]
-
-    def set_intersections_with_interval(self, interval, new_data):
-        """Set the intersection data an interval to the specified data.
-        """
-        x = self.get_intersections_with_interval(interval)
-        x[:] = new_data
-
-    def add_intersection_with_interval(self, typ, branch_or_cusp, interval,
-                                       with_sign=1):
-        """Add an intersection of a branch or cusp with an interval (or
-        subtract if ``with_sign`` is -1).
-        """
-        x = self.get_intersections_with_interval(interval)
-        idx = self._path_idx(typ, branch_or_cusp)
-        x[idx] += with_sign
-
-    def add_interval_to_other_interval(self, added_interval, add_to_interval,
-                                       with_sign=1):
-        """Add the intersection data of one interval to that of another
-        interval.
-        """
-        x1 = self.get_intersections_with_interval(add_to_interval)
-        x2 = self.get_intersections_with_interval(added_interval)
-        x1 += with_sign * x2
-
-    def erase_interval_intersections(self, interval):
-        """Zero out the intersection data of an interval.
-        """
-        x = self.get_intersections_with_interval(interval)
-        x.fill(0)
-
-    def delete_interval(self, interval):
-        """Delete an interval.
-
-        This involves zeroing out all intersections, returning its index to the
-        unused indices and deleting the interval object.
-        """
-        self.erase_interval_intersections(interval)
-        self._unused_interval_indices.append(interval.index)
-        # deleting explicitly because of possible circular references
-        del interval
-
-    def create_interval(self):
-        interval = Interval()
-        interval.index = self.get_unused_interval_index()        
-
-    def collapsed_branches_from_small_switch(self, small_switch):
-        """Return the list of collapsed branches emanating from a switch of the small train track."""
-        for br in self._small_tt.outgoing_branches(small_switch):
-            if self.is_branch_collapsed(br):
-                yield br
-
-    def get_connected_switches(self, branch):
-        """Return an iterator for the switches connected to the endpoint of a branch by collapsed branches. 
-
-        The specified branch is not allowed to use as a connection. Hence the outcome is a component of a click minus a switch."""
-        switch = self._small_tt.branch_endpoint(branch)
-        yield switch
-        for br in self.collapsed_branches_from_small_switch(switch) + \
-            self.collapsed_branches_from_small_switch(-switch):
-            if br != -branch:
-                for br in self.get_connected_switches(br):
-                    yield br
-
-    def small_switch_to_click(self, small_switch):
-        """Return the click containing the switch of the small train track.
-        """
-        return self._small_switch_to_click[abs(small_switch)-1]
-
-    def set_small_switch_to_click(self, small_switch, click):
-        self._small_switch_to_click[abs(small_switch)-1] = click
-
-    def small_switch_to_large_switch(self, small_switch):
-        """Return the image of a switch of the small train track in the large
-        train track.
-        """
-        click = self.small_switch_to_click(small_switch)
-        large_switch = click.large_switch  # always positive
-        if self._is_switch_map_orientation_preserving[abs(small_switch)-1]:
-            return large_switch
-        else:
-            return -large_switch
-
-    def interval_next_to_small_switch(self, small_switch, side):
-        """Return the interval of the left of right of the small switch.
-        """
-        click = self.small_switch_to_click(small_switch)
-        if self._is_switch_map_orientation_preserving[abs(small_switch)-1]:
-            offset = 0
-        else:
-            offset = 1
-        return click.get_interval((side+offset) % 2)
-
-    def is_branch_or_cusp_collapsed(self, typ, branch_or_cusp):
-        """Decide if a branch or cusp of the small train track is collapsed.
-        """
-        return np.all(self.train_path(typ, branch_or_cusp) == 0)
-
-    def is_branch_collapsed(self, branch):
-        """Decide if a branch of the small train track is collapsed.
-        """
-        return self.is_branch_collapsed(branch)
-
-    def is_cusp_collapsed(self, cusp):
-        """Decide if a cusp of the small train track is collapsed.
-        """
-        return self.is_cusp_collapsed(cusp)
-
-    # def is_click_empty(self, large_branch, pos):
-    #     """Decide is the specified click is empty.
-    #     """
-    #     x = self.small_switches_at_click(large_switch, pos)
-    #     return len(x) == 0
-
-    # def remove_switch_from_click(self, switch):
-    #     """Remove a small switch from its current click.
-    #     """
-    #     large_switch, pos = self.image_of_switch(switch)
-    #     x = self.small_switches_at_click(large_switch, pos)
-    #     x.pop(switch)
-
-    def merge_intervals_next_to_click(self, large_switch, pos):
-        """Merge the two intervals next to a click if the click is empty.
-        """
-        if len(self.small_switches_at_click(large_switch, pos)) == 0:
-            # removing the click
-            self._switch_clicks[large_switch].pop(pos)
-            # adding pos+1 to pos
-            for typ in [BRANCH, CUSP]:
-                self._switch_intersections[large_switch][pos][typ] += \
-                    self._switch_intersections[large_switch][pos+1][typ]
-            # removing pos+1
-            self._switch_intersections[large_switch][pos].pop(pos+1)
-
-    # def small_switches_at_click(self, large_switch, pos):
-    #     """Return the set of switches at a click at a large switch and at
-    #     specified position.
-    #     """
-    #     return self._switch_clicks[large_switch][pos]
-
-    def path_coordinates(self, typ, branch_or_cusp):
-        idx = self._path_idx(typ, branch_or_cusp)
-        return self._path_coordinates[idx]
-
-    # def train_path(self, typ, branch_or_cusp):
-    #     """Return the train path corresponding to a branch or cusp.
-    #     """
-    #     idx = self._path_idx(typ, branch_or_cusp)
-    #     return self._paths[idx]
-
-    def image_of_half_branch(self, typ, branch_or_cusp):
-        """Return the image of a half-branch in the small train track in the
-        large train track.
-        """
-        a = self._path_index(typ, branch_or_cusp)
-        return self._half_branch_map[a]
-
-    def set_image_of_half_branch(self, typ, branch_or_cusp, large_branch):
-        """Set the image of a half-branch in the small train track in the large
-        train track.
-        """
-        a = self._path_index(typ, branch_or_cusp)
-        self._half_branch_map[a] = large_branch
-
-    def image_of_small_cusp(self, small_cusp):
-        """Return the image of a cusp of the small train track in the large
-        train track.
-        """
-        return self._cusp_map[small_cusp-1]
-
-    def get_strands_in_branch(self, large_branch):
-        """Return the 1D array counting the branches and cusp paths in a branch
-        of the large train track.
-
-        INPUT:
-
-        - ``large_branch`` -- a branch of the large train track. Its sign does not
-        matter.
-
-        OUTPUT:
-
-        a 1D array, containing how many times each branch and cusp path of the
-        small train track shows up in this branch.
-
-        """
-        return self._train_paths[:, abs(branch)-1]
-
-    def get_strands_on_side(self, typ, branch_or_cusp, side):
-        """Return the 1D array counting the branches and cusps on the specified
-        side of the branch of the small train track.
-
-        The counting occurs in the branch of the large train track where the
-        branch or cusp goes into.
-
-        This makes sense only if the branch of cusp specified is not collapsed.
-        If it is not collapsed, then we can consider the first branch of the
-        large train track the branch or cusp path traverses and count the
-        branches in that large branch.
-        """
-        large_hb = self.image_of_half_branch(typ, branch_or_cusp)
-        if large_hb == 0:
-            # branch_or_cusp is collapsed, in which case we raise an error for
-            # now.
-            # TODO: Maybe we should return the zero array?
-            assert(False)
-
-        a = self._path_index(typ, branch_or_cusp)
-        left_strands = self._hb_between_branches[a]
-        if side == LEFT:
-            # Counting on the left side is easy, since that is what we store
-            # directly.
-            return left_strands
-
-        # For counting on the right, we count all branches and subtract the
-        # branches on the left and the branch or cusp path itself.
-        all_strands = self.get_strands_in_branch(large_hb)
-        right_strands = all_strands - left_strands
-        # We also need to take out the branch itself.
-        right_strands[a[1]] -= 1
-        return right_strands
-
-    def zero_out_strands_on_the_left(self, typ, branch_or_cusp):
-        """Set _hb_between_branches to the zero array for a branch or cusp.
-        """
-        a = self._path_index(typ, branch_or_cusp)
-        self._hb_between_branches[a].fill(0)
-
-    def set_strands_on_the_left(self, typ, branch_or_cusp, new_array):
-        """Set _hb_between_branches to a new array.
-        """
-        a = self._path_index(typ, branch_or_cusp)
-        self._hb_between_branches[a] = new_array
-
-    def small_tt(self):
-        return self._small_tt
-
-    def large_tt(self):
-        return self._large_tt
-
-    def __mul__(self):
-        """
-        Compose two carrying maps if possible.
-        """
-        pass
-
-    def compute_measure_on_codomain(self):
-        """
-        Compute the measure on the codomain from the measure of the domain.
-        """
-        pass
-
-    def unzip_codomain(self, branch):
+    def peel_in_large(self, branch):
         """Unzips the codomain and, if necessary, the domain, too.
 
         The domain has to be a measured train track. If there is a way
@@ -884,43 +868,7 @@ class CarryingMap(SageObject):
         """
         pass
 
-    # ------------------------------------------------------------
-    # Teichmuller/Alexander polynomial computation.
-    # ------------------------------------------------------------
 
-    def action_on_cohomology(self):
-        pass
-
-    def invariant_cohomology(self):
-        pass
-
-    def teichmuller_polynomial(self):
-        pass
-
-    def first_non_collapsed_branch(self, small_switch, side):
-        """Return the first non-collapsed branch of the small train track going
-        to the left or right.
-
-        It is possible that the left- or right-most outgoing branch from the
-        switch is collapsed. In this case, we move to the next switch, and
-        look at the left- or right-most branch of that. We keep doing this
-        until we find branch of the small train track which is not collapsed.
-
-        """
-        small_tt = self.small_tt()
-        sw = small_switch
-        count = 0
-        while True:
-            br = sw.outgoing_branch(sw, start_side=side)
-            hb = self.image_of_half_branch(BRANCH, br)
-            if hb != 0:
-                # the branch br is not collapsed
-                return br
-            sw = -small_tt.branch_endpoint(br)
-
-            # For safety, we make sure that we don't get into an infinite loop.
-            assert(count <= small_tt.num_switches())
-            count += 1    
 
 
 def merge_lists(a, b):
