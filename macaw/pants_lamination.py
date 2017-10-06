@@ -5,7 +5,7 @@ r"""
 AUTHORS:
 
 - BALAZS STRENNER (2017-07-30): initial version
-
+- KYLE XIAO (2017-10-04)
 
 """
 
@@ -221,9 +221,11 @@ class PantsLamination(SageObject):
     def apply_twist(self, pants_curve, power=1):
         self._tt.unzip_fold_pants_twist(pants_curve, power)
 
+    #defines cost as the absolute value of the sum of the absolute value of vector elements
     def cost(self):
         return sum(abs(x) for x in self.to_vector())
 
+    #applies twists to minimize cost so that (a, b) -> (a, b%a)
     def reduce_twist(self):
         vec = self.to_vector()
         curve = 1
@@ -234,16 +236,21 @@ class PantsLamination(SageObject):
                 self.apply_twist(curve, -y)
             curve += 1
 
+    #returns a copy of the lamination with reduce_twist applied to it
     def get_reduced_twist(self):
         tt = self.copy()
         tt.reduce_twist()
         return tt
 
+    #returns a copy of the lamination with apply_elementary_move applied to it
     def get_elementary_move(self, pants_curve, inverse=False, debug=False):
         tt = self.copy()
         tt.apply_elementary_move(pants_curve, inverse, debug)
         return tt
 
+    #recursive function that returns a copy of the lamination whose cost is
+    #minimized or 1 using twists and elementary moves. Implements a best-first
+    #search of possible moves.
     def get_reduced(self, visited=[]):
         lam = self.copy()
         lam.reduce_twist()
@@ -268,5 +275,6 @@ class PantsLamination(SageObject):
                 insort(final_lams, branch)
         return final_lams[0]
 
+    #applies get_reduced to self
     def reduce(self):
         self._tt = self.get_reduced([])._tt
