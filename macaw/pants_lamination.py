@@ -5,7 +5,8 @@ r"""
 AUTHORS:
 
 - BALAZS STRENNER (2017-07-30): initial version
-
+- KYLE XIAO (2017-10-04)
+- JONATHAN CHEN (2017-10-4)
 
 """
 
@@ -291,6 +292,7 @@ class PantsLamination(SageObject):
         lam = self.copy()
         return lam.apply_twist(pants_curve, power)
 
+    # defines cost as the absolute value of the sum of the absolute value of vector elements
     def cost(self):
         """
         Calculates the cost of each state given by the sum of the coordinates
@@ -307,6 +309,8 @@ class PantsLamination(SageObject):
         Looks at the PantsLamination object to apply twists wherever necessary.
 
         """
+    # applies twists to minimize cost so that (a, b) -> (a, b%a)
+    def reduce_twist(self):
         vec = self.to_vector()
         curve = 1
         for x,y in zip(vec[0::2], vec[1::2]):
@@ -316,19 +320,24 @@ class PantsLamination(SageObject):
                 self.apply_twist(curve, -y)
             curve += 1
 
-    def get_simplified_twist(self):
+    # returns a copy of the lamination with reduce_twist applied to it
+    def get_reduced_twist(self):
         tt = self.copy()
-        tt.simplify_twist()
+        tt.reduce_twist()
         return tt
 
+    # returns a copy of the lamination with apply_elementary_move applied to it
     def get_elementary_move(self, pants_curve, inverse=False, debug=False):
         tt = self.copy()
         tt.apply_elementary_move(pants_curve, inverse, debug)
         return tt
 
-    def get_simplified(self, visited=[]):
+    # recursive function that returns a copy of the lamination whose cost is
+    # minimized or 1 using twists and elementary moves. Implements a best-first
+    # search of possible moves.
+    def get_reduced(self, visited=[]):
         lam = self.copy()
-        lam.simplify_twist()
+        lam.reduce_twist()
         if lam.cost() == 1 or lam in visited:
             return lam
         insort(visited, lam)
@@ -343,12 +352,13 @@ class PantsLamination(SageObject):
             curve += 1
         final_lams = []
         for m in moves:
-            branch = m.get_simplified(visited)
+            branch = m.get_reduced(visited)
             if branch.cost() == 1:
                 return branch
             else:
                 insort(final_lams, branch)
         return final_lams[0]
 
-    def simplify(self):
-        self._tt = self.get_simplified()._tt
+    # applies get_reduced to self
+    def reduce(self):
+        self._tt = self.get_reduced([])._tt

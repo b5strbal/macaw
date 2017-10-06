@@ -491,7 +491,7 @@ class CarryingMap(SageObject):
             offset = 1
         return click.get_interval((side+offset) % 2)
  
-     def set_intersections_with_interval(self, interval, new_data):
+    def set_intersections_with_interval(self, interval, new_data):
         """Set the intersection data an interval to the specified data.
         """
         x = self.get_intersections_with_interval(interval)
@@ -599,7 +599,7 @@ class CarryingMap(SageObject):
     def large_switch_to_extremal_interval(self, large_switch, side):
         """Return the leftmost or rightmost interval corresponding to a switch of the large train track.
         """
-        offset = 0 is large_switch > 0 else 1
+        offset = 0 if large_switch > 0 else 1
         return self._large_switch_to_extremal_interval[(side+1) % 2][
             abs(large_switch)-1]
 
