@@ -224,7 +224,7 @@ class PantsLamination(SageObject):
     def cost(self):
         return sum(abs(x) for x in self.to_vector())
 
-    def simplify_twist(self):
+    def reduce_twist(self):
         vec = self.to_vector()
         curve = 1
         for x,y in zip(vec[0::2], vec[1::2]):
@@ -234,9 +234,9 @@ class PantsLamination(SageObject):
                 self.apply_twist(curve, -y)
             curve += 1
 
-    def get_simplified_twist(self):
+    def get_reduced_twist(self):
         tt = self.copy()
-        tt.simplify_twist()
+        tt.reduce_twist()
         return tt
 
     def get_elementary_move(self, pants_curve, inverse=False, debug=False):
@@ -244,9 +244,9 @@ class PantsLamination(SageObject):
         tt.apply_elementary_move(pants_curve, inverse, debug)
         return tt
 
-    def get_simplified(self, visited=[]):
+    def get_reduced(self, visited=[]):
         lam = self.copy()
-        lam.simplify_twist()
+        lam.reduce_twist()
         if lam.cost() == 1 or lam in visited:
             return lam
         insort(visited, lam)
@@ -261,12 +261,12 @@ class PantsLamination(SageObject):
             curve += 1
         final_lams = []
         for m in moves:
-            branch = m.get_simplified(visited)
+            branch = m.get_reduced(visited)
             if branch.cost() == 1:
                 return branch
             else:
                 insort(final_lams, branch)
         return final_lams[0]
 
-    def simplify(self):
-        self._tt = self.get_simplified()._tt
+    def reduce(self):
+        self._tt = self.get_reduced([])._tt
