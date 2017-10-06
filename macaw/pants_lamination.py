@@ -39,6 +39,13 @@ class MeasuredLamination(SageObject):
 class PantsLamination(SageObject):
     def __init__(self, pants_decomposition, coordinates, debug=False):
         """
+        Pants laminations can be represented by a pants decomposition and a list of six
+        coordinates for the pants decomposition. The pants decomposition is a pants
+        decomposition object, and each coordinate is denoted by an integer.
+
+        INPUTS:
+        'pants_decomposition' - a pants decomposition object that is made of a list of lists
+        'coordinates' - a list of six integers
 
         TESTS:
 
@@ -134,7 +141,16 @@ class PantsLamination(SageObject):
     @classmethod
     def from_pants_curve(cls, pants_decomposition, pants_curve):
         """
-        Construct the measured corresponding to a pants curve.
+        Construct the measured pants lamination corresponding to a pants curve
+        and an inputted pants decomposition.
+
+        INPUT:
+        'pants_decomposition' - a pants decomposition object made from a list of lists
+        'pants_curve' - a pants curve
+
+        OUTPUT:
+        A new PantsLamination object with the given pants_decomposition and the
+        coordinates calculated from the pants curve
 
         EXAMPLE:
 
@@ -177,6 +193,41 @@ class PantsLamination(SageObject):
 
     @classmethod
     def random(cls, pants_decomposition, max_values=100):
+        """
+        Takes a pants decomposition and returns a new pants lamination with
+        the given pants decomposition and random coordinates
+
+        INPUTS:
+        'pants_decomposition' - a pants decomposition object to which random
+            list of six integer coordinates are given
+        'max_values' - a range from which random integer coordinates are drawn
+            from, range is [-max_values, max_values]
+
+        OUTPUT:
+        A new PantsLamination object with the given pants decomposition object
+        and random coordinates generated
+
+        EXAMPLE: (will vary because of use of randomness)
+
+        sage: from macaw.pants_decomposition import PantsDecomposition
+        sage: from macaw.pants_lamination import PantsLamination
+        sage: p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
+        sage: lam = PantsLamination(p, [2,-2,7,1,1,1])
+        sage: lam
+        (2, -2, 7, 1, 1, 1)
+        sage: q = PantsDecomposition([[-1,1,2],[-2,3,-3]])
+        sage: lam.random(q)
+        (85, 63, 2, -55, 62, -44)
+        sage: lam.random(q)
+        (95, -13, 84, -4, 8, 24)
+        sage: lam.random(q)
+        (63, -13, 48, -9, 60, 38)
+        sage: lam.random(p)
+        (62, 58, 6, -73, 34, 82)
+        sage: lam.random(p)
+        (97, 42, 3, 73, 60, -99)
+
+        """
         import random
         p = pants_decomposition
         l = []
@@ -187,6 +238,21 @@ class PantsLamination(SageObject):
         return cls(p, l)
 
     def to_vector(self):
+        """
+        Convert the PantsLamination object to a sage vector
+
+        OUTPUT:
+        A new sage vector object
+
+        EXAMPLES:
+        sage: from macaw.pants_decomposition import PantsDecomposition
+        sage: from macaw.pants_lamination import PantsLamination
+        sage: p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
+        sage: lam = PantsLamination(p, [2,-2,7,1,1,1])
+        sage: lam.to_vector()
+        (2, -2, 7, 1, 1, 1)
+
+        """
         ls = []
         tt = self._tt
         for i in range(tt.num_switches()):
@@ -221,10 +287,26 @@ class PantsLamination(SageObject):
     def apply_twist(self, pants_curve, power=1):
         self._tt.unzip_fold_pants_twist(pants_curve, power)
 
+    def apply_twist_copy(self, pants_curve, power=1):
+        lam = self.copy()
+        return lam.apply_twist(pants_curve, power)
+
     def cost(self):
+        """
+        Calculates the cost of each state given by the sum of the coordinates
+        of the PantsLamination object.
+
+        OUTPUT:
+        An integer that sums the coordinates of the PantsLamination
+
+        """
         return sum(abs(x) for x in self.to_vector())
 
     def simplify_twist(self):
+        """
+        Looks at the PantsLamination object to apply twists wherever necessary.
+
+        """
         vec = self.to_vector()
         curve = 1
         for x,y in zip(vec[0::2], vec[1::2]):
