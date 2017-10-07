@@ -24,7 +24,6 @@ EXAMPLES::
 # *****************************************************************************
 
 
-from sage.structure.sage_object import SageObject
 from macaw.constants import LEFT, RIGHT, START, END
 import numpy as np
 
@@ -33,7 +32,7 @@ class DeleteSwitchError(Exception):
     pass
 
 
-class TrainTrack(SageObject):
+class TrainTrack(object):
     r"""A train track on a surface.
 
     There are different versions of train tracks in math. Here we

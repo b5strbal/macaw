@@ -20,7 +20,6 @@ AUTHORS:
 
 
 from macaw.constants import LEFT, RIGHT
-from sage.structure.sage_object import SageObject
 from sage.all import sign
 
 transform_rules = {
@@ -42,7 +41,7 @@ transform_rules = {
 }
 
 
-class BranchMap(SageObject):
+class BranchMap(object):
     def __init__(self, branches):
         """
         EXAMPLES:

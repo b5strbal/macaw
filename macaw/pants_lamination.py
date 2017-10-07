@@ -20,16 +20,14 @@ AUTHORS:
 #                  http://www.gnu.org/licenses/
 # *****************************************************************************
 
-
-from sage.structure.sage_object import SageObject
-from sage.all import vector, Integer
+import numpy as np
 from .train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
 from .constants import LEFT, RIGHT
 from bisect import insort
 
 
 
-class MeasuredLamination(SageObject):
+class MeasuredLamination(object):
     def surface(self):
         pass
 
@@ -37,7 +35,7 @@ class MeasuredLamination(SageObject):
         return "Measured lamination: " + repr(self.to_vector())
 
 
-class PantsLamination(SageObject):
+class PantsLamination(object):
     def __init__(self, pants_decomposition, coordinates, debug=False):
         """
         Pants laminations can be represented by a pants decomposition and a list of six
@@ -168,8 +166,7 @@ class PantsLamination(SageObject):
         p = pants_decomposition
         l = []
         for c in p.inner_pants_curves():
-            l.extend([Integer(0), Integer(0)] if c != pants_curve else
-                     [Integer(0), Integer(1)])
+            l.extend([0, 0] if c != pants_curve else [0, 1])
         # t = [0]*p.num_inner_pants_curves()
         # t[pants_curve-1] = 1
         # l = PantsCoordinates()*p.num_pants()
@@ -188,8 +185,7 @@ class PantsLamination(SageObject):
         l = []
         typ = p.elementary_move_type(pants_curve)
         for c in p.inner_pants_curves():
-            l.extend([Integer(0), Integer(0)] if c != pants_curve else
-                     [Integer(typ), Integer(0)])
+            l.extend([0, 0] if c != pants_curve else [typ, 0])
         return cls(p, l)
 
     @classmethod
@@ -233,17 +229,17 @@ class PantsLamination(SageObject):
         p = pants_decomposition
         l = []
         for c in p.inner_pants_curves():
-            l.extend([Integer(random.randint(0, max_values)), None])
+            l.extend([random.randint(0, max_values), None])
             min_value = 0 if l[-2] == 0 else -max_values
-            l[-1] = Integer(random.randint(min_value, max_values))
+            l[-1] = random.randint(min_value, max_values)
         return cls(p, l)
 
     def to_vector(self):
         """
-        Convert the PantsLamination object to a sage vector
+        Convert the PantsLamination object to a numpy array
 
         OUTPUT:
-        A new sage vector object
+        A new numpy array
 
         EXAMPLES:
         sage: from macaw.pants_decomposition import PantsDecomposition
@@ -265,7 +261,7 @@ class PantsLamination(SageObject):
                 ls.append(tt.branch_measure(b))
             else:
                 ls.append(-tt.branch_measure(b))
-        return vector(ls)
+        return np.array(ls)
 
     def apply_elementary_move(self, pants_curve, inverse=False, debug=False):
         # print debug

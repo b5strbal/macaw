@@ -8,7 +8,6 @@ AUTHORS:
 
 
 """
-from sage.structure.sage_object import SageObject
 
 
 # *****************************************************************************
@@ -21,7 +20,7 @@ from sage.structure.sage_object import SageObject
 #                  http://www.gnu.org/licenses/
 # *****************************************************************************
 
-class Surface(SageObject):
+class Surface(object):
     """Compact surface with finitely many of points removed.
 
     INPUT:

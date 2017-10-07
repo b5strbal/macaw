@@ -1,7 +1,6 @@
-from sage.structure.sage_object import SageObject
 
 
-class MappingClass(SageObject):
+class MappingClass:
     """
     Abstract base class for mapping classes.
     """

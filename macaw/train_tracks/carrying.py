@@ -21,7 +21,6 @@ AUTHORS:
 
 
 # from train_track import TrainTrack
-from sage.structure.sage_object import SageObject
 from macaw.constants import LEFT, RIGHT, START, END, BRANCH, CUSP, \
     FORWARD, BACKWARD, INTERVAL
 # from sage.all import vector
@@ -73,7 +72,7 @@ class Interval:
         self._nb_clicks[side] = click
 
 
-class CarryingMap(SageObject):
+class CarryingMap(object):
     """
     A carrying relationship between two train tracks.
     """

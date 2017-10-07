@@ -123,7 +123,7 @@
       136    0.000    0.000    0.000    0.000 {sage.rings.finite_rings.finite_field_base.is_FiniteField}
        68    0.000    0.000    0.000    0.000 pants_decomposition.py:245(num_pants)
        64    0.000    0.000    0.000    0.000 pants_mapping_class.py:63(__init__)
-      136    0.000    0.000    0.000    0.000 {method 'parent' of 'sage.structure.sage_object.SageObject' objects}
+      136    0.000    0.000    0.000    0.000 {method 'parent' of 'sage.structure.sage_object.object' objects}
       136    0.000    0.000    0.000    0.000 {method 'is_exact' of 'sage.rings.ring.Ring' objects}
        14    0.000    0.000    0.000    0.000 pants_mapping_class.py:180(inverse)
        32    0.000    0.000    0.000    0.000 pants_mapping_class.py:44(__init__)

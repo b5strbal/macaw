@@ -20,7 +20,7 @@ AUTHORS:
 # *****************************************************************************
 
 
-from sage.all import sign
+import numpy as np
 from macaw.train_tracks.train_track import TrainTrack, FoldError
 from macaw.constants import LEFT, RIGHT
 from .branch_map import BranchMap
@@ -114,15 +114,21 @@ class DehnThurstonTT(TrainTrack):
             m = [coordinates[abs(c)][0] for c in curves]
 
             # self-connecting branches: lambda_11, lambda_22, lambda_33
-            self_conn = [max(m[i] - m[(i+1) % 3] - m[(i+2) % 3], 0) / 2 for i
+            self_conn = [max(m[i] - m[(i+1) % 3] - m[(i+2) % 3], 0) for i
                          in range(3)]
+            if any(x % 2 == 1 for x in self_conn):
+                raise ValueError("The specified coordinates do not result in an integral lamination.")
+            self_conn = map(lambda x: x/2, self_conn)
             # take out the self-connecting strands, now the triangle ineq. is
             # satisfied
             m = [m[i] - 2*self_conn[i] for i in range(3)]
 
             # lambda_12, lambda_23, lambda_31
-            pairs = [max(m[i] + m[(i+1) % 3] - m[(i+2) % 3], 0) / 2 for i in
+            pairs = [max(m[i] + m[(i+1) % 3] - m[(i+2) % 3], 0) for i in
                      range(3)]
+            if any(x % 2 == 1 for x in pairs):
+                raise ValueError("The specified coordinates do not result in an integral lamination.")
+            pairs = map(lambda x: x/2, pairs)
             if debug:
                 print "m:", m
                 print "self_conn:", self_conn
@@ -202,7 +208,7 @@ class DehnThurstonTT(TrainTrack):
                     print
                     print "Adding self-connecting branch..."
                 c = curves[self_conn_idx]
-                switch = sign(c)*(ipc.index(abs(c))+1)
+                switch = np.sign(c)*(ipc.index(abs(c))+1)
                 if coordinates[abs(c)][1] >= 0:
                     gluing_list[a(switch)].\
                         insert(-1, -next_branch)

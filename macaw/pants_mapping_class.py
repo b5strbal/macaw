@@ -20,13 +20,12 @@ AUTHORS:
 # *****************************************************************************
 
 
-from sage.structure.sage_object import SageObject
 from pants_lamination import PantsLamination
 from mapping_class import MappingClass
 from sage.all import numerical_approx, norm, matrix
 
 
-class PantsTwist(SageObject):
+class PantsTwist(object):
     """
     - ``elementary_moves`` -- a list of pants curve indices on which
     elementary moves are performed.
