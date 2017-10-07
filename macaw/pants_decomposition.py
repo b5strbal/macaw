@@ -24,9 +24,8 @@ EXAMPLES::
 #                  http://www.gnu.org/licenses/
 # *****************************************************************************
 
-
+import networkx as nx
 from .surface import Surface
-from sage.graphs.graph import Graph
 from .constants import LEFT, RIGHT
 
 PANT = 0
@@ -56,17 +55,17 @@ class PantsDecomposition(Surface):
 
     EXAMPLES::
 
-        sage: from macaw import PantsDecomposition
-        sage: PantsDecomposition([[1, 2, 3], [-3, -2, -1]])
+        >>> from macaw import PantsDecomposition
+        >>> PantsDecomposition([[1, 2, 3], [-3, -2, -1]])
         Pants decomposition with gluing list [[1, 2, 3], [-3, -2, -1]]
 
-        sage: PantsDecomposition([[1, 2, 2]])
+        >>> PantsDecomposition([[1, 2, 2]])
         Pants decomposition with gluing list [[1, 2, 2]]
 
-        sage: PantsDecomposition([[1, 2, -2]])
+        >>> PantsDecomposition([[1, 2, -2]])
         Pants decomposition with gluing list [[1, 2, -2]]
 
-        sage: PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
+        >>> PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
         Pants decomposition with gluing list [[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]]
 
     """
@@ -171,10 +170,10 @@ class PantsDecomposition(Surface):
 
         TESTS:
 
-            sage: from macaw import PantsDecomposition
-            sage: p = PantsDecomposition([[1, 2, 3], [-3, -2, -1]])
-            sage: g = p.dual_graph()
-            sage: g.edges()
+            >>> from macaw import PantsDecomposition
+            >>> p = PantsDecomposition([[1, 2, 3], [-3, -2, -1]])
+            >>> g = p.dual_graph()
+            >>> g.edges()
             [(0, (0, 0), 0),
              (0, (0, 1), 0),
              (0, (0, 2), 0),
@@ -185,14 +184,14 @@ class PantsDecomposition(Surface):
              ((0, 1), (1, 1), 0),
              ((0, 2), (1, 0), 0)]
 
-            sage: p = PantsDecomposition([[1, 2, -2]])
-            sage: g = p.dual_graph()
-            sage: g.edges()
+            >>> p = PantsDecomposition([[1, 2, -2]])
+            >>> g = p.dual_graph()
+            >>> g.edges()
             [(0, (0, 0), 0), (0, (0, 1), 0), (0, (0, 2), 0), ((0, 1), (0, 2), 0)]
 
-            sage: p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
-            sage: g = p.dual_graph()
-            sage: g.edges()
+            >>> p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
+            >>> g = p.dual_graph()
+            >>> g.edges()
             [(0, (0, 0), 0),
              (0, (0, 1), 0),
              (0, (0, 2), 0),
@@ -226,21 +225,28 @@ class PantsDecomposition(Surface):
         for pant in range(self.num_pants()):
             # curves = self.adjacent_curves(pant)
             edge_ls.extend([(pant, (pant, i), 0) for i in range(3)])
-        return Graph(edge_ls)
+        graph = nx.Graph()
+        graph.add_weighted_edges_from(edge_ls)
+        return graph
 
     def _compute_orientable(self):
         """Decide if the surface is orientable.
         """
-        g = self.dual_graph()
-        for cycle in g.cycle_basis(output='edge'):
-            if sum(e[2] for e in cycle) %2 == 1:
+        G = self.dual_graph()
+        for cycle in nx.cycle_basis(G):
+            total = 0
+            for i in range(len(cycle)):
+                node = cycle[i]
+                node2 = cycle[(i+1) % len(cycle)]
+                total += G.get_edge_data(node, node2)['weight']
+            if total % 2 == 1:
                 return False
         return True
 
     def is_connected(self):
         """Decide if the surface is connected.
         """
-        return self.dual_graph().is_connected()
+        return nx.is_connected(self.dual_graph())
 
     def homology_basis(self):
         """Compute a homology basis for the surface.
@@ -272,19 +278,19 @@ class PantsDecomposition(Surface):
         """
         EXAMPLES:
 
-            sage: from macaw import PantsDecomposition
-            sage: p = PantsDecomposition([[1, 2, 3], [-3, -2, -1]])
-            sage: p.bdy_index_left_of_pants_curve(1)
+            >>> from macaw import PantsDecomposition
+            >>> p = PantsDecomposition([[1, 2, 3], [-3, -2, -1]])
+            >>> p.bdy_index_left_of_pants_curve(1)
             0
-            sage: p.bdy_index_left_of_pants_curve(2)
+            >>> p.bdy_index_left_of_pants_curve(2)
             1
-            sage: p.bdy_index_left_of_pants_curve(3)
+            >>> p.bdy_index_left_of_pants_curve(3)
             2
-            sage: p.bdy_index_left_of_pants_curve(-1)
+            >>> p.bdy_index_left_of_pants_curve(-1)
             2
-            sage: p.bdy_index_left_of_pants_curve(-2)
+            >>> p.bdy_index_left_of_pants_curve(-2)
             1
-            sage: p.bdy_index_left_of_pants_curve(-3)
+            >>> p.bdy_index_left_of_pants_curve(-3)
             0
 
         """
@@ -299,41 +305,41 @@ class PantsDecomposition(Surface):
 
         EXAMPLES::
 
-            sage: from macaw import PantsDecomposition
-            sage: p = PantsDecomposition([[1, 2, 3], [-3, -2, -1]])
-            sage: p.adjacent_pants(1)
+            >>> from macaw import PantsDecomposition
+            >>> p = PantsDecomposition([[1, 2, 3], [-3, -2, -1]])
+            >>> p.adjacent_pants(1)
             [[(0, 0)], [(1, 2)]]
-            sage: p.adjacent_pants(2)
+            >>> p.adjacent_pants(2)
             [[(0, 1)], [(1, 1)]]
-            sage: p.adjacent_pants(3)
+            >>> p.adjacent_pants(3)
             [[(0, 2)], [(1, 0)]]
-            sage: p.adjacent_pants(-1)
+            >>> p.adjacent_pants(-1)
             [[(1, 2)], [(0, 0)]]
-            sage: p.adjacent_pants(-2)
+            >>> p.adjacent_pants(-2)
             [[(1, 1)], [(0, 1)]]
-            sage: p.adjacent_pants(-3)
+            >>> p.adjacent_pants(-3)
             [[(1, 0)], [(0, 2)]]
 
-            sage: p = PantsDecomposition([[1, 2, -2]])
-            sage: p.adjacent_pants(1)
+            >>> p = PantsDecomposition([[1, 2, -2]])
+            >>> p.adjacent_pants(1)
             [[(0, 0)], []]
-            sage: p.adjacent_pants(2)
+            >>> p.adjacent_pants(2)
             [[(0, 1)], [(0, 2)]]
-            sage: p.adjacent_pants(-1)
+            >>> p.adjacent_pants(-1)
             [[], [(0, 0)]]
-            sage: p.adjacent_pants(-2)
+            >>> p.adjacent_pants(-2)
             [[(0, 2)], [(0, 1)]]
 
-            sage: p = PantsDecomposition([[1, 2, 2]])
-            sage: p.adjacent_pants(2)
+            >>> p = PantsDecomposition([[1, 2, 2]])
+            >>> p.adjacent_pants(2)
             [[(0, 1), (0, 2)], []]
 
-            sage: p = PantsDecomposition([[1, -2, -2]])
-            sage: p.adjacent_pants(2)
+            >>> p = PantsDecomposition([[1, -2, -2]])
+            >>> p.adjacent_pants(2)
             [[], [(0, 1), (0, 2)]]
 
-            sage: p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
-            sage: p.adjacent_pants(3)
+            >>> p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
+            >>> p.adjacent_pants(3)
             [[(1, 2)], [(2, 0)]]
         """
         if pants_curve > 0:
@@ -344,11 +350,11 @@ class PantsDecomposition(Surface):
         """
         EXAMPLES::
 
-            sage: from macaw import PantsDecomposition
-            sage: p = PantsDecomposition([[1, 2, 3], [-3, -2, -1]])
-            sage: p.adjacent_curves(0)
+            >>> from macaw import PantsDecomposition
+            >>> p = PantsDecomposition([[1, 2, 3], [-3, -2, -1]])
+            >>> p.adjacent_curves(0)
             [1, 2, 3]
-            sage: p.adjacent_curves(1)
+            >>> p.adjacent_curves(1)
             [-3, -2, -1]
         """
         return self._gluing_list[pant]
@@ -357,17 +363,17 @@ class PantsDecomposition(Surface):
         """
         EXAMPLES::
 
-            sage: from macaw import PantsDecomposition
-            sage: p = PantsDecomposition([[1, 2, 3], [-3, -2, -1]])
-            sage: p.num_pants()
+            >>> from macaw import PantsDecomposition
+            >>> p = PantsDecomposition([[1, 2, 3], [-3, -2, -1]])
+            >>> p.num_pants()
             2
 
-            sage: p = PantsDecomposition([[1, 2, -2]])
-            sage: p.num_pants()
+            >>> p = PantsDecomposition([[1, 2, -2]])
+            >>> p.num_pants()
             1
 
-            sage: p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
-            sage: p.num_pants()
+            >>> p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
+            >>> p.num_pants()
             4
         """
         return len(self._gluing_list)
@@ -376,17 +382,17 @@ class PantsDecomposition(Surface):
         """
         EXAMPLES::
 
-            sage: from macaw import PantsDecomposition
-            sage: p = PantsDecomposition([[1, 2, 3], [-3, -2, -1]])
-            sage: p.pants_curves()
+            >>> from macaw import PantsDecomposition
+            >>> p = PantsDecomposition([[1, 2, 3], [-3, -2, -1]])
+            >>> p.pants_curves()
             [1, 2, 3]
 
-            sage: p = PantsDecomposition([[1, 2, -2]])
-            sage: p.pants_curves()
+            >>> p = PantsDecomposition([[1, 2, -2]])
+            >>> p.pants_curves()
             [1, 2]
 
-            sage: p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
-            sage: p.pants_curves()
+            >>> p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
+            >>> p.pants_curves()
             [1, 2, 3, 4, 5, 6]
         """
         return range(1, len(self._adjacent_pants)+1)
@@ -395,17 +401,17 @@ class PantsDecomposition(Surface):
         """
         EXAMPLES::
 
-            sage: from macaw import PantsDecomposition
-            sage: p = PantsDecomposition([[1, 2, 3], [4, 5, -1]])
-            sage: p.inner_pants_curves()
+            >>> from macaw import PantsDecomposition
+            >>> p = PantsDecomposition([[1, 2, 3], [4, 5, -1]])
+            >>> p.inner_pants_curves()
             [1]
 
-            sage: p = PantsDecomposition([[1, 2, -2]])
-            sage: p.inner_pants_curves()
+            >>> p = PantsDecomposition([[1, 2, -2]])
+            >>> p.inner_pants_curves()
             [2]
 
-            sage: p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
-            sage: p.inner_pants_curves()
+            >>> p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
+            >>> p.inner_pants_curves()
             [1, 2, 3, 4, 5, 6]
         """
         def is_inner(c):
@@ -420,17 +426,17 @@ class PantsDecomposition(Surface):
         """
         EXAMPLES::
 
-            sage: from macaw import PantsDecomposition
-            sage: p = PantsDecomposition([[1, 2, 3], [4, 5, -1]])
-            sage: p.boundary_pants_curves()
+            >>> from macaw import PantsDecomposition
+            >>> p = PantsDecomposition([[1, 2, 3], [4, 5, -1]])
+            >>> p.boundary_pants_curves()
             [2, 3, 4, 5]
 
-            sage: p = PantsDecomposition([[1, 2, -2]])
-            sage: p.boundary_pants_curves()
+            >>> p = PantsDecomposition([[1, 2, -2]])
+            >>> p.boundary_pants_curves()
             [1]
 
-            sage: p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
-            sage: p.boundary_pants_curves()
+            >>> p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
+            >>> p.boundary_pants_curves()
             []
         """
         return sorted(list(set(self.pants_curves()) - set(self.inner_pants_curves())))
@@ -439,17 +445,17 @@ class PantsDecomposition(Surface):
         """
         EXAMPLES::
 
-            sage: from macaw import PantsDecomposition
-            sage: p = PantsDecomposition([[1, 2, 3], [4, 5, -1]])
-            sage: p.num_pants_curves()
+            >>> from macaw import PantsDecomposition
+            >>> p = PantsDecomposition([[1, 2, 3], [4, 5, -1]])
+            >>> p.num_pants_curves()
             5
 
-            sage: p = PantsDecomposition([[1, 2, -2]])
-            sage: p.num_pants_curves()
+            >>> p = PantsDecomposition([[1, 2, -2]])
+            >>> p.num_pants_curves()
             2
 
-            sage: p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
-            sage: p.num_pants_curves()
+            >>> p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
+            >>> p.num_pants_curves()
             6
         """
         return len(self.pants_curves())
@@ -458,17 +464,17 @@ class PantsDecomposition(Surface):
         """
         EXAMPLES::
 
-            sage: from macaw import PantsDecomposition
-            sage: p = PantsDecomposition([[1, 2, 3], [4, 5, -1]])
-            sage: p.num_inner_pants_curves()
+            >>> from macaw import PantsDecomposition
+            >>> p = PantsDecomposition([[1, 2, 3], [4, 5, -1]])
+            >>> p.num_inner_pants_curves()
             1
 
-            sage: p = PantsDecomposition([[1, 2, -2]])
-            sage: p.num_inner_pants_curves()
+            >>> p = PantsDecomposition([[1, 2, -2]])
+            >>> p.num_inner_pants_curves()
             1
 
-            sage: p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
-            sage: p.num_inner_pants_curves()
+            >>> p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
+            >>> p.num_inner_pants_curves()
             6
         """
         return len(self.inner_pants_curves())
@@ -477,17 +483,17 @@ class PantsDecomposition(Surface):
         """
         EXAMPLES::
 
-            sage: from macaw import PantsDecomposition
-            sage: p = PantsDecomposition([[1, 2, 3], [4, 5, -1]])
-            sage: p.num_boundary_pants_curves()
+            >>> from macaw import PantsDecomposition
+            >>> p = PantsDecomposition([[1, 2, 3], [4, 5, -1]])
+            >>> p.num_boundary_pants_curves()
             4
 
-            sage: p = PantsDecomposition([[1, 2, -2]])
-            sage: p.num_boundary_pants_curves()
+            >>> p = PantsDecomposition([[1, 2, -2]])
+            >>> p.num_boundary_pants_curves()
             1
 
-            sage: p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
-            sage: p.num_boundary_pants_curves()
+            >>> p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
+            >>> p.num_boundary_pants_curves()
             0
         """
         return len(self.boundary_pants_curves())
@@ -513,13 +519,13 @@ class PantsDecomposition(Surface):
 
         Type 1 elementary move::
 
-            sage: from macaw import PantsDecomposition
-            sage: p = PantsDecomposition([[1, 2, -2]])
-            sage: p.apply_elementary_move(2)
+            >>> from macaw import PantsDecomposition
+            >>> p = PantsDecomposition([[1, 2, -2]])
+            >>> p.apply_elementary_move(2)
             Pants decomposition with gluing list [[1, 2, -2]]
 
-            sage: p = PantsDecomposition([[-1, 1, 2], [-2, 3, -3]])
-            sage: p.apply_elementary_move(1)
+            >>> p = PantsDecomposition([[-1, 1, 2], [-2, 3, -3]])
+            >>> p.apply_elementary_move(1)
             Pants decomposition with gluing list [[-1, 1, 2], [-2, 3, -3]]
 
         The resulting (marked) pants decomposition is isomorphic to
@@ -529,10 +535,10 @@ class PantsDecomposition(Surface):
         Type 2 elementary move, resulting in a pants decomposition
         with a separating curve::
 
-            sage: p = PantsDecomposition([[1, 2, 3], [-3, -2, -1]])
-            sage: p.apply_elementary_move(2)
+            >>> p = PantsDecomposition([[1, 2, 3], [-3, -2, -1]])
+            >>> p.apply_elementary_move(2)
             Pants decomposition with gluing list [[2, 1, -1], [-2, -3, 3]]
-            sage: p.apply_elementary_move(-2)
+            >>> p.apply_elementary_move(-2)
             Pants decomposition with gluing list [[2, 1, -1], [-2, -3, 3]]
 
 
@@ -540,10 +546,10 @@ class PantsDecomposition(Surface):
         decomposition but with a different marking. The resulting
         pants decomposition now does not have a separating curve:
 
-            sage: p = PantsDecomposition([[1, 2, 3], [-1, -2, -3]])
-            sage: p.apply_elementary_move(2)
+            >>> p = PantsDecomposition([[1, 2, 3], [-1, -2, -3]])
+            >>> p.apply_elementary_move(2)
             Pants decomposition with gluing list [[2, 1, -3], [-2, -1, 3]]
-            sage: p.apply_elementary_move(-2)
+            >>> p.apply_elementary_move(-2)
             Pants decomposition with gluing list [[2, 1, -3], [-2, -1, 3]]
 
         As demonstrated by the above examples, the orientation of the input

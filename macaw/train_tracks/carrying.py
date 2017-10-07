@@ -20,11 +20,11 @@ AUTHORS:
 # *****************************************************************************
 
 
+import numpy as np
 # from train_track import TrainTrack
-from macaw.constants import LEFT, RIGHT, START, END, BRANCH, CUSP, \
+from ..constants import LEFT, RIGHT, START, END, BRANCH, CUSP, \
     FORWARD, BACKWARD, INTERVAL
 # from sage.all import vector
-import numpy as np
 from .train_track import SMALL_COLLAPSIBLE, FoldError
 from .train_track0 import TrainTrack
 

@@ -67,34 +67,34 @@ class TrainTrack(TrainTrack1):
 
         TESTS::
 
-        sage: from macaw.constants import LEFT, RIGHT
-        sage: from macaw.train_tracks.train_track import TrainTrack
-        sage: tt = TrainTrack([[1, 2, 3], [-1, -2, -3]], [2, 3, 4])
-        sage: peeled_side = tt.peel(1, LEFT)
-        sage: peeled_side == RIGHT
+        >>> from macaw.constants import LEFT, RIGHT
+        >>> from macaw.train_tracks.train_track import TrainTrack
+        >>> tt = TrainTrack([[1, 2, 3], [-1, -2, -3]], [2, 3, 4])
+        >>> peeled_side = tt.peel(1, LEFT)
+        >>> peeled_side == RIGHT
         True
-        sage: tt.gluing_list()
+        >>> tt.gluing_list()
         [[2, 1, 3], [-1, -2, -3]]
-        sage: tt.measure()
+        >>> tt.measure()
         [2, 3, 2]
-        sage: peeled_side = tt.peel(1, RIGHT, preferred_peeled_side=LEFT)
-        sage: peeled_side == LEFT
+        >>> peeled_side = tt.peel(1, RIGHT, preferred_peeled_side=LEFT)
+        >>> peeled_side == LEFT
         True
-        sage: tt.gluing_list()
+        >>> tt.gluing_list()
         [[2, 1, 3], [-1, -2, -3]]
-        sage: tt.measure()
+        >>> tt.measure()
         [0, 3, 2]
-        sage: tt.fold_by_branch_labels(3, 1)
-        sage: tt.gluing_list()
+        >>> tt.fold_by_branch_labels(3, 1)
+        >>> tt.gluing_list()
         [[2, 1, 3], [-1, -2, -3]]
-        sage: tt.measure()
+        >>> tt.measure()
         [2, 3, 2]
-        sage: peeled_side = tt.peel(1, RIGHT, preferred_peeled_side=RIGHT)
-        sage: peeled_side == RIGHT
+        >>> peeled_side = tt.peel(1, RIGHT, preferred_peeled_side=RIGHT)
+        >>> peeled_side == RIGHT
         True
-        sage: tt.gluing_list()
+        >>> tt.gluing_list()
         [[2, 1, 3], [-2, -1, -3]]
-        sage: tt.measure()
+        >>> tt.measure()
         [2, 3, 0]
         """
         assert(self.is_measured())
@@ -195,50 +195,50 @@ class TrainTrack(TrainTrack1):
         In the following examples, we get the same train track back after
         folding, only the measure changes::
 
-            sage: from macaw.train_tracks.train_track import TrainTrack
-            sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
-            sage: tt.fold(1, 1, 0)
-            sage: tt.gluing_list()
+            >>> from macaw.train_tracks.train_track import TrainTrack
+            >>> tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
+            >>> tt.fold(1, 1, 0)
+            >>> tt.gluing_list()
             [[1, 2], [-1, -2]]
-            sage: tt.measure()
+            >>> tt.measure()
             [8, 5]
 
-            sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
-            sage: tt.fold(-1, 1, 0)
-            sage: tt.gluing_list()
+            >>> tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
+            >>> tt.fold(-1, 1, 0)
+            >>> tt.gluing_list()
             [[1, 2], [-1, -2]]
-            sage: tt.measure()
+            >>> tt.measure()
             [8, 5]
 
-            sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
-            sage: tt.fold(1, 0, 1)
-            sage: tt.gluing_list()
+            >>> tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
+            >>> tt.fold(1, 0, 1)
+            >>> tt.gluing_list()
             [[1, 2], [-1, -2]]
-            sage: tt.measure()
+            >>> tt.measure()
             [3, 8]
 
-            sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
-            sage: tt.fold(-1, 0, 1)
-            sage: tt.gluing_list()
+            >>> tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
+            >>> tt.fold(-1, 0, 1)
+            >>> tt.gluing_list()
             [[1, 2], [-1, -2]]
-            sage: tt.measure()
+            >>> tt.measure()
             [3, 8]
 
         This is a similar train track with two switches. Now the train track
         does change::
 
-            sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [8, 3, 5])
-            sage: tt.fold(2, 1, 0)
-            sage: tt.gluing_list()
+            >>> tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]], [8, 3, 5])
+            >>> tt.fold(2, 1, 0)
+            >>> tt.gluing_list()
             [[1, 3], [-2, -3], [2], [-1]]
-            sage: tt.measure()
+            >>> tt.measure()
             [8, 8, 5]
 
         An example when a fold is not possible::
 
-            sage: tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
+            >>> tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
             ....: [-5], [6, -6] ])
-            sage: tt.fold(1, 1, 0)
+            >>> tt.fold(1, 1, 0)
             Traceback (most recent call last):
             ...
             FoldError: The fold is not possible, because there is a ...
@@ -333,19 +333,19 @@ class TrainTrack(TrainTrack1):
     #     There are three possible unzippings from the positive side of
     #     switch 1::
 
-    #         # sage: tt = TrainTrack([ [1, 2], [-1, -2] ])
-    #         # sage: tt.unzip_create_new_switch(1, 0, 0)
-    #         # sage: tt.gluing_list()
+    #         # >>> tt = TrainTrack([ [1, 2], [-1, -2] ])
+    #         # >>> tt.unzip_create_new_switch(1, 0, 0)
+    #         # >>> tt.gluing_list()
     #         # [[1, 3], [-1, -2], [2], [-3]]
 
-    #         # sage: tt = TrainTrack([ [1, 2], [-1, -2] ])
-    #         # sage: tt.unzip_create_new_switch(1, 0, 1)
-    #         # sage: tt.gluing_list()
+    #         # >>> tt = TrainTrack([ [1, 2], [-1, -2] ])
+    #         # >>> tt.unzip_create_new_switch(1, 0, 1)
+    #         # >>> tt.gluing_list()
     #         # [[1], [-2], [2, 3], [-1, -3]]
 
-    #         # sage: tt = TrainTrack([ [1, 2], [-1, -2] ])
-    #         # sage: tt.unzip_create_new_switch(1, 0, 0, True)
-    #         # sage: tt.gluing_list()
+    #         # >>> tt = TrainTrack([ [1, 2], [-1, -2] ])
+    #         # >>> tt.unzip_create_new_switch(1, 0, 0, True)
+    #         # >>> tt.gluing_list()
     #         # [[1], [-2], [2], [-1]]
 
     #     """
@@ -519,26 +519,26 @@ class TrainTrack(TrainTrack1):
 
         EXAMPLES:
 
-            sage: from macaw.train_tracks.train_track import TrainTrack
-            sage: tt = TrainTrack([[1, 2], [-3], [3], [-1, -2]], [3, 5, 8])
-            sage: tt.split(3)
-            sage: tt.gluing_list()
+            >>> from macaw.train_tracks.train_track import TrainTrack
+            >>> tt = TrainTrack([[1, 2], [-3], [3], [-1, -2]], [3, 5, 8])
+            >>> tt.split(3)
+            >>> tt.gluing_list()
             [[2], [-1, -3], [1, 3], [-2]]
-            sage: tt.measure()
+            >>> tt.measure()
             [3, 5, 2]
 
-            sage: tt = TrainTrack([[1, 2], [-3], [3], [-1, -2]], [5, 3, 8])
-            sage: tt.split(3)
-            sage: tt.gluing_list()
+            >>> tt = TrainTrack([[1, 2], [-3], [3], [-1, -2]], [5, 3, 8])
+            >>> tt.split(3)
+            >>> tt.gluing_list()
             [[1], [-3, -2], [3, 2], [-1]]
-            sage: tt.measure()
+            >>> tt.measure()
             [5, 3, 2]
 
-            sage: tt = TrainTrack([[1, 2], [-3], [3], [-1, -2]], [5, 5, 10])
-            sage: tt.split(3)
-            sage: tt.gluing_list()
+            >>> tt = TrainTrack([[1, 2], [-3], [3], [-1, -2]], [5, 5, 10])
+            >>> tt.split(3)
+            >>> tt.gluing_list()
             [[], [], [1], [-1]]
-            sage: tt.measure()
+            >>> tt.measure()
             [5, 0, 0]
 
         AUTHORS:
@@ -634,19 +634,19 @@ class TrainTrack(TrainTrack1):
         """
         Folds a small branch of a trivalent train track.
 
-            sage: from macaw.train_tracks.train_track import TrainTrack
-            sage: tt = TrainTrack([[2], [-1, -3], [1, 3], [-2]], [3, 5, 2])
-            sage: tt.fold_trivalent(3)
-            sage: tt.gluing_list()
+            >>> from macaw.train_tracks.train_track import TrainTrack
+            >>> tt = TrainTrack([[2], [-1, -3], [1, 3], [-2]], [3, 5, 2])
+            >>> tt.fold_trivalent(3)
+            >>> tt.gluing_list()
             [[1, 2], [-3], [3], [-1, -2]]
-            sage: tt.measure()
+            >>> tt.measure()
             [3, 5, 8]
 
-            sage: tt = TrainTrack([[1], [-3, -2], [3, 2], [-1]], [5, 3, 2])
-            sage: tt.fold_trivalent(3)
-            sage: tt.gluing_list()
+            >>> tt = TrainTrack([[1], [-3, -2], [3, 2], [-1]], [5, 3, 2])
+            >>> tt.fold_trivalent(3)
+            >>> tt.gluing_list()
             [[1, 2], [-3], [3], [-1, -2]]
-            sage: tt.measure()
+            >>> tt.measure()
             [5, 3, 8]
 
 
@@ -686,12 +686,12 @@ class TrainTrack(TrainTrack1):
 
         Merging branches 2 and 3:
 
-            sage: from macaw.train_tracks.train_track import TrainTrack
-            sage: tt = TrainTrack([[1, 2, 3], [-1, -2, -3]], [2, 3, 4])
-            sage: tt.merge_branches(1, 1)
-            sage: tt.gluing_list()
+            >>> from macaw.train_tracks.train_track import TrainTrack
+            >>> tt = TrainTrack([[1, 2, 3], [-1, -2, -3]], [2, 3, 4])
+            >>> tt.merge_branches(1, 1)
+            >>> tt.gluing_list()
             [[1, 2], [-1, -4, -3], [4, 3], [-2]]
-            sage: tt.measure()
+            >>> tt.measure()
             [2, 7, 4, 3]
 
         """
@@ -725,19 +725,19 @@ class TrainTrack(TrainTrack1):
 
         TESTS::
 
-            sage: from macaw.train_tracks.train_track import TrainTrack
-            sage: tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
-            sage: tt.make_trivalent()
-            sage: tt.gluing_list()
+            >>> from macaw.train_tracks.train_track import TrainTrack
+            >>> tt = TrainTrack([[1, 2], [-1, -2]], [3, 5])
+            >>> tt.make_trivalent()
+            >>> tt.gluing_list()
             [[1], [-3, -2], [3, 2], [-1]]
-            sage: tt.measure()
+            >>> tt.measure()
             [8, 5, 3]
 
-            sage: tt = TrainTrack([[1, 2, 3], [-1, -2, -3]], [2, 3, 4])
-            sage: tt.make_trivalent()
-            sage: tt.gluing_list()
+            >>> tt = TrainTrack([[1, 2, 3], [-1, -2, -3]], [2, 3, 4])
+            >>> tt.make_trivalent()
+            >>> tt.gluing_list()
             [[1], [-4, -3], [-6, 2], [-5], [5, 3], [-1], [6, -2], [4]]
-            sage: tt.measure()
+            >>> tt.measure()
             [9, 3, 4, 5, 5, 2]
 
         """

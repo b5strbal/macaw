@@ -23,10 +23,11 @@ EXAMPLES::
 #                  http://www.gnu.org/licenses/
 # *****************************************************************************
 
+import networkx as nx
 from .train_track0 import TrainTrack as TrainTrack0
-from macaw.surface import Surface
-from sage.graphs.graph import Graph
-from sage.graphs.digraph import DiGraph
+from ..surface import Surface
+# from sage.graphs.graph import Graph
+# from sage.graphs.digraph import DiGraph
 
 
 class TrainTrack(TrainTrack0):
@@ -36,9 +37,9 @@ class TrainTrack(TrainTrack0):
 
         EXAMPLES::
 
-        sage: from macaw.train_tracks.train_track1 import TrainTrack
-        sage: tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
-        sage: tt._repr_()
+        >>> from macaw.train_tracks.train_track1 import TrainTrack
+        >>> tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
+        >>> tt._repr_()
         'Train track on the torus with 1 puncture'
 
         """
@@ -77,20 +78,20 @@ class TrainTrack(TrainTrack0):
 
         EXAMPLES::
 
-            sage: from macaw.train_tracks.train_track1 import TrainTrack
-            sage: tt = TrainTrack([ [1, 2], [-1, -2] ])
-            sage: G = tt._get_puncturefinder_graph()
-            sage: set(G.neighbors(1)) == {2, -2}
+            >>> from macaw.train_tracks.train_track1 import TrainTrack
+            >>> tt = TrainTrack([ [1, 2], [-1, -2] ])
+            >>> G = tt._get_puncturefinder_graph()
+            >>> set(G.neighbors(1)) == {2, -2}
             True
-            sage: set(G.neighbors(-1)) == {2, -2}
+            >>> set(G.neighbors(-1)) == {2, -2}
             True
 
-            sage: tt = TrainTrack([ [1, -1], [2], [3], [4, -4], [-2, -3], [5],
+            >>> tt = TrainTrack([ [1, -1], [2], [3], [4, -4], [-2, -3], [5],
             ....: [6, -6], [-5] ])
-            sage: G = tt._get_puncturefinder_graph()
-            sage: set(G.neighbors(1)) == {-2, 2}
+            >>> G = tt._get_puncturefinder_graph()
+            >>> set(G.neighbors(1)) == {-2, 2}
             True
-            sage: set(G.neighbors(5)) == {3, 6}
+            >>> set(G.neighbors(5)) == {3, 6}
             True
 
         AUTHORS:
@@ -104,13 +105,15 @@ class TrainTrack(TrainTrack0):
         except AttributeError:
             pass
 
-        g = Graph(multiedges=True, loops=True)
+        # g = Graph(multiedges=True, loops=True)
+        g = nx.MultiGraph()
         for i in self.switches():
             for sw in {-i, i}:
                 b1 = self.outgoing_branches(sw)
                 b2 = self.outgoing_branches(-sw)
                 # connecting branches forming a 180 degree angle
-                g.add_edge([b1[0], -b2[-1], 0])
+                g.add_edge(b1[0], -b2[-1], weight=0)
+                # g.add_edge([b1[0], -b2[-1], 0])
 
                 # The left side of branch b, when looking
                 # from the switch conveniently corresponds to vertex
@@ -118,7 +121,8 @@ class TrainTrack(TrainTrack0):
 
                 # connecting branches at cusps
                 for j in range(len(b1)-1):
-                    g.add_edge([-b1[j], b1[j+1], 1])
+                    # g.add_edge([-b1[j], b1[j+1], 1])
+                    g.add_edge(-b1[j], b1[j+1], weight=1)
 
         self._puncturefinder_graph = g
         return self._puncturefinder_graph
@@ -130,18 +134,19 @@ class TrainTrack(TrainTrack0):
 
         EXAMPLES::
 
-        sage: from macaw.train_tracks.train_track1 import TrainTrack
-        sage: tt = TrainTrack([[-2, 1], [2, -1]])
-        sage: tt.num_complementary_regions()
+        >>> from macaw.train_tracks.train_track1 import TrainTrack
+        >>> tt = TrainTrack([[-2, 1], [2, -1]])
+        >>> tt.num_complementary_regions()
         1
-        sage: tt = TrainTrack([ [1, -1], [2], [3], [4, -4], [-2, -3], [5], [6,
+        >>> tt = TrainTrack([ [1, -1], [2], [3], [4, -4], [-2, -3], [5], [6,
         ....: -6], [-5] ])
-        sage: tt.num_complementary_regions()
+        >>> tt.num_complementary_regions()
         4
 
         """
         g = self._get_puncturefinder_graph()
-        return g.connected_components_number()
+        # return g.connected_components_number()
+        return nx.number_connected_components(g)
 
     def complementary_regions(self):
         """
@@ -151,30 +156,31 @@ class TrainTrack(TrainTrack0):
 
         EXAMPLES::
 
-            sage: from macaw.train_tracks.train_track1 import TrainTrack
-            sage: tt = TrainTrack([ [1, 2], [-1, -2] ])
-            sage: c = tt.complementary_regions()
-            sage: len(c)
+            >>> from macaw.train_tracks.train_track1 import TrainTrack
+            >>> tt = TrainTrack([ [1, 2], [-1, -2] ])
+            >>> c = tt.complementary_regions()
+            >>> len(c)
             1
-            sage: set(c[0]) == {-2, -1, 1, 2}
+            >>> set(c[0]) == {-2, -1, 1, 2}
             True
 
-            sage: tt = TrainTrack([ [1], [-2, -3], [2, 3], [-1] ])
-            sage: c = tt.complementary_regions()
-            sage: len(c)
+            >>> tt = TrainTrack([ [1], [-2, -3], [2, 3], [-1] ])
+            >>> c = tt.complementary_regions()
+            >>> len(c)
             1
-            sage: set(c[0]) == {-3, -2, -1, 1, 2, 3}
+            >>> set(c[0]) == {-3, -2, -1, 1, 2, 3}
             True
 
-            sage: tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
+            >>> tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
             ....: [-5], [6, -6] ])
-            sage: tt.complementary_regions()
+            >>> tt.complementary_regions()
             [[-5, -3, -2, 1, 2, 3, 4, 5, 6], [-6], [-4], [-1]]
 
 
         """
         g = self._get_puncturefinder_graph()
-        return g.connected_components()
+        # return g.connected_components()
+        return nx.connected_components(g)
 
     def regular_neighborhood(self):
         """
@@ -182,18 +188,18 @@ class TrainTrack(TrainTrack0):
 
         EXAMPLES::
 
-            sage: from macaw.train_tracks.train_track1 import TrainTrack
-            sage: tt = TrainTrack([ [1, 2], [-1, -2] ])
-            sage: tt.regular_neighborhood()
+            >>> from macaw.train_tracks.train_track1 import TrainTrack
+            >>> tt = TrainTrack([ [1, 2], [-1, -2] ])
+            >>> tt.regular_neighborhood()
             Torus with 1 puncture
 
-            sage: tt = TrainTrack([ [1], [-2, -3], [2, 3], [-1] ])
-            sage: tt.regular_neighborhood()
+            >>> tt = TrainTrack([ [1], [-2, -3], [2, 3], [-1] ])
+            >>> tt.regular_neighborhood()
             Torus with 1 puncture
 
-            sage: tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
+            >>> tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
             ....: [-5], [6, -6] ])
-            sage: tt.regular_neighborhood()
+            >>> tt.regular_neighborhood()
             Sphere with 4 punctures
 
         """
@@ -211,24 +217,27 @@ class TrainTrack(TrainTrack0):
 
         EXAMPLES::
 
-            sage: from macaw.train_tracks.train_track1 import TrainTrack
-            sage: tt = TrainTrack([[1, -1], [-2, 2]])
-            sage: tt.num_cusps_of_regions()
+            >>> from macaw.train_tracks.train_track1 import TrainTrack
+            >>> tt = TrainTrack([[1, -1], [-2, 2]])
+            >>> tt.num_cusps_of_regions()
             [0, 1, 1]
 
-            sage: tt = TrainTrack([[1, 2], [-1, -2]])
-            sage: tt.num_cusps_of_regions()
+            >>> tt = TrainTrack([[1, 2], [-1, -2]])
+            >>> tt.num_cusps_of_regions()
             [2]
 
-            sage: tt = TrainTrack([ [1, -1], [2], [-2, -3], [5], [6, -6],
+            >>> tt = TrainTrack([ [1, -1], [2], [-2, -3], [5], [6, -6],
             ....: [-5], [4, -4], [3] ])
-            sage: tt.num_cusps_of_regions()
+            >>> tt.num_cusps_of_regions()
             [1, 1, 1, 1]
 
         """
         G = self._get_puncturefinder_graph()
-        return [sum(G.subgraph(vertices=region).edge_labels())
-                for region in G.connected_components()]
+        # return [sum(G.subgraph(vertices=region).edge_labels())
+        #         for region in G.connected_components()]
+        return [sum(edge[2]['weight']
+                for subgraph in nx.connected_component_subgraphs(G)
+                for edge in subgraph.edges(data=True))]
 
     def _get_recurrence_graph(self):
         """Return a graph to determine recurrence.
@@ -242,10 +251,10 @@ class TrainTrack(TrainTrack0):
 
         EXAMPLES:
 
-            sage: from macaw.train_tracks.train_track1 import TrainTrack
-            sage: tt = TrainTrack([ [1, -1], [2, -2] ])
-            sage: G = tt._get_recurrence_graph()
-            sage: G.edges()
+            >>> from macaw.train_tracks.train_track1 import TrainTrack
+            >>> tt = TrainTrack([ [1, -1], [2, -2] ])
+            >>> G = tt._get_recurrence_graph()
+            >>> G.edges()
             [(-2, -1, None),
             (-2, 1, None),
             (-1, -2, None),
@@ -257,23 +266,23 @@ class TrainTrack(TrainTrack0):
 
         TESTS::
 
-            sage: tt = TrainTrack([ [1, -1], [2, -2] ])
-            sage: G = tt._get_recurrence_graph()
-            sage: set(G.edges()) == {(-2, -1, None), (-2, 1, None), (-1, -2,
+            >>> tt = TrainTrack([ [1, -1], [2, -2] ])
+            >>> G = tt._get_recurrence_graph()
+            >>> set(G.edges()) == {(-2, -1, None), (-2, 1, None), (-1, -2,
             ....: None), (-1, 2, None), (1, -2, None), (1, 2, None), (2, -1,
             ....: None), (2, 1, None)}
             True
 
-            sage: tt = TrainTrack([ [1, 2], [-1, -2] ])
-            sage: G = tt._get_recurrence_graph()
-            sage: set(G.edges()) == {(-2, -1, None), (-1, -2, None), (1, 2,
+            >>> tt = TrainTrack([ [1, 2], [-1, -2] ])
+            >>> G = tt._get_recurrence_graph()
+            >>> set(G.edges()) == {(-2, -1, None), (-1, -2, None), (1, 2,
             ....: None), (2, 1, None)}
             True
 
-            sage: tt = TrainTrack([ [1, -1], [2], [-2, -3], [5], [6, -6],
+            >>> tt = TrainTrack([ [1, -1], [2], [-2, -3], [5], [6, -6],
             ....: [-5], [4, -4], [3] ])
-            sage: G = tt._get_recurrence_graph()
-            sage: set(G.edges()) == {(-6, 5, None), (-5, -6, None), (-5, 6,
+            >>> G = tt._get_recurrence_graph()
+            >>> set(G.edges()) == {(-6, 5, None), (-5, -6, None), (-5, 6,
             ....: None), (-4, -3, None), (-3, -5, None), (-2, -5, None), (-1,
             ....: -2, None), (1, -2, None), (2, -1, None), (2, 1, None), (3,
             ....: -4, None), (3, 4, None), (4, -3, None), (5, 2, None), (5, 3,
@@ -291,11 +300,13 @@ class TrainTrack(TrainTrack0):
         except AttributeError:
             pass
 
-        g = DiGraph()
+        # g = DiGraph()
+        g = nx.DiGraph()
         for i in range(self.num_switches()):
             for ii in {-i-1, i+1}:
-                g.add_edges([(j, -k) for j in self.outgoing_branches(ii) for k
-                             in self.outgoing_branches(-ii)])
+                g.add_edges_from([(j, -k) 
+                for j in self.outgoing_branches(ii) 
+                for k in self.outgoing_branches(-ii)])
 
         self._recurrence_graph = g
         return g
@@ -309,29 +320,31 @@ class TrainTrack(TrainTrack0):
 
         EXAMPLES::
 
-            sage: from macaw.train_tracks.train_track1 import TrainTrack
-            sage: tt = TrainTrack([ [1, 2], [-1, -2] ])
-            sage: tt.is_recurrent()
+            >>> from macaw.train_tracks.train_track1 import TrainTrack
+            >>> tt = TrainTrack([ [1, 2], [-1, -2] ])
+            >>> tt.is_recurrent()
             True
 
-            sage: tt = TrainTrack([ [1, -1], [2], [-2, -3], [5], [6, -6],
+            >>> tt = TrainTrack([ [1, -1], [2], [-2, -3], [5], [6, -6],
             ....: [-5], [4, -4], [3] ])
-            sage: tt.is_recurrent()
+            >>> tt.is_recurrent()
             True
 
-            sage: tt = TrainTrack([ [2, 1, -2], [-1] ])
-            sage: tt.is_recurrent()
+            >>> tt = TrainTrack([ [2, 1, -2], [-1] ])
+            >>> tt.is_recurrent()
             False
 
-            sage: tt = TrainTrack([ [1, 2, 3, -3], [-1, -2] ])
-            sage: tt.is_recurrent()
+            >>> tt = TrainTrack([ [1, 2, 3, -3], [-1, -2] ])
+            >>> tt.is_recurrent()
             False
 
         """
         G = self._get_recurrence_graph()
-        C = G.strongly_connected_components()
-        return sorted(list(set([abs(x) for x in C[0]]))) == \
-            range(1, self.num_branches()+1)
+        # C = G.strongly_connected_components()
+        first_component = nx.strongly_connected_component(G).next()
+        # return sorted(list(set([abs(x) for x in C[0]]))) == \
+            # range(1, self.num_branches()+1)
+        return first_component == set(range(1, self.num_branches()+1))
 
     # ------------------------------------------------------------
     # Homology/cohomology computation.

@@ -249,20 +249,20 @@ class DehnThurstonTT(TrainTrack):
 
         TESTS:
 
-            sage: from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
-            sage: tt = DehnThurstonTT([[8, 6, 5], [-8, 2, -6], [-5, -2, 4],
+            >>> from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
+            >>> tt = DehnThurstonTT([[8, 6, 5], [-8, 2, -6], [-5, -2, 4],
             ....: [-1, -3, -4], [3, 9, 7], [-9, 1, -7]])
-            sage: tt.get_turning(1)
+            >>> tt.get_turning(1)
             0
-            sage: tt.get_turning(-1)
+            >>> tt.get_turning(-1)
             0
-            sage: tt.get_turning(2)
+            >>> tt.get_turning(2)
             1
-            sage: tt.get_turning(-2)
+            >>> tt.get_turning(-2)
             1
-            sage: tt.get_turning(3)
+            >>> tt.get_turning(3)
             1
-            sage: tt.get_turning(-3)
+            >>> tt.get_turning(-3)
             1
 
         TODO: This doesn't work for the once-punctured torus. We need to store
@@ -283,20 +283,20 @@ class DehnThurstonTT(TrainTrack):
         """
         TESTS:
 
-            sage: from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
-            sage: tt = DehnThurstonTT([[10, 6, 5], [-10, 4, -6], [-5, -4, 2],
+            >>> from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
+            >>> tt = DehnThurstonTT([[10, 6, 5], [-10, 4, -6], [-5, -4, 2],
             ....: [-8, -7, -2], [7, 9, 13], [-9, 8, -13]])
-            sage: tt.pants_branch_on_switch(1)
+            >>> tt.pants_branch_on_switch(1)
             10
-            sage: tt.pants_branch_on_switch(-1)
+            >>> tt.pants_branch_on_switch(-1)
             10
-            sage: tt.pants_branch_on_switch(2)
+            >>> tt.pants_branch_on_switch(2)
             2
-            sage: tt.pants_branch_on_switch(-2)
+            >>> tt.pants_branch_on_switch(-2)
             2
-            sage: tt.pants_branch_on_switch(3)
+            >>> tt.pants_branch_on_switch(3)
             13
-            sage: tt.pants_branch_on_switch(-3)
+            >>> tt.pants_branch_on_switch(-3)
             13
 
         """
@@ -311,20 +311,20 @@ class DehnThurstonTT(TrainTrack):
 
         TESTS:
 
-            sage: from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
-            sage: tt = DehnThurstonTT([[8, 6, 5], [-8, 2, -6], [-5, -2, 4],
+            >>> from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
+            >>> tt = DehnThurstonTT([[8, 6, 5], [-8, 2, -6], [-5, -2, 4],
             ....: [-1, -3, -4], [3, 9, 7], [-9, 1, -7]])
-            sage: tt.elem_move_type(1)
+            >>> tt.elem_move_type(1)
             1
-            sage: tt.elem_move_type(-1)
+            >>> tt.elem_move_type(-1)
             1
-            sage: tt.elem_move_type(2)
+            >>> tt.elem_move_type(2)
             2
-            sage: tt.elem_move_type(-2)
+            >>> tt.elem_move_type(-2)
             2
-            sage: tt.elem_move_type(3)
+            >>> tt.elem_move_type(3)
             1
-            sage: tt.elem_move_type(-3)
+            >>> tt.elem_move_type(-3)
             1
 
         """
@@ -364,66 +364,66 @@ class DehnThurstonTT(TrainTrack):
 
         We only twist in the good direction::
 
-            sage: from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
-            sage: tt = DehnThurstonTT([[4, 1], [6, -1], [-2, -6, 7, -4, -7],
+            >>> from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
+            >>> tt = DehnThurstonTT([[4, 1], [6, -1], [-2, -6, 7, -4, -7],
             ....: [2, 9, -5, 8, 5], [-8, 3], [-9, -3]], [1, 2, 8, 11, 7, 11, 5,
             ....: 9, 9])
-            sage: tt.unzip_fold_general_twist(2, -2, -1)
-            sage: tt.gluing_list()
+            >>> tt.unzip_fold_general_twist(2, -2, -1)
+            >>> tt.gluing_list()
             [[4, 1], [6, -1], [-2, 7, -4, -7, -6], [2, 8, 5, 9, -5], [-8, 3], [-9, -3]]
-            sage: tt.measure()
+            >>> tt.measure()
             [1, 29, 8, 11, 7, 11, 5, 9, 9]
 
         There is twist in the good direction on the left side and in the wrong
         direction on the right side. The unzip on the right goes into the pants
         branch.
 
-            sage: tt = DehnThurstonTT([[4, 1], [6, -1], [-2, -6, 7, -4, -7],
+            >>> tt = DehnThurstonTT([[4, 1], [6, -1], [-2, -6, 7, -4, -7],
             ....: [2, 9, -5, 8, 5], [-8, 3], [-9, -3]], [1, 100, 8, 11, 7, 11,
             ....: 5, 9, 9])
-            sage: tt.unzip_fold_general_twist(2, -2, 1)
-            sage: tt.gluing_list()
+            >>> tt.unzip_fold_general_twist(2, -2, 1)
+            >>> tt.gluing_list()
             [[4, 1], [6, -1], [-2, -7, -6, 7, -4], [2, 8, 5, 9, -5], [-8, 3], [-9, -3]]
-            sage: tt.measure()
+            >>> tt.measure()
             [1, 111, 8, 11, 7, 11, 5, 9, 9]
 
         There is bad twist on both sides, but both unzips go into the pants
         curve.
 
-            sage: tt = DehnThurstonTT([[4, 1], [6, -1], [-2, -6, 7, -4, -7],
+            >>> tt = DehnThurstonTT([[4, 1], [6, -1], [-2, -6, 7, -4, -7],
             ....: [2, 9, -5, 8, 5], [-8, 3], [-9, -3]], [1, 100, 8, 11, 7, 11,
             ....: 5, 9, 9])
-            sage: tt.unzip_fold_general_twist(2, 2, 1)
-            sage: tt.gluing_list()
+            >>> tt.unzip_fold_general_twist(2, 2, 1)
+            >>> tt.gluing_list()
             [[4, 1], [6, -1], [-2, -7, -6, 7, -4], [2, 8, 5, 9, -5], [-8, 3], [-9, -3]]
-            sage: tt.measure()
+            >>> tt.measure()
             [1, 79, 8, 11, 7, 11, 5, 9, 9]
 
         Now we consider a right-turning train track, with good twist on the
         left but more bad twist on the right. Now the unzip goes across and the
         orientation of the switch changes.
 
-            sage: from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
-            sage: tt = DehnThurstonTT([[4, 1], [6, -1], [-6, 7, -4, -7, -2],
+            >>> from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
+            >>> tt = DehnThurstonTT([[4, 1], [6, -1], [-6, 7, -4, -7, -2],
             ....: [9, -5, 8, 5, 2], [-8, 3], [-9, -3]], [1, 2, 8, 11, 7, 11,
             ....: 5, 9, 9])
-            sage: tt.unzip_fold_general_twist(2, 1, -3)
-            sage: tt.gluing_list()
+            >>> tt.unzip_fold_general_twist(2, 1, -3)
+            >>> tt.gluing_list()
             [[4, 1], [6, -1], [2, 5, 9, -5, 8], [-2, -7, -6, 7, -4], [-8, 3], [-9, -3]]
-            sage: tt.measure()
+            >>> tt.measure()
             [1, 18, 8, 11, 7, 11, 5, 9, 9]
 
         The next one is a right-turning train track which has a bad twist on
         both sides. The unzips also go across.
 
-            sage: from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
-            sage: tt = DehnThurstonTT([[4, 1], [6, -1], [-6, 7, -4, -7, -2],
+            >>> from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
+            >>> tt = DehnThurstonTT([[4, 1], [6, -1], [-6, 7, -4, -7, -2],
             ....: [9, -5, 8, 5, 2], [-8, 3], [-9, -3]], [1, 2, 8, 11, 7, 11,
             ....: 5, 9, 9])
-            sage: tt.unzip_fold_general_twist(2, -2, -3)
-            sage: tt.gluing_list()
+            >>> tt.unzip_fold_general_twist(2, -2, -3)
+            >>> tt.gluing_list()
             [[4, 1], [6, -1], [2, 5, 9, -5, 8], [-2, -4, -7, -6, 7], [-8, 3], [-9, -3]]
-            sage: tt.measure()
+            >>> tt.measure()
             [1, 39, 8, 11, 7, 11, 5, 9, 9]
 
         """
@@ -555,39 +555,39 @@ class DehnThurstonTT(TrainTrack):
 
         Twisting in the good direction:
 
-            sage: from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
-            sage: tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4,
+            >>> from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
+            >>> tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4,
             ....: -2, 3, 9, -3], [-8, -5], [-6, 5]], [1, 2, 8, 8, 14, 6, 4, 6,
             ....: 2])
-            sage: tt.unzip_fold_pants_twist(2, -1)
-            sage: tt.gluing_list()
+            >>> tt.unzip_fold_pants_twist(2, -1)
+            >>> tt.gluing_list()
             [[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4, -2, 3, 9, -3], [-8, -5], [-6, 5]]
-            sage: tt.measure()
+            >>> tt.measure()
             [1, 2, 8, 28, 14, 6, 4, 6, 2]
 
         Twisting in the bad direction, train track remains left-turning:
 
-            sage: from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
-            sage: tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4,
+            >>> from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
+            >>> tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4,
             ....: -2, 3, 9, -3], [-8, -5], [-6, 5]], [1, 2, 8, 100, 14, 6, 4,
             ....: 6, 2])
-            sage: tt.unzip_fold_pants_twist(2, 1)
-            sage: tt.gluing_list()
+            >>> tt.unzip_fold_pants_twist(2, 1)
+            >>> tt.gluing_list()
             [[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4, -2, 3, 9, -3], [-8, -5], [-6, 5]]
-            sage: tt.measure()
+            >>> tt.measure()
             [1, 2, 8, 80, 14, 6, 4, 6, 2]
 
 
         Twisting in the bad direction, train track becomes right-turning:
 
-            sage: from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
-            sage: tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4,
+            >>> from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
+            >>> tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4,
             ....: -2, 3, 9, -3], [-8, -5], [-6, 5]], [1, 2, 8, 1, 14, 6, 4,
             ....: 6, 2])
-            sage: tt.unzip_fold_pants_twist(2, 1)
-            sage: tt.gluing_list()
+            >>> tt.unzip_fold_pants_twist(2, 1)
+            >>> tt.gluing_list()
             [[-9, 1], [2, -1], [-2, 3, 9, -3, -4], [8, 7, 6, -7, 4], [-8, -5], [-6, 5]]
-            sage: tt.measure()
+            >>> tt.measure()
             [1, 2, 8, 19, 14, 6, 4, 6, 2]
 
 
@@ -644,67 +644,67 @@ class DehnThurstonTT(TrainTrack):
         boundary of the torus. At switch 3, unzipping goes into the pants
         curves, at switch 1 it goes across.
 
-            sage: from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
-            sage: tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4,
+            >>> from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
+            >>> tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4,
             ....: -2, 3, 9, -3], [-8, -5], [-6, 5]], [1, 2, 8, 1, 14, 6, 4,
             ....: 6, 2])
-            sage: tt.unzip_fold_first_move(1)
-            sage: tt.gluing_list()
+            >>> tt.unzip_fold_first_move(1)
+            >>> tt.gluing_list()
             [[1, 3], [-1, 2], [-3, -9, -2, 9, -4], [8, 7, 6, -7, 4], [-8, -5], [-6, 5]]
-            sage: tt.measure()
+            >>> tt.measure()
             [1, 9, 9, 8, 14, 6, 4, 6, 1]
-            sage: tt.unzip_fold_first_move(-3)
-            sage: tt.gluing_list()
+            >>> tt.unzip_fold_first_move(-3)
+            >>> tt.gluing_list()
             [[1, 3], [-1, 2], [-3, -9, -2, 9, -4], [-7, 8, 4], [6, -8, -5], [-6, 5, 7]]
-            sage: tt.measure()
+            >>> tt.measure()
             [1, 9, 9, 18, 8, 6, 10, 10, 1]
-            sage: tt.unzip_fold_first_move(-3, inverse=True)
-            sage: tt.gluing_list()
+            >>> tt.unzip_fold_first_move(-3, inverse=True)
+            >>> tt.gluing_list()
             [[1, 3], [-1, 2], [-3, -9, -2, 9, -4], [8, 7, 6, -7, 4], [-8, -5], [-6, 5]]
-            sage: tt.measure()
+            >>> tt.measure()
             [1, 9, 9, 8, 14, 6, 4, 6, 1]
-            sage: tt.unzip_fold_first_move(1, inverse=True)
-            sage: tt.gluing_list()
+            >>> tt.unzip_fold_first_move(1, inverse=True)
+            >>> tt.gluing_list()
             [[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4, -2, 3, 9, -3], [-8, -5], [-6, 5]]
-            sage: tt.measure()
+            >>> tt.measure()
             [1, 2, 8, 1, 14, 6, 4, 6, 2]
 
         Now testing the cases when lambda23 is present:
 
-            sage: tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2],
+            >>> tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2],
             ....: [-8, -7, -2], [7, 9, 3], [-9, 8, -3]], [100, 20, 2, 7, 7, 4,
             ....: 7, 7, 1])
-            sage: tt.unzip_fold_first_move(-1)
-            sage: tt.gluing_list()
+            >>> tt.unzip_fold_first_move(-1)
+            >>> tt.gluing_list()
             [[1, 5, 6], [4, -1, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]]
-            sage: tt.measure()
+            >>> tt.measure()
             [93, 20, 2, 7, 7, 11, 7, 7, 1]
-            sage: tt.unzip_fold_first_move(3)
-            sage: tt.gluing_list()
+            >>> tt.unzip_fold_first_move(3)
+            >>> tt.gluing_list()
             [[1, 5, 6], [4, -1, -6], [-5, -4, 2], [-3, 7, -8, -7, -2], [9, 3], [-9, 8]]
-            sage: tt.measure()
+            >>> tt.measure()
             [93, 22, 2, 7, 7, 11, 5, 2, 3]
-            sage: tt.unzip_fold_first_move(-1, inverse=True)
-            sage: tt.gluing_list()
+            >>> tt.unzip_fold_first_move(-1, inverse=True)
+            >>> tt.gluing_list()
             [[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-3, 7, -8, -7, -2], [9, 3], [-9, 8]]
-            sage: tt.measure()
+            >>> tt.measure()
             [100, 22, 2, 7, 7, 4, 5, 2, 3]
-            sage: tt.unzip_fold_first_move(3, inverse=True)
-            sage: tt.gluing_list()
+            >>> tt.unzip_fold_first_move(3, inverse=True)
+            >>> tt.gluing_list()
             [[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]]
-            sage: tt.measure()
+            >>> tt.measure()
             [100, 20, 2, 7, 7, 4, 7, 7, 1]
 
         Another test for the inverse:
 
-            sage: tt = DehnThurstonTT([[1, 5], [-1, 4], [2, -8, 9, -7, -9],
+            >>> tt = DehnThurstonTT([[1, 5], [-1, 4], [2, -8, 9, -7, -9],
             ....: [-2, -5, 6, -4, -6], [7, 3], [8, -3]], [3, 20, 3, 10, 10, 13,
             ....: 15, 15, 8])
-            sage: tt.unzip_fold_first_move(1)
-            sage: tt.unzip_fold_first_move(1, inverse=True)
-            sage: tt.gluing_list()
+            >>> tt.unzip_fold_first_move(1)
+            >>> tt.unzip_fold_first_move(1, inverse=True)
+            >>> tt.gluing_list()
             [[1, 5], [-1, 4], [2, -8, 9, -7, -9], [-2, -5, 6, -4, -6], [7, 3], [8, -3]]
-            sage: tt.measure()
+            >>> tt.measure()
             [3, 20, 3, 10, 10, 13, 15, 15, 8]
 
         """
@@ -859,17 +859,17 @@ class DehnThurstonTT(TrainTrack):
 
         TESTS:
 
-            sage: from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
-            sage: tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2],
+            >>> from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
+            >>> tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2],
             ....: [-8, -7, -2], [7, 9, 3], [-9, 8, -3]])
-            sage: d = tt.standardize_neighboring_branches(2)
-            sage: sorted(d.items())
+            >>> d = tt.standardize_neighboring_branches(2)
+            >>> sorted(d.items())
             [(-9, -8), (-8, -9), (-7, 7), (-6, 2), (-5, -3), (-4, 1), (-2, -13), (2, 13), (4, -1), (5, 3), (6, -2), (7, -7), (8, 9), (9, 8)]
 
-            sage: tt2 = DehnThurstonTT([[1, 6], [-1, 4], [-8, -4, -5, 9, 5],
+            >>> tt2 = DehnThurstonTT([[1, 6], [-1, 4], [-8, -4, -5, 9, 5],
             ....: [8, -7, -2, -6, 2], [7, 3], [-9, -3]])
-            sage: d = tt2.standardize_neighboring_branches(2)
-            sage: sorted(d.items())
+            >>> d = tt2.standardize_neighboring_branches(2)
+            >>> sorted(d.items())
             [(-9, -7), (-8, 13), (-7, -3), (-6, 1), (-5, 10), (-4, -9), (-2, 4), (2, -4), (4, 9), (5, -10), (6, -1), (7, 3), (8, -13), (9, 7)]
         """
 
@@ -987,51 +987,51 @@ class DehnThurstonTT(TrainTrack):
 
         A right-turning example and its inverse which is left-turning:
 
-            sage: from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
-            sage: tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2],
+            >>> from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
+            >>> tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2],
             ....: [-8, -7, -2], [7, 9, 3], [-9, 8, -3]], [100, 20, 30, 7, 7, 4,
             ....: 7, 7, 1])
-            sage: tt.unzip_fold_second_move(2)
-            sage: tt.gluing_list()
+            >>> tt.unzip_fold_second_move(2)
+            >>> tt.gluing_list()
             [[1, 6], [-1, 4], [-8, -4, -5, 9, 5], [8, -7, -2, -6, 2], [7, 3], [-9, -3]]
-            sage: tt.measure()
+            >>> tt.measure()
             [93, 13, 37, 11, 13, 11, 8, 20, 8]
-            sage: tt.unzip_fold_second_move(2)
-            sage: tt.gluing_list()
+            >>> tt.unzip_fold_second_move(2)
+            >>> tt.gluing_list()
             [[1, 6, -8], [-1, 4, -6], [8, -4, -5], [-2, -7, 5], [7, 9, 3], [-9, 2, -3]]
-            sage: tt.measure()
+            >>> tt.measure()
             [100, 7, 30, 7, 20, 4, 7, 7, 1]
 
         Now we start with a right-turning switch with five branches on each side.
 
-            sage: tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4,
+            >>> tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4,
             ....: -2, 3, 9, -3], [-8, -5], [-6, 5]], [1, 2, 8, 1, 14, 6, 4,
             ....: 6, 2])
-            sage: tt.unzip_fold_second_move(2)
-            sage: tt.gluing_list()
+            >>> tt.unzip_fold_second_move(2)
+            >>> tt.gluing_list()
             [[-9, 1], [2, -1], [-4, 6, -7, -2, 7], [4, 9, -3, 8, 3], [-8, -5], [-6, 5]]
-            sage: tt.measure()
+            >>> tt.measure()
             [3, 2, 1, 11, 20, 6, 1, 6, 2]
-            sage: tt.unzip_fold_second_move(2)
-            sage: tt.gluing_list()
+            >>> tt.unzip_fold_second_move(2)
+            >>> tt.gluing_list()
             [[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4, -2, 3, 9, -3], [-8, -5], [-6, 5]]
-            sage: tt.measure()
+            >>> tt.measure()
             [1, 2, 8, 1, 14, 6, 4, 6, 2]
 
         Here we start with a switch with only two branches on each side.
 
-            sage: tt = DehnThurstonTT([[-9, 1], [2, -1], [-4, 6, -7, -2, 7],
+            >>> tt = DehnThurstonTT([[-9, 1], [2, -1], [-4, 6, -7, -2, 7],
             ....: [4, 9, -3, 8, 3], [-8, -5], [-6, 5]], [3, 2, 1, 11, 20, 6, 1,
             ....: 6, 2])
-            sage: tt.unzip_fold_second_move(3)
-            sage: tt.gluing_list()
+            >>> tt.unzip_fold_second_move(3)
+            >>> tt.gluing_list()
             [[-9, 1], [2, -1], [-4, 6], [4, -3], [8, 9, -7, -2, 7], [-8, -6, 5, 3, -5]]
-            sage: tt.measure()
+            >>> tt.measure()
             [3, 2, 10, 4, 14, 10, 22, 21, 2]
-            sage: tt.unzip_fold_second_move(3)
-            sage: tt.gluing_list()
+            >>> tt.unzip_fold_second_move(3)
+            >>> tt.gluing_list()
             [[-9, 1], [2, -1], [-4, 6, -7, -2, 7], [4, 9, -3, 8, 3], [-8, -5], [-6, 5]]
-            sage: tt.measure()
+            >>> tt.measure()
             [3, 2, 1, 11, 20, 6, 1, 6, 2]
 
 

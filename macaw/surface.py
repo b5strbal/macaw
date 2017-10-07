@@ -45,25 +45,25 @@ class Surface(object):
 
     #. Specifying the genus and the number of punctures::
 
-        sage: from macaw.surface import Surface
-        sage: Surface(3, 1)
+        >>> from macaw.surface import Surface
+        >>> Surface(3, 1)
         Surface of genus 3 with 1 puncture
-        sage: Surface(2, 2, False)
+        >>> Surface(2, 2, False)
         Klein bottle with 2 punctures
 
 
     #. If only the genus is specified, the surface by default is a closed
     surface::
 
-        sage: Surface(1)
+        >>> Surface(1)
         Torus
-        sage: Surface(2, is_orientable = False)
+        >>> Surface(2, is_orientable = False)
         Klein bottle
 
 
     #. Specifying the Euler characteristic and number of punctures::
 
-        sage: Surface(num_punctures = 3, euler_char = -3)
+        >>> Surface(num_punctures = 3, euler_char = -3)
         Torus with 3 punctures
 
     """
@@ -72,38 +72,38 @@ class Surface(object):
         """
         TESTS::
 
-            sage: from macaw.surface import Surface
-            sage: Surface()
+            >>> from macaw.surface import Surface
+            >>> Surface()
             Traceback (most recent call last):
             ...
             ValueError: Either the genus or the Euler characteristic
             should be specified, but not both.
 
-            sage: Surface(1,2,euler_char=2)
+            >>> Surface(1,2,euler_char=2)
             Traceback (most recent call last):
             ...
             ValueError: Either the genus or the Euler characteristic
             should be specified, but not both.
 
-            sage: Surface(1,-1)
+            >>> Surface(1,-1)
             Traceback (most recent call last):
             ...
             ValueError: The number of punctures should be a nonnegative
             integer.
 
-            sage: Surface(num_punctures=0, euler_char=-1)
+            >>> Surface(num_punctures=0, euler_char=-1)
             Traceback (most recent call last):
             ...
             ValueError: There is no surface with the specified number of
             punctures and Euler characteristic.
 
-            sage: Surface(-1)
+            >>> Surface(-1)
             Traceback (most recent call last):
             ...
             ValueError: The genus of an orientable surface should be
             nonnegative.
 
-            sage: Surface(0,is_orientable=False)
+            >>> Surface(0,is_orientable=False)
             Traceback (most recent call last):
             ...
             ValueError: The genus of a nonorientable surface should be
@@ -153,54 +153,54 @@ class Surface(object):
 
         EXAMPLES::
 
-            sage: from macaw.surface import Surface
-            sage: S = Surface(2)
-            sage: S._repr_()
+            >>> from macaw.surface import Surface
+            >>> S = Surface(2)
+            >>> S._repr_()
             'Closed surface of genus 2'
 
         TESTS::
 
-            sage: from macaw.surface import Surface
-            sage: Surface(0)
+            >>> from macaw.surface import Surface
+            >>> Surface(0)
             Sphere
 
-            sage: Surface(1)
+            >>> Surface(1)
             Torus
 
-            sage: Surface(2)
+            >>> Surface(2)
             Closed surface of genus 2
 
-            sage: Surface(0,1)
+            >>> Surface(0,1)
             Disk
 
-            sage: Surface(0,2)
+            >>> Surface(0,2)
             Annulus
 
-            sage: Surface(1,2)
+            >>> Surface(1,2)
             Torus with 2 punctures
 
-            sage: Surface(2,3)
+            >>> Surface(2,3)
             Surface of genus 2 with 3 punctures
 
-            sage: Surface(1,0,is_orientable=False)
+            >>> Surface(1,0,is_orientable=False)
             Projective plane
 
-            sage: Surface(1,1,is_orientable=False)
+            >>> Surface(1,1,is_orientable=False)
             Moebius strip
 
-            sage: Surface(1,2,is_orientable=False)
+            >>> Surface(1,2,is_orientable=False)
             Projective plane with 2 punctures
 
-            sage: Surface(2,0,is_orientable=False)
+            >>> Surface(2,0,is_orientable=False)
             Klein bottle
 
-            sage: Surface(2,1,is_orientable=False)
+            >>> Surface(2,1,is_orientable=False)
             Klein bottle with 1 puncture
 
-            sage: Surface(3,is_orientable=False)
+            >>> Surface(3,is_orientable=False)
             Closed nonorientable surface of genus 3
 
-            sage: Surface(3,4,is_orientable=False)
+            >>> Surface(3,4,is_orientable=False)
             Nonorientable surface of genus 3 with 4 punctures
         """
         if self.is_orientable():
@@ -242,12 +242,12 @@ class Surface(object):
 
         EXAMPLES::
 
-            sage: from macaw.surface import Surface
-            sage: S = Surface(0)
-            sage: S.is_orientable()
+            >>> from macaw.surface import Surface
+            >>> S = Surface(0)
+            >>> S.is_orientable()
             True
-            sage: S = Surface(1, is_orientable = False)
-            sage: S.is_orientable()
+            >>> S = Surface(1, is_orientable = False)
+            >>> S.is_orientable()
             False
 
         """
@@ -260,12 +260,12 @@ class Surface(object):
 
         EXAMPLES::
 
-            sage: from macaw.surface import Surface
-            sage: S = Surface(0, 0)
-            sage: S.num_punctures()
+            >>> from macaw.surface import Surface
+            >>> S = Surface(0, 0)
+            >>> S.num_punctures()
             0
-            sage: S = Surface(genus = 5, num_punctures = 3)
-            sage: S.num_punctures()
+            >>> S = Surface(genus = 5, num_punctures = 3)
+            >>> S.num_punctures()
             3
 
         """
@@ -277,18 +277,18 @@ class Surface(object):
 
         EXAMPLES::
 
-            sage: from macaw.surface import Surface
-            sage: S = Surface(5)
-            sage: S.genus()
+            >>> from macaw.surface import Surface
+            >>> S = Surface(5)
+            >>> S.genus()
             5
-            sage: S = Surface(5, 2)
-            sage: S.genus()
+            >>> S = Surface(5, 2)
+            >>> S.genus()
             5
-            sage: S = Surface(10, 2, is_orientable = False)
-            sage: S.genus()
+            >>> S = Surface(10, 2, is_orientable = False)
+            >>> S.genus()
             10
-            sage: S = Surface(num_punctures = 2, euler_char = -2)
-            sage: S.genus()
+            >>> S = Surface(num_punctures = 2, euler_char = -2)
+            >>> S.genus()
             1
 
         """
@@ -301,21 +301,21 @@ class Surface(object):
 
         EXAMPLES::
 
-            sage: from macaw.surface import Surface
-            sage: S = Surface(0, 0)
-            sage: S.euler_char()
+            >>> from macaw.surface import Surface
+            >>> S = Surface(0, 0)
+            >>> S.euler_char()
             2
-            sage: S = Surface(0, 1)
-            sage: S.euler_char()
+            >>> S = Surface(0, 1)
+            >>> S.euler_char()
             1
-            sage: S = Surface(1, 0)
-            sage: S.euler_char()
+            >>> S = Surface(1, 0)
+            >>> S.euler_char()
             0
-            sage: S = Surface(1, 0, False)
-            sage: S.euler_char()
+            >>> S = Surface(1, 0, False)
+            >>> S.euler_char()
             1
-            sage: S = Surface(2, 1, False)
-            sage: S.euler_char()
+            >>> S = Surface(2, 1, False)
+            >>> S.euler_char()
             -1
         """
         return self._euler_char
@@ -325,41 +325,41 @@ class Surface(object):
 
         TESTS::
 
-            sage: from macaw.surface import Surface
-            sage: Surface(2).homology_dimension()
+            >>> from macaw.surface import Surface
+            >>> Surface(2).homology_dimension()
             4
 
-            sage: Surface(0,1).homology_dimension()
+            >>> Surface(0,1).homology_dimension()
             0
 
-            sage: Surface(0,2).homology_dimension()
+            >>> Surface(0,2).homology_dimension()
             1
 
-            sage: Surface(1,2).homology_dimension()
+            >>> Surface(1,2).homology_dimension()
             3
 
-            sage: Surface(2,3).homology_dimension()
+            >>> Surface(2,3).homology_dimension()
             6
 
-            sage: Surface(1,0,is_orientable=False).homology_dimension()
+            >>> Surface(1,0,is_orientable=False).homology_dimension()
             0
 
-            sage: Surface(1,1,is_orientable=False).homology_dimension()
+            >>> Surface(1,1,is_orientable=False).homology_dimension()
             1
 
-            sage: Surface(1,2,is_orientable=False).homology_dimension()
+            >>> Surface(1,2,is_orientable=False).homology_dimension()
             2
 
-            sage: Surface(2,0,is_orientable=False).homology_dimension()
+            >>> Surface(2,0,is_orientable=False).homology_dimension()
             1
 
-            sage: Surface(2,1,is_orientable=False).homology_dimension()
+            >>> Surface(2,1,is_orientable=False).homology_dimension()
             2
 
-            sage: Surface(3,is_orientable=False).homology_dimension()
+            >>> Surface(3,is_orientable=False).homology_dimension()
             2
 
-            sage: Surface(3,4,is_orientable=False).homology_dimension()
+            >>> Surface(3,4,is_orientable=False).homology_dimension()
             6
 
         """
@@ -374,49 +374,49 @@ class Surface(object):
 
         EXAMPLES::
 
-            sage: from macaw.surface import Surface
-            sage: Surface(0,4).teich_space_dim()
+            >>> from macaw.surface import Surface
+            >>> Surface(0,4).teich_space_dim()
             2
-            sage: Surface(1).teich_space_dim()
+            >>> Surface(1).teich_space_dim()
             2
-            sage: Surface(2).teich_space_dim()
+            >>> Surface(2).teich_space_dim()
             6
-            sage: Surface(2,0,False).teich_space_dim()
+            >>> Surface(2,0,False).teich_space_dim()
             1
-            sage: Surface(3,1,False).teich_space_dim()
+            >>> Surface(3,1,False).teich_space_dim()
             5
 
         TESTS::
 
-            sage: Surface(0).teich_space_dim()
+            >>> Surface(0).teich_space_dim()
             0
-            sage: Surface(0,1).teich_space_dim()
+            >>> Surface(0,1).teich_space_dim()
             0
-            sage: Surface(0,2).teich_space_dim()
+            >>> Surface(0,2).teich_space_dim()
             0
-            sage: Surface(0,3).teich_space_dim()
+            >>> Surface(0,3).teich_space_dim()
             0
-            sage: Surface(0,5).teich_space_dim()
+            >>> Surface(0,5).teich_space_dim()
             4
-            sage: Surface(1,1).teich_space_dim()
+            >>> Surface(1,1).teich_space_dim()
             2
-            sage: Surface(1,2).teich_space_dim()
+            >>> Surface(1,2).teich_space_dim()
             4
-            sage: Surface(3,1).teich_space_dim()
+            >>> Surface(3,1).teich_space_dim()
             14
-            sage: Surface(1,0,False).teich_space_dim()
+            >>> Surface(1,0,False).teich_space_dim()
             0
-            sage: Surface(1,1,False).teich_space_dim()
+            >>> Surface(1,1,False).teich_space_dim()
             0
-            sage: Surface(1,2,False).teich_space_dim()
+            >>> Surface(1,2,False).teich_space_dim()
             1
-            sage: Surface(1,3,False).teich_space_dim()
+            >>> Surface(1,3,False).teich_space_dim()
             3
-            sage: Surface(2,1,False).teich_space_dim()
+            >>> Surface(2,1,False).teich_space_dim()
             2
-            sage: Surface(2,2,False).teich_space_dim()
+            >>> Surface(2,2,False).teich_space_dim()
             4
-            sage: Surface(3,0,False).teich_space_dim()
+            >>> Surface(3,0,False).teich_space_dim()
             3
 
         """

@@ -50,47 +50,47 @@ class PantsLamination(object):
 
         Specifying the coordinates in a list:
 
-            sage: from macaw.pants_decomposition import PantsDecomposition
-            sage: from macaw.pants_lamination import PantsLamination
-            sage: p = PantsDecomposition([[-1, 1, 2], [-2, 3, -3]])
-            sage: lam = PantsLamination(p, [2, -2, 7, 1, 1, 1])
-            sage: lam._tt.gluing_list()
+            >>> from macaw.pants_decomposition import PantsDecomposition
+            >>> from macaw.pants_lamination import PantsLamination
+            >>> p = PantsDecomposition([[-1, 1, 2], [-2, 3, -3]])
+            >>> lam = PantsLamination(p, [2, -2, 7, 1, 1, 1])
+            >>> lam._tt.gluing_list()
             [[1, -5], [-1, 4], [-4, 6, 5, -6, 2], [-8, 9, 7, -9, -2], [-7, 3], [8, -3]]
-            sage: lam._tt.measure()
+            >>> lam._tt.measure()
             [2, 1, 1, 2, 2, 3/2, 1, 1, 5/2]
 
         The coordinates can be specified with a dictionary as well.
 
-            sage: lam = PantsLamination(p, {1: [2, -2], 2: [7, 1], 3:[1, 1]})
-            sage: lam._tt.gluing_list()
+            >>> lam = PantsLamination(p, {1: [2, -2], 2: [7, 1], 3:[1, 1]})
+            >>> lam._tt.gluing_list()
             [[1, -5], [-1, 4], [-4, 6, 5, -6, 2], [-8, 9, 7, -9, -2], [-7, 3], [8, -3]]
-            sage: lam._tt.measure()
+            >>> lam._tt.measure()
             [2, 1, 1, 2, 2, 3/2, 1, 1, 5/2]
 
         That way is perhaps more intitive if there are boundaries.
 
-            sage: p = PantsDecomposition([[1, 2, 3], [-3, 4, 5]])
-            sage: lam = PantsLamination(p, {3: [3, 5]})
-            sage: lam._tt.gluing_list()
+            >>> p = PantsDecomposition([[1, 2, 3], [-3, 4, 5]])
+            >>> lam = PantsLamination(p, {3: [3, 5]})
+            >>> lam._tt.gluing_list()
             [[2, -2, 1], [3, -3, -1]]
-            sage: lam._tt.measure()
+            >>> lam._tt.measure()
             [5, 3/2, 3/2]
 
         It works with a list, too.
 
-            sage: lam = PantsLamination(p, [3, 5])
-            sage: lam._tt.gluing_list()
+            >>> lam = PantsLamination(p, [3, 5])
+            >>> lam._tt.gluing_list()
             [[2, -2, 1], [3, -3, -1]]
-            sage: lam._tt.measure()
+            >>> lam._tt.measure()
             [5, 3/2, 3/2]
 
         If some coordinates are zero, we still get a complete train track.
 
-            sage: p = PantsDecomposition([[-1, 1, 2], [-2, 3, -3]])
-            sage: lam = PantsLamination(p, [1, 0, 0, 0, 0, 0])
-            sage: lam._tt.gluing_list()
+            >>> p = PantsDecomposition([[-1, 1, 2], [-2, 3, -3]])
+            >>> lam = PantsLamination(p, [1, 0, 0, 0, 0, 0])
+            >>> lam._tt.gluing_list()
             [[-4, 1], [-5, 6, 4, -6, -1], [5, 2], [-9, 7, -2], [-7, 8, 3], [-8, 9, -3]]
-            sage: lam._tt.measure()
+            >>> lam._tt.measure()
             [0, 0, 0, 1, 0, 0, 0, 0, 0]
 
         """
@@ -153,7 +153,7 @@ class PantsLamination(object):
 
         EXAMPLE:
 
-        # sage: p = PantsDecomposition([[1, 2, 3], [-1, -3, -2]])
+        # >>> p = PantsDecomposition([[1, 2, 3], [-1, -3, -2]])
 
         """
         debug = False
@@ -206,22 +206,22 @@ class PantsLamination(object):
 
         EXAMPLE: (will vary because of use of randomness)
 
-        sage: from macaw.pants_decomposition import PantsDecomposition
-        sage: from macaw.pants_lamination import PantsLamination
-        sage: p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
-        sage: lam = PantsLamination(p, [2,-2,7,1,1,1])
-        sage: lam
+        >>> from macaw.pants_decomposition import PantsDecomposition
+        >>> from macaw.pants_lamination import PantsLamination
+        >>> p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
+        >>> lam = PantsLamination(p, [2,-2,7,1,1,1])
+        >>> lam
         (2, -2, 7, 1, 1, 1)
-        sage: q = PantsDecomposition([[-1,1,2],[-2,3,-3]])
-        sage: lam.random(q)
+        >>> q = PantsDecomposition([[-1,1,2],[-2,3,-3]])
+        >>> lam.random(q)
         (85, 63, 2, -55, 62, -44)
-        sage: lam.random(q)
+        >>> lam.random(q)
         (95, -13, 84, -4, 8, 24)
-        sage: lam.random(q)
+        >>> lam.random(q)
         (63, -13, 48, -9, 60, 38)
-        sage: lam.random(p)
+        >>> lam.random(p)
         (62, 58, 6, -73, 34, 82)
-        sage: lam.random(p)
+        >>> lam.random(p)
         (97, 42, 3, 73, 60, -99)
 
         """
@@ -242,11 +242,11 @@ class PantsLamination(object):
         A new numpy array
 
         EXAMPLES:
-        sage: from macaw.pants_decomposition import PantsDecomposition
-        sage: from macaw.pants_lamination import PantsLamination
-        sage: p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
-        sage: lam = PantsLamination(p, [2,-2,7,1,1,1])
-        sage: lam.to_vector()
+        >>> from macaw.pants_decomposition import PantsDecomposition
+        >>> from macaw.pants_lamination import PantsLamination
+        >>> p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
+        >>> lam = PantsLamination(p, [2,-2,7,1,1,1])
+        >>> lam.to_vector()
         (2, -2, 7, 1, 1, 1)
 
         """

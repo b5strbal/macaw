@@ -46,11 +46,11 @@ class BranchMap(object):
         """
         EXAMPLES:
 
-        sage: from macaw.train_tracks.dehn_thurston.branch_map import BranchMap
-        sage: bm = BranchMap([2, -4, 5, -6, 1])
-        sage: bm._branch_map[4]
+        >>> from macaw.train_tracks.dehn_thurston.branch_map import BranchMap
+        >>> bm = BranchMap([2, -4, 5, -6, 1])
+        >>> bm._branch_map[4]
         [4]
-        sage: bm._branch_map[2]
+        >>> bm._branch_map[2]
         [2]
         """
         self._branch_map = {abs(b): [abs(b)] for b in branches}
@@ -61,15 +61,15 @@ class BranchMap(object):
         """
         EXAMPLES:
 
-        sage: from macaw.train_tracks.dehn_thurston.branch_map import BranchMap
-        sage: bm = BranchMap([2, -4, 5, -6, 1])
-        sage: bm.branch_list(4)
+        >>> from macaw.train_tracks.dehn_thurston.branch_map import BranchMap
+        >>> bm = BranchMap([2, -4, 5, -6, 1])
+        >>> bm.branch_list(4)
         [4]
-        sage: bm.branch_list(-4)
+        >>> bm.branch_list(-4)
         [-4]
-        sage: bm.branch_list(2)
+        >>> bm.branch_list(2)
         [2]
-        sage: bm.branch_list(-2)
+        >>> bm.branch_list(-2)
         [-2]
         """
         if branch > 0:
@@ -81,20 +81,20 @@ class BranchMap(object):
         """
         EXAMPLES:
 
-        sage: from macaw.train_tracks.dehn_thurston.branch_map import BranchMap
-        sage: bm = BranchMap([2, -4, 5, -6, 1])
-        sage: bm.append(2, -4)
-        sage: bm.branch_list(2)
+        >>> from macaw.train_tracks.dehn_thurston.branch_map import BranchMap
+        >>> bm = BranchMap([2, -4, 5, -6, 1])
+        >>> bm.append(2, -4)
+        >>> bm.branch_list(2)
         [2, -4]
-        sage: bm.append(-2, 5)
-        sage: bm.branch_list(2)
+        >>> bm.append(-2, 5)
+        >>> bm.branch_list(2)
         [-5, 2, -4]
-        sage: bm.branch_list(-2)
+        >>> bm.branch_list(-2)
         [4, -2, 5]
-        sage: bm.append(-1, -2)
-        sage: bm.branch_list(1)
+        >>> bm.append(-1, -2)
+        >>> bm.branch_list(1)
         [-5, 2, -4, 1]
-        sage: bm.branch_list(-1)
+        >>> bm.branch_list(-1)
         [-1, 4, -2, 5]
         """
         if append_to > 0:

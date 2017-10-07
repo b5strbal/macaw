@@ -4,15 +4,15 @@ Installation script for the Macaw module
 It depends on distutils
 """
 
-try:
-    from sage.env import SAGE_SRC
-except ImportError:
-    raise ValueError("this package currently installs only inside SageMath (http://www.sagemath.org)")
+# try:
+#     from sage.env import SAGE_SRC
+# except ImportError:
+#     raise ValueError("this package currently installs only inside SageMath (http://www.sagemath.org)")
 
 from distutils.core import setup
-from distutils.extension import Extension
-from Cython.Build import cythonize
-import sys, os
+# from distutils.extension import Extension
+# from Cython.Build import cythonize
+# import sys, os
 
 
 setup(name='Macaw',

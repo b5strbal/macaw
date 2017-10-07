@@ -20,9 +20,9 @@ AUTHORS:
 # *****************************************************************************
 
 
+import numpy as np
 from .pants_lamination import PantsLamination
 from .mapping_class import MappingClass
-import numpy as np
 
 
 class PantsTwist(object):
@@ -201,35 +201,35 @@ class PantsMappingClass(MappingClass):
         """
         TESTS::
 
-            sage: from macaw.generating_sets import humphries_generators
-            sage: A, B, c = humphries_generators(2)
-            sage: A[0]*A[1] == A[1]*A[0]
+            >>> from macaw.generating_sets import humphries_generators
+            >>> A, B, c = humphries_generators(2)
+            >>> A[0]*A[1] == A[1]*A[0]
             True
-            sage: A[0]*B[1] == B[1]*A[0]
+            >>> A[0]*B[1] == B[1]*A[0]
             True
-            sage: A[0]*c == c*A[0]
+            >>> A[0]*c == c*A[0]
             True
-            sage: A[0]*B[0] == B[0]*A[0]
+            >>> A[0]*B[0] == B[0]*A[0]
             False
-            sage: A[0]*B[0]*A[0] == B[0]*A[0]*B[0]
+            >>> A[0]*B[0]*A[0] == B[0]*A[0]*B[0]
             True
-            sage: B[0]*c == c*B[0]
+            >>> B[0]*c == c*B[0]
             True
-            sage: B[0]*B[1] == B[1]*B[0]
+            >>> B[0]*B[1] == B[1]*B[0]
             True
-            sage: B[0]*A[1] == A[1]*B[0]
+            >>> B[0]*A[1] == A[1]*B[0]
             False
-            sage: B[0]*A[1]*B[0] == A[1]*B[0]*A[1]
+            >>> B[0]*A[1]*B[0] == A[1]*B[0]*A[1]
             True
-            sage: A[1]*c == c*A[1]
+            >>> A[1]*c == c*A[1]
             True
-            sage: A[1]*B[1] == B[1]*A[1]
+            >>> A[1]*B[1] == B[1]*A[1]
             False
-            sage: A[1]*B[1]*A[1] == B[1]*A[1]*B[1]
+            >>> A[1]*B[1]*A[1] == B[1]*A[1]*B[1]
             True
-            sage: B[1]*c == c*B[1]
+            >>> B[1]*c == c*B[1]
             False
-            sage: B[1]*c*B[1] == c*B[1]*c
+            >>> B[1]*c*B[1] == c*B[1]*c
             True
         """
         if not isinstance(other, PantsMappingClass):
@@ -253,13 +253,13 @@ class PantsMappingClass(MappingClass):
         """
         TESTS::
 
-        sage: from macaw.generating_sets import humphries_generators
-        sage: A, B, c = humphries_generators(2)
-        sage: f = A[0]*B[0]^(-1)
-        sage: n(f.stretch_factor(), digits=4)
+        >>> from macaw.generating_sets import humphries_generators
+        >>> A, B, c = humphries_generators(2)
+        >>> f = A[0]*B[0]^(-1)
+        >>> n(f.stretch_factor(), digits=4)
         2.618
-        sage: g = A[0]*B[0]
-        sage: 0.9 < g.stretch_factor() < 1.1
+        >>> g = A[0]*B[0]
+        >>> 0.9 < g.stretch_factor() < 1.1
         True
 
         """
@@ -301,12 +301,12 @@ class PantsMappingClass(MappingClass):
 
         EXAMPLES:
 
-            sage: from macaw.examples import hyperelliptic_involution
-            sage: f = hyperelliptic_involution(2)
-            sage: f.is_in_torelli()
+            >>> from macaw.examples import hyperelliptic_involution
+            >>> f = hyperelliptic_involution(2)
+            >>> f.is_in_torelli()
             False
 
-            sage: (f^2).is_in_torelli()
+            >>> (f^2).is_in_torelli()
             True
 
         """
@@ -318,16 +318,16 @@ class PantsMappingClass(MappingClass):
 
         TESTS::
 
-        sage: from macaw.generating_sets import humphries_generators
-        sage: A, B, c = humphries_generators(4)
-        sage: A[0].order()
+        >>> from macaw.generating_sets import humphries_generators
+        >>> A, B, c = humphries_generators(4)
+        >>> A[0].order()
         0
-        sage: (A[0]*B[0]^(-1)).order()
+        >>> (A[0]*B[0]^(-1)).order()
         0
 
-        sage: from macaw.examples import hyperelliptic_involution
-        sage: g = hyperelliptic_involution(3)
-        sage: g.order()
+        >>> from macaw.examples import hyperelliptic_involution
+        >>> g = hyperelliptic_involution(3)
+        >>> g.order()
         2
         """
         # TODO: test using this:

@@ -35,17 +35,17 @@ def hyperelliptic_involution(genus):
 
     TESTS::
 
-        sage: from macaw.examples import hyperelliptic_involution
-        sage: g = hyperelliptic_involution(3)
-        sage: g.order()
+        >>> from macaw.examples import hyperelliptic_involution
+        >>> g = hyperelliptic_involution(3)
+        >>> g.order()
         2
-        sage: g.action_on_homology() == -matrix.identity(6)
+        >>> g.action_on_homology() == -matrix.identity(6)
         True
 
-        sage: g = hyperelliptic_involution(4)
-        sage: g.order()
+        >>> g = hyperelliptic_involution(4)
+        >>> g.order()
         2
-        sage: g.action_on_homology() == -matrix.identity(8)
+        >>> g.action_on_homology() == -matrix.identity(8)
         True
 
     """

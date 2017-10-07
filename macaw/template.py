@@ -24,8 +24,8 @@ EXAMPLES::
 #                  http://www.gnu.org/licenses/
 # *****************************************************************************
 
-from train_tracks import TrainTrack
-from constant import LEFT, RIGHT
+from .train_tracks.train_track import TrainTrack
+from .constants import LEFT, RIGHT
 
 class Edge:
     def __init__(self, starting_gate, ending_gate, orientation=None,
@@ -52,8 +52,8 @@ class TrainTrackToTemplate:
 
         A train track in the square torus:
 
-        # sage: tt = TrainTrack([[1, 2], [-1,-3], [3], [-2]])
-        # sage: ttt = TrainTrackToTemplate(tt, {1: [Edge(1, -1)], 2: [Edge(1, -2)], 3:[Edge(2, -1)]})
+        # >>> tt = TrainTrack([[1, 2], [-1,-3], [3], [-2]])
+        # >>> ttt = TrainTrackToTemplate(tt, {1: [Edge(1, -1)], 2: [Edge(1, -2)], 3:[Edge(2, -1)]})
 
         """
         self._tt = train_track
@@ -152,12 +152,12 @@ class Template(object):
     PantsMarkedSurface([ [0,0,0,1] ]) ala Penner-Harer. Why are there
     no edges here connecting boundaries with themselves?
 
-    # sage: Template( [((0,0),0,(0,0),2), ((0,0),1,(0,0),3)] )
+    # >>> Template( [((0,0),0,(0,0),2), ((0,0),1,(0,0),3)] )
 
     2. A template of the pi_1-train track of the square torus. Here
     the template is not embedded in the torus, only immersed.
 
-    # sage: Template( [(0,0,1,2), (0,1,0,4), (0,2,1,3), (0,3,1,5),
+    # >>> Template( [(0,0,1,2), (0,1,0,4), (0,2,1,3), (0,3,1,5),
     # (0,5,1,0), (1,1,1,4))], illegal_paths = [ [((1,6),2), ((1,-5),2),
     # ...] ] ).
 
@@ -182,21 +182,21 @@ class TrainTrackInTemplate(TrainTrack):
 
     1. A standard train track in a Penner-Harer torus template.
 
-    # sage: t = Template( [((0,0),0,(0,0),2), ((0,0),1,(0,0),3)], labels
+    # >>> t = Template( [((0,0),0,(0,0),2), ((0,0),1,(0,0),3)], labels
     # = ['e1','e2'])
-    # sage: tt = TrainTrack([[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]],
+    # >>> tt = TrainTrack([[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]],
     # labels=['b1','b2'] )
-    # sage: mapping = {'b1' : ['e1'], 'b2' : ['e2'] }
-    # sage: TrainTrackInTemplate(tt, t, mapping)
+    # >>> mapping = {'b1' : ['e1'], 'b2' : ['e2'] }
+    # >>> TrainTrackInTemplate(tt, t, mapping)
 
     2. These are the image and inverse image of the train track under
     a Dehn twist in the same template.
 
-    # sage: mapping = {'b1' : [('e1',0)], 'b2' : [('e1',1),('e2',0)] }
-    # sage: TrainTrackInTemplate(tt, t, mapping)
+    # >>> mapping = {'b1' : [('e1',0)], 'b2' : [('e1',1),('e2',0)] }
+    # >>> TrainTrackInTemplate(tt, t, mapping)
 
-    # sage: mapping = {'b1' : [('e1',0)], 'b2' : [('-e1',0),('e2',0)] }
-    # sage: TrainTrackInTemplate(tt, t, mapping)
+    # >>> mapping = {'b1' : [('e1',0)], 'b2' : [('-e1',0),('e2',0)] }
+    # >>> TrainTrackInTemplate(tt, t, mapping)
 
     """
     def __init__(self, train_track, template, mapping):
@@ -224,9 +224,9 @@ class TrainTrackInPantsTemplate(TrainTrack):
 
     1. A standard train track for the once-punctured torus.
 
-    # sage: s = PantsMarkedSurface([ [0,0,0,1] ])
-    # sage: tt = TrainTrack([[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]])
-    # sage: TrainTrackInPantsTemplate(s,[ [[0,0],'+',0,  [0,1],'-',0], )
+    # >>> s = PantsMarkedSurface([ [0,0,0,1] ])
+    # >>> tt = TrainTrack([[0,'+',0,0,'-',1], [0,'+',1,0,'-',0]])
+    # >>> TrainTrackInPantsTemplate(s,[ [[0,0],'+',0,  [0,1],'-',0], )
 
     """
     def __init__(self):
