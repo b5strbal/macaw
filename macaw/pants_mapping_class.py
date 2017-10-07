@@ -20,9 +20,9 @@ AUTHORS:
 # *****************************************************************************
 
 
-from pants_lamination import PantsLamination
-from mapping_class import MappingClass
-from sage.all import numerical_approx, norm, matrix
+from .pants_lamination import PantsLamination
+from .mapping_class import MappingClass
+import numpy as np
 
 
 class PantsTwist(object):
@@ -69,7 +69,7 @@ class PantsMappingClass(MappingClass):
     @classmethod
     def identity(cls, pants_decomposition):
         p = pants_decomposition
-        return cls(p, matrix.identity(p.homology_dimension()))
+        return cls(p, np.identity(p.homology_dimension(), dtype=object))
 
     def __mul__(self, other):
         if isinstance(other, PantsMappingClass):
@@ -272,8 +272,7 @@ class PantsMappingClass(MappingClass):
         cc = (self**100) * c
         # print self**100
         # print cc
-        return numerical_approx(norm((self*cc).to_vector()) /
-                                norm(cc.to_vector()))
+        return np.linalg.norm((self*cc).to_vector()) / np.linalg.norm(cc.to_vector())
 
     def action_on_homology(self):
         """Compute the action on homology.
@@ -312,7 +311,7 @@ class PantsMappingClass(MappingClass):
 
         """
         mat = self.action_on_homology()
-        return mat == matrix.identity(mat.nrows())
+        return mat == np.identity(mat.nrows(), dtype=object)
 
     def order(self):
         """

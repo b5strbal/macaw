@@ -1,6 +1,6 @@
 
 
-class MappingClass:
+class MappingClass(object):
     """
     Abstract base class for mapping classes.
     """

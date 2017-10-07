@@ -25,10 +25,9 @@ EXAMPLES::
 # *****************************************************************************
 
 
-from surface import Surface
+from .surface import Surface
 from sage.graphs.graph import Graph
-from sage.all import sign
-from constants import LEFT, RIGHT
+from .constants import LEFT, RIGHT
 
 PANT = 0
 BDY_IDX = 1

@@ -20,7 +20,7 @@ AUTHORS:
 
 
 from macaw.constants import LEFT, RIGHT
-from sage.all import sign
+from numpy import sign
 
 transform_rules = {
     (1,): (-3,),

@@ -24,7 +24,6 @@ EXAMPLES::
 #                  http://www.gnu.org/licenses/
 # *****************************************************************************
 
-from sage.all import Graph
 from train_tracks import TrainTrack
 from constant import LEFT, RIGHT
 
@@ -125,7 +124,7 @@ class TrainTrackToTemplate:
 
 
 
-class Template(Graph):
+class Template(object):
     """A graph that is used to guide train tracks.
 
     Every vertex is thought of as a small oriented disk in a surface,

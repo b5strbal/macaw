@@ -23,8 +23,7 @@ EXAMPLES::
 # *****************************************************************************
 
 
-from generating_sets import humphries_generators
-from sage.all import Integer
+from .generating_sets import humphries_generators
 
 
 def hyperelliptic_involution(genus):
@@ -120,6 +119,7 @@ def compute_charpolies():
     """Compute the characteristic polynomials of homology actions of finite
     order mapping classes.
     """
+    from sage.all import Integer
     data = {}
     for genus in finite_order_primitives.keys():
         data[genus] = []

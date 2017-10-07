@@ -19,11 +19,15 @@ AUTHORS:
 #                  http://www.gnu.org/licenses/
 # *****************************************************************************
 
+import numpy as np
+from .pants_decomposition import PantsDecomposition
+from .pants_mapping_class import PantsMappingClass, PantsTwist
 
-from sage.all import elementary_matrix, Integer, matrix
-from pants_decomposition import PantsDecomposition
-from pants_mapping_class import PantsMappingClass, PantsTwist
 
+def elementary_matrix(size, row, col, entry):
+    mat = np.identity(size, dtype=object)
+    mat[row, col] = entry
+    return mat
 
 def humphries_generators(genus, right_most_included=False):
     """Construct the Humphries generators on a closed orientable surface.
@@ -66,35 +70,35 @@ def humphries_generators(genus, right_most_included=False):
 
     # The first curve is curve 0 in the homology basis and it intersects only
     # the curve g in the homology basis.
-    mat = elementary_matrix(dim, row1=0, row2=g, scale=Integer(1))
+    mat = elementary_matrix(dim, 0, g, 1)
     A = [PantsMappingClass(p, [PantsTwist([], 1)], mat)]
     for i in range(g-1):
         # Every other curve in A intersects a curve of B on the left and right.
-        mat1 = elementary_matrix(dim, row1=i+1, row2=g+i, scale=Integer(-1))
-        mat2 = elementary_matrix(dim, row1=i+1, row2=g+i+1, scale=Integer(1))
+        mat1 = elementary_matrix(dim, i+1, g+i, -1)
+        mat2 = elementary_matrix(dim, i+1, g+i+1, 1)
         A.append(PantsMappingClass(p, [PantsTwist([3*i+2], 3*i+2)],
                                    mat1*mat2))
 
     # Every curve of B except the last one intersects a curve of A on the left
     # and a curve of A on the right.
-    mat1 = elementary_matrix(dim, row1=g, row2=0, scale=-Integer(1))
-    mat2 = elementary_matrix(dim, row1=g, row2=1, scale=Integer(1))
+    mat1 = elementary_matrix(dim, g, 0, -1)
+    mat2 = elementary_matrix(dim, g, 1, 1)
     B = [PantsMappingClass(p, [PantsTwist([1], 1)], mat1*mat2)]
 
     for i in range(g-2):
-        mat1 = elementary_matrix(dim, row1=g+i+1, row2=i+1, scale=-Integer(1))
-        mat2 = elementary_matrix(dim, row1=g+i+1, row2=i+2, scale=Integer(1))
+        mat1 = elementary_matrix(dim, g+i+1, i+1, -1)
+        mat2 = elementary_matrix(dim, g+i+1, i+2, 1)
         B.append(PantsMappingClass(p, [PantsTwist([3*i+3, 3*i+4], 3*i+4)],
                                    mat1*mat2))
 
     # The last curve of B intersects only the last curve of A, numbered g-1.
-    mat = elementary_matrix(dim, row1=2*g-1, row2=g-1, scale=-Integer(1))
+    mat = elementary_matrix(dim, 2*g-1, g-1, -1)
     B.append(PantsMappingClass(p, [PantsTwist([3*g-3], 3*g-3)], mat))
 
     # The curve c intersects only curve 1 of B. The curve c itself is
     # homologous to A[0]+A[1].
-    mat1 = elementary_matrix(dim, row1=0, row2=g+1, scale=Integer(1))
-    mat2 = elementary_matrix(dim, row1=1, row2=g+1, scale=Integer(1))
+    mat1 = elementary_matrix(dim, 0, g+1, 1)
+    mat2 = elementary_matrix(dim, 1, g+1, 1)
     c = PantsMappingClass(p, [PantsTwist([], 3)], mat1*mat2)
 
     if right_most_included:
@@ -103,7 +107,7 @@ def humphries_generators(genus, right_most_included=False):
         # curve is homologous to minus the sum of the A-curves. Since the
         # intersection is from the right, that cancels out this minus sign and the
         # matrix has positive entries.
-        mat = matrix.identity(2*g)
+        mat = np.identity(2*g, dtype=object)
         for i in range(g):
             mat[i, 2*g-1] = 1
         A.append(PantsMappingClass(p, [PantsTwist([], 3*g-3)], mat))
