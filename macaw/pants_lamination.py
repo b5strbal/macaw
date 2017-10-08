@@ -31,7 +31,7 @@ class MeasuredLamination(object):
     def surface(self):
         pass
 
-    def _repr_(self):
+    def __repr__(self):
         return "Measured lamination: " + repr(self.to_vector())
 
 
@@ -53,36 +53,36 @@ class PantsLamination(object):
             >>> from macaw.pants_decomposition import PantsDecomposition
             >>> from macaw.pants_lamination import PantsLamination
             >>> p = PantsDecomposition([[-1, 1, 2], [-2, 3, -3]])
-            >>> lam = PantsLamination(p, [2, -2, 7, 1, 1, 1])
+            >>> lam = PantsLamination(p, [2, -2, 8, 1, 1, 1])
             >>> lam._tt.gluing_list()
             [[1, -5], [-1, 4], [-4, 6, 5, -6, 2], [-8, 9, 7, -9, -2], [-7, 3], [8, -3]]
             >>> lam._tt.measure()
-            [2, 1, 1, 2, 2, 3/2, 1, 1, 5/2]
+            [2, 1, 1, 2, 2, 2, 1, 1, 3]
 
         The coordinates can be specified with a dictionary as well.
 
-            >>> lam = PantsLamination(p, {1: [2, -2], 2: [7, 1], 3:[1, 1]})
+            >>> lam = PantsLamination(p, {1: [2, -2], 2: [8, 1], 3:[1, 1]})
             >>> lam._tt.gluing_list()
             [[1, -5], [-1, 4], [-4, 6, 5, -6, 2], [-8, 9, 7, -9, -2], [-7, 3], [8, -3]]
             >>> lam._tt.measure()
-            [2, 1, 1, 2, 2, 3/2, 1, 1, 5/2]
+            [2, 1, 1, 2, 2, 2, 1, 1, 3]
 
-        That way is perhaps more intitive if there are boundaries.
+        That way is perhaps more intuitive if there are boundaries.
 
             >>> p = PantsDecomposition([[1, 2, 3], [-3, 4, 5]])
-            >>> lam = PantsLamination(p, {3: [3, 5]})
+            >>> lam = PantsLamination(p, {3: [4, 5]})
             >>> lam._tt.gluing_list()
             [[2, -2, 1], [3, -3, -1]]
             >>> lam._tt.measure()
-            [5, 3/2, 3/2]
+            [5, 2, 2]
 
         It works with a list, too.
 
-            >>> lam = PantsLamination(p, [3, 5])
+            >>> lam = PantsLamination(p, [4, 5])
             >>> lam._tt.gluing_list()
             [[2, -2, 1], [3, -3, -1]]
             >>> lam._tt.measure()
-            [5, 3/2, 3/2]
+            [5, 2, 2]
 
         If some coordinates are zero, we still get a complete train track.
 
@@ -117,7 +117,7 @@ class PantsLamination(object):
         lam._tt = self._tt.copy()
         return lam
 
-    def _repr_(self):
+    def __repr__(self):
         return repr(self.to_vector())
 
     def __eq__(self, other):
@@ -129,7 +129,7 @@ class PantsLamination(object):
         #     print 'b'
         #     return False
         # print 'c'
-        return self.to_vector() == other.to_vector()
+        return all(self.to_vector() == other.to_vector())
 
     def __lt__(self, other):
         return self.cost() < other.cost()
@@ -144,16 +144,12 @@ class PantsLamination(object):
         and an inputted pants decomposition.
 
         INPUT:
-        'pants_decomposition' - a pants decomposition object made from a list of lists
-        'pants_curve' - a pants curve
+        - ``pants_decomposition`` - a pants decomposition object made from a list of lists
+        - ``pants_curve`` - a pants curve
 
         OUTPUT:
         A new PantsLamination object with the given pants_decomposition and the
         coordinates calculated from the pants curve
-
-        EXAMPLE:
-
-        # >>> p = PantsDecomposition([[1, 2, 3], [-1, -3, -2]])
 
         """
         debug = False
@@ -195,44 +191,29 @@ class PantsLamination(object):
         the given pants decomposition and random coordinates
 
         INPUTS:
-        'pants_decomposition' - a pants decomposition object to which random
+        - ``pants_decomposition`` - a pants decomposition object to which random
             list of six integer coordinates are given
-        'max_values' - a range from which random integer coordinates are drawn
-            from, range is [-max_values, max_values]
+        - ``max_values`` - a range from which random integer coordinates are drawn from, range is [-max_values, max_values]
 
         OUTPUT:
         A new PantsLamination object with the given pants decomposition object
         and random coordinates generated
 
-        EXAMPLE: (will vary because of use of randomness)
-
-        >>> from macaw.pants_decomposition import PantsDecomposition
-        >>> from macaw.pants_lamination import PantsLamination
-        >>> p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
-        >>> lam = PantsLamination(p, [2,-2,7,1,1,1])
-        >>> lam
-        (2, -2, 7, 1, 1, 1)
-        >>> q = PantsDecomposition([[-1,1,2],[-2,3,-3]])
-        >>> lam.random(q)
-        (85, 63, 2, -55, 62, -44)
-        >>> lam.random(q)
-        (95, -13, 84, -4, 8, 24)
-        >>> lam.random(q)
-        (63, -13, 48, -9, 60, 38)
-        >>> lam.random(p)
-        (62, 58, 6, -73, 34, 82)
-        >>> lam.random(p)
-        (97, 42, 3, 73, 60, -99)
 
         """
         import random
         p = pants_decomposition
-        l = []
-        for c in p.inner_pants_curves():
-            l.extend([random.randint(0, max_values), None])
-            min_value = 0 if l[-2] == 0 else -max_values
-            l[-1] = random.randint(min_value, max_values)
-        return cls(p, l)
+        while True:
+            try:
+                l = []
+                for c in p.inner_pants_curves():
+                    l.extend([random.randint(0, max_values), None])
+                    min_value = 0 if l[-2] == 0 else -max_values
+                    l[-1] = random.randint(min_value, max_values)
+                return cls(p, l)
+            except ValueError:
+                # in case we do not get an integral lamination (dividing odd numbers by 2)
+                continue
 
     def to_vector(self):
         """
@@ -245,9 +226,9 @@ class PantsLamination(object):
         >>> from macaw.pants_decomposition import PantsDecomposition
         >>> from macaw.pants_lamination import PantsLamination
         >>> p = PantsDecomposition([[1,2,3],[-3,-2,-1]])
-        >>> lam = PantsLamination(p, [2,-2,7,1,1,1])
+        >>> lam = PantsLamination(p, [2,-2,8,1,2,1])
         >>> lam.to_vector()
-        (2, -2, 7, 1, 1, 1)
+        array([ 2, -2,  8,  1,  2,  1])
 
         """
         ls = []

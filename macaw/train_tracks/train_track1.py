@@ -31,7 +31,7 @@ from ..surface import Surface
 
 
 class TrainTrack(TrainTrack0):
-    def _repr_(self):
+    def __repr__(self):
         """
         Return a string representation of self.
 
@@ -39,7 +39,7 @@ class TrainTrack(TrainTrack0):
 
         >>> from macaw.train_tracks.train_track1 import TrainTrack
         >>> tt = TrainTrack([[1], [-2, -3], [2, 3], [-1]])
-        >>> tt._repr_()
+        >>> tt.__repr__()
         'Train track on the torus with 1 puncture'
 
         """
@@ -86,8 +86,7 @@ class TrainTrack(TrainTrack0):
             >>> set(G.neighbors(-1)) == {2, -2}
             True
 
-            >>> tt = TrainTrack([ [1, -1], [2], [3], [4, -4], [-2, -3], [5],
-            ....: [6, -6], [-5] ])
+            >>> tt = TrainTrack([ [1, -1], [2], [3], [4, -4], [-2, -3], [5], [6, -6], [-5] ])
             >>> G = tt._get_puncturefinder_graph()
             >>> set(G.neighbors(1)) == {-2, 2}
             True
@@ -138,8 +137,7 @@ class TrainTrack(TrainTrack0):
         >>> tt = TrainTrack([[-2, 1], [2, -1]])
         >>> tt.num_complementary_regions()
         1
-        >>> tt = TrainTrack([ [1, -1], [2], [3], [4, -4], [-2, -3], [5], [6,
-        ....: -6], [-5] ])
+        >>> tt = TrainTrack([[1, -1], [2], [3], [4, -4], [-2, -3], [5], [6, -6], [-5]])
         >>> tt.num_complementary_regions()
         4
 
@@ -171,16 +169,15 @@ class TrainTrack(TrainTrack0):
             >>> set(c[0]) == {-3, -2, -1, 1, 2, 3}
             True
 
-            >>> tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
-            ....: [-5], [6, -6] ])
+            >>> tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3], [-5], [6, -6] ])
             >>> tt.complementary_regions()
-            [[-5, -3, -2, 1, 2, 3, 4, 5, 6], [-6], [-4], [-1]]
+            [set([1, 2, 3, 4, 5, 6, -5, -3, -2]), set([-6]), set([-4]), set([-1])]
 
 
         """
         g = self._get_puncturefinder_graph()
         # return g.connected_components()
-        return nx.connected_components(g)
+        return list(nx.connected_components(g))
 
     def regular_neighborhood(self):
         """
@@ -197,8 +194,7 @@ class TrainTrack(TrainTrack0):
             >>> tt.regular_neighborhood()
             Torus with 1 puncture
 
-            >>> tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
-            ....: [-5], [6, -6] ])
+            >>> tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3], [-5], [6, -6] ])
             >>> tt.regular_neighborhood()
             Sphere with 4 punctures
 
@@ -226,8 +222,7 @@ class TrainTrack(TrainTrack0):
             >>> tt.num_cusps_of_regions()
             [2]
 
-            >>> tt = TrainTrack([ [1, -1], [2], [-2, -3], [5], [6, -6],
-            ....: [-5], [4, -4], [3] ])
+            >>> tt = TrainTrack([ [1, -1], [2], [-2, -3], [5], [6, -6], [-5], [4, -4], [3] ])
             >>> tt.num_cusps_of_regions()
             [1, 1, 1, 1]
 
@@ -236,8 +231,8 @@ class TrainTrack(TrainTrack0):
         # return [sum(G.subgraph(vertices=region).edge_labels())
         #         for region in G.connected_components()]
         return [sum(edge[2]['weight']
-                for subgraph in nx.connected_component_subgraphs(G)
-                for edge in subgraph.edges(data=True))]
+                for edge in subgraph.edges(data=True))
+                for subgraph in nx.connected_component_subgraphs(G)]
 
     def _get_recurrence_graph(self):
         """Return a graph to determine recurrence.
@@ -249,45 +244,42 @@ class TrainTrack(TrainTrack0):
         of the first oriented branch is the starting point of the
         second branch.
 
-        EXAMPLES:
+        # EXAMPLES:
 
-            >>> from macaw.train_tracks.train_track1 import TrainTrack
-            >>> tt = TrainTrack([ [1, -1], [2, -2] ])
-            >>> G = tt._get_recurrence_graph()
-            >>> G.edges()
-            [(-2, -1, None),
-            (-2, 1, None),
-            (-1, -2, None),
-            (-1, 2, None),
-            (1, -2, None),
-            (1, 2, None),
-            (2, -1, None),
-            (2, 1, None)]
+        #     >>> from macaw.train_tracks.train_track1 import TrainTrack
+        #     >>> tt = TrainTrack([ [1, -1], [2, -2] ])
+        #     >>> G = tt._get_recurrence_graph()
+        #     >>> G.edges()
+        #     [(-2, -1, None),
+        #     (-2, 1, None),
+        #     (-1, -2, None),
+        #     (-1, 2, None),
+        #     (1, -2, None),
+        #     (1, 2, None),
+        #     (2, -1, None),
+        #     (2, 1, None)]
 
-        TESTS::
+        # TESTS::
 
-            >>> tt = TrainTrack([ [1, -1], [2, -2] ])
-            >>> G = tt._get_recurrence_graph()
-            >>> set(G.edges()) == {(-2, -1, None), (-2, 1, None), (-1, -2,
-            ....: None), (-1, 2, None), (1, -2, None), (1, 2, None), (2, -1,
-            ....: None), (2, 1, None)}
-            True
+        #     >>> tt = TrainTrack([ [1, -1], [2, -2] ])
+        #     >>> G = tt._get_recurrence_graph()
+        #     >>> set(G.edges()) == {(-2, -1, None), (-2, 1, None), (-1, -2, None), (-1, 2, None), (1, -2, None), (1, 2, None), (2, -1, None), (2, 1, None)}
+        #     True
 
-            >>> tt = TrainTrack([ [1, 2], [-1, -2] ])
-            >>> G = tt._get_recurrence_graph()
-            >>> set(G.edges()) == {(-2, -1, None), (-1, -2, None), (1, 2,
-            ....: None), (2, 1, None)}
-            True
+        #     >>> tt = TrainTrack([ [1, 2], [-1, -2] ])
+        #     >>> G = tt._get_recurrence_graph()
+        #     >>> set(G.edges()) == {(-2, -1, None), (-1, -2, None), (1, 2, None), (2, 1, None)}
+        #     True
 
-            >>> tt = TrainTrack([ [1, -1], [2], [-2, -3], [5], [6, -6],
-            ....: [-5], [4, -4], [3] ])
-            >>> G = tt._get_recurrence_graph()
-            >>> set(G.edges()) == {(-6, 5, None), (-5, -6, None), (-5, 6,
-            ....: None), (-4, -3, None), (-3, -5, None), (-2, -5, None), (-1,
-            ....: -2, None), (1, -2, None), (2, -1, None), (2, 1, None), (3,
-            ....: -4, None), (3, 4, None), (4, -3, None), (5, 2, None), (5, 3,
-            ....: None), (6, 5, None)}
-            True
+        #     >>> tt = TrainTrack([ [1, -1], [2], [-2, -3], [5], [6, -6],
+        #     ....: [-5], [4, -4], [3] ])
+        #     >>> G = tt._get_recurrence_graph()
+        #     >>> set(G.edges()) == {(-6, 5, None), (-5, -6, None), (-5, 6,
+        #     ....: None), (-4, -3, None), (-3, -5, None), (-2, -5, None), (-1,
+        #     ....: -2, None), (1, -2, None), (2, -1, None), (2, 1, None), (3,
+        #     ....: -4, None), (3, 4, None), (4, -3, None), (5, 2, None), (5, 3,
+        #     ....: None), (6, 5, None)}
+        #     True
 
         AUTHORS:
 
@@ -314,9 +306,9 @@ class TrainTrack(TrainTrack0):
     def is_recurrent(self):
         """Test if ``self`` is recurrent.
 
-        A train track is recurrent if it admits a scrictly positive
+        A train track is recurrent if it admits a strictly positive
         measure. Equivalently, it is recurrent, if it is possible to
-        get from any branch to any other branch along train paths.
+        get from any branch to any other branch (not necessarily in both directions) along train paths.
 
         EXAMPLES::
 
@@ -325,8 +317,7 @@ class TrainTrack(TrainTrack0):
             >>> tt.is_recurrent()
             True
 
-            >>> tt = TrainTrack([ [1, -1], [2], [-2, -3], [5], [6, -6],
-            ....: [-5], [4, -4], [3] ])
+            >>> tt = TrainTrack([ [1, -1], [2], [-2, -3], [5], [6, -6], [-5], [4, -4], [3] ])
             >>> tt.is_recurrent()
             True
 
@@ -341,10 +332,11 @@ class TrainTrack(TrainTrack0):
         """
         G = self._get_recurrence_graph()
         # C = G.strongly_connected_components()
-        first_component = nx.strongly_connected_component(G).next()
+        first_component = nx.strongly_connected_components(G).next()
+        abs_numbers = {abs(x) for x in first_component}
         # return sorted(list(set([abs(x) for x in C[0]]))) == \
             # range(1, self.num_branches()+1)
-        return first_component == set(range(1, self.num_branches()+1))
+        return abs_numbers == set(range(1, self.num_branches()+1))
 
     # ------------------------------------------------------------
     # Homology/cohomology computation.

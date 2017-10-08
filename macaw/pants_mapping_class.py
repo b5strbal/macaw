@@ -231,6 +231,7 @@ class PantsMappingClass(MappingClass):
             False
             >>> B[1]*c*B[1] == c*B[1]*c
             True
+
         """
         if not isinstance(other, PantsMappingClass):
             # print "A"
@@ -255,9 +256,9 @@ class PantsMappingClass(MappingClass):
 
         >>> from macaw.generating_sets import humphries_generators
         >>> A, B, c = humphries_generators(2)
-        >>> f = A[0]*B[0]^(-1)
-        >>> n(f.stretch_factor(), digits=4)
-        2.618
+        >>> f = A[0]*B[0]**(-1)
+        >>> 2.616 < f.stretch_factor() < 2.62
+        True
         >>> g = A[0]*B[0]
         >>> 0.9 < g.stretch_factor() < 1.1
         True
@@ -272,7 +273,8 @@ class PantsMappingClass(MappingClass):
         cc = (self**100) * c
         # print self**100
         # print cc
-        return np.linalg.norm((self*cc).to_vector()) / np.linalg.norm(cc.to_vector())
+        return float(sum(abs(x) for x in (self*cc).to_vector())) / \
+                    sum(abs(x) for x in cc.to_vector())
 
     def action_on_homology(self):
         """Compute the action on homology.
@@ -306,12 +308,12 @@ class PantsMappingClass(MappingClass):
             >>> f.is_in_torelli()
             False
 
-            >>> (f^2).is_in_torelli()
+            >>> (f**2).is_in_torelli()
             True
 
         """
         mat = self.action_on_homology()
-        return mat == np.identity(mat.nrows(), dtype=object)
+        return np.array_equal(mat, np.identity(mat.shape[0], dtype=object))
 
     def order(self):
         """
@@ -322,13 +324,14 @@ class PantsMappingClass(MappingClass):
         >>> A, B, c = humphries_generators(4)
         >>> A[0].order()
         0
-        >>> (A[0]*B[0]^(-1)).order()
+        >>> (A[0]*B[0]**(-1)).order()
         0
 
         >>> from macaw.examples import hyperelliptic_involution
         >>> g = hyperelliptic_involution(3)
         >>> g.order()
         2
+
         """
         # TODO: test using this:
         # https://projecteuclid.org/euclid.ojm/1277298910

@@ -1,3 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env python
 
-find ./macaw -name "*.py" | xargs sage -t
+import doctest
+import macaw
+import fnmatch
+import os
+
+for root, dirnames, filenames in os.walk('macaw'):
+    for filename in fnmatch.filter(filenames, '*.py'):
+        doctest.testfile(os.path.join(root, filename))
+

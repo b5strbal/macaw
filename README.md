@@ -1,6 +1,6 @@
 # Macaw
 
-Sage library for experiments in mapping class groups.
+Python module for experiments in mapping class groups.
 
 The project is still under construction, but some functionality already
 exists, see below.
@@ -9,10 +9,9 @@ exists, see below.
 
 Download the project and run
 ```
-sage setup.py install
+python setup.py install
 ```
-from the main directory containing the `setup.py` file. For this to work,
-`Sage` needs to be installed.
+from the directory containing the `setup.py` file. Without root access you can run ``python setup.py install --user``.
 
 ## Current functionality
 
@@ -79,8 +78,6 @@ True
 [ 0  1  0  0]
 [ 1 -1  1  0]
 [ 0  0  0  1]
->>> _.charpoly().factor()
-(x - 1)^2 * (x^2 - 3*x + 1)
 
 >>> g = hyperelliptic_involution(2)
 >>> g.action_on_homology()

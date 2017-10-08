@@ -170,46 +170,47 @@ class PantsDecomposition(Surface):
 
         TESTS:
 
-            >>> from macaw import PantsDecomposition
-            >>> p = PantsDecomposition([[1, 2, 3], [-3, -2, -1]])
-            >>> g = p.dual_graph()
-            >>> g.edges()
-            [(0, (0, 0), 0),
-             (0, (0, 1), 0),
-             (0, (0, 2), 0),
-             (1, (1, 0), 0),
-             (1, (1, 1), 0),
-             (1, (1, 2), 0),
-             ((0, 0), (1, 2), 0),
-             ((0, 1), (1, 1), 0),
-             ((0, 2), (1, 0), 0)]
+            # >>> from macaw import PantsDecomposition
+            # >>> p = PantsDecomposition([[1, 2, 3], [-3, -2, -1]])
+            # >>> g = p.dual_graph()
+            # >>> g.edges()
+            # [(0, (0, 0), 0),
+            #  (0, (0, 1), 0),
+            #  (0, (0, 2), 0),
+            #  (1, (1, 0), 0),
+            #  (1, (1, 1), 0),
+            #  (1, (1, 2), 0),
+            #  ((0, 0), (1, 2), 0),
+            #  ((0, 1), (1, 1), 0),
+            #  ((0, 2), (1, 0), 0)]
 
-            >>> p = PantsDecomposition([[1, 2, -2]])
-            >>> g = p.dual_graph()
-            >>> g.edges()
-            [(0, (0, 0), 0), (0, (0, 1), 0), (0, (0, 2), 0), ((0, 1), (0, 2), 0)]
+            # >>> p = PantsDecomposition([[1, 2, -2]])
+            # >>> g = p.dual_graph()
+            # >>> g.edges()
+            # [(0, (0, 0), 0), (0, (0, 1), 0), (0, (0, 2), 0), ((0, 1), (0, 2), 0)]
 
-            >>> p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
-            >>> g = p.dual_graph()
-            >>> g.edges()
-            [(0, (0, 0), 0),
-             (0, (0, 1), 0),
-             (0, (0, 2), 0),
-             (1, (1, 0), 0),
-             (1, (1, 1), 0),
-             (1, (1, 2), 0),
-             (2, (2, 0), 0),
-             (2, (2, 1), 0),
-             (2, (2, 2), 0),
-             (3, (3, 0), 0),
-             (3, (3, 1), 0),
-             (3, (3, 2), 0),
-             ((0, 0), (0, 1), 0),
-             ((0, 2), (1, 0), 0),
-             ((1, 1), (3, 1), 0),
-             ((1, 2), (2, 0), 0),
-             ((2, 1), (3, 0), 0),
-             ((2, 2), (3, 2), 0)]
+            # >>> p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
+            # >>> g = p.dual_graph()
+            # >>> g.edges()
+            # [(0, (0, 0), 0),
+            #  (0, (0, 1), 0),
+            #  (0, (0, 2), 0),
+            #  (1, (1, 0), 0),
+            #  (1, (1, 1), 0),
+            #  (1, (1, 2), 0),
+            #  (2, (2, 0), 0),
+            #  (2, (2, 1), 0),
+            #  (2, (2, 2), 0),
+            #  (3, (3, 0), 0),
+            #  (3, (3, 1), 0),
+            #  (3, (3, 2), 0),
+            #  ((0, 0), (0, 1), 0),
+            #  ((0, 2), (1, 0), 0),
+            #  ((1, 1), (3, 1), 0),
+            #  ((1, 2), (2, 0), 0),
+            #  ((2, 1), (3, 0), 0),
+            #  ((2, 2), (3, 2), 0)]
+
         """
         edge_ls = []
         for c in self.inner_pants_curves():
@@ -270,7 +271,7 @@ class PantsDecomposition(Surface):
         # assert(self.homology_dimension() = size of the basis constructed)
         pass
 
-    def _repr_(self):
+    def __repr__(self):
         return 'Pants decomposition with gluing list ' + repr(self._gluing_list)
         # return 'Pants decomposition of the ' + super(PantsDecomposition, self).__repr__().lower()
 
@@ -341,6 +342,7 @@ class PantsDecomposition(Surface):
             >>> p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
             >>> p.adjacent_pants(3)
             [[(1, 2)], [(2, 0)]]
+
         """
         if pants_curve > 0:
             return self._adjacent_pants[pants_curve]
@@ -356,6 +358,7 @@ class PantsDecomposition(Surface):
             [1, 2, 3]
             >>> p.adjacent_curves(1)
             [-3, -2, -1]
+
         """
         return self._gluing_list[pant]
 
@@ -375,6 +378,7 @@ class PantsDecomposition(Surface):
             >>> p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
             >>> p.num_pants()
             4
+
         """
         return len(self._gluing_list)
 
@@ -394,6 +398,7 @@ class PantsDecomposition(Surface):
             >>> p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
             >>> p.pants_curves()
             [1, 2, 3, 4, 5, 6]
+
         """
         return range(1, len(self._adjacent_pants)+1)
 
@@ -413,6 +418,7 @@ class PantsDecomposition(Surface):
             >>> p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
             >>> p.inner_pants_curves()
             [1, 2, 3, 4, 5, 6]
+
         """
         def is_inner(c):
             a = self.adjacent_pants(c)
@@ -438,6 +444,7 @@ class PantsDecomposition(Surface):
             >>> p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
             >>> p.boundary_pants_curves()
             []
+
         """
         return sorted(list(set(self.pants_curves()) - set(self.inner_pants_curves())))
 
@@ -457,6 +464,7 @@ class PantsDecomposition(Surface):
             >>> p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
             >>> p.num_pants_curves()
             6
+
         """
         return len(self.pants_curves())
 
@@ -476,6 +484,7 @@ class PantsDecomposition(Surface):
             >>> p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
             >>> p.num_inner_pants_curves()
             6
+
         """
         return len(self.inner_pants_curves())
 
@@ -495,6 +504,7 @@ class PantsDecomposition(Surface):
             >>> p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
             >>> p.num_boundary_pants_curves()
             0
+
         """
         return len(self.boundary_pants_curves())
 

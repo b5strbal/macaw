@@ -20,12 +20,13 @@ AUTHORS:
 # *****************************************************************************
 
 import numpy as np
+import numpy.matlib
 from .pants_decomposition import PantsDecomposition
 from .pants_mapping_class import PantsMappingClass, PantsTwist
 
 
 def elementary_matrix(size, row, col, entry):
-    mat = np.identity(size, dtype=object)
+    mat = numpy.matlib.identity(size, dtype=object)
     mat[row, col] = entry
     return mat
 

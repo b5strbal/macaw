@@ -52,6 +52,7 @@ class BranchMap(object):
         [4]
         >>> bm._branch_map[2]
         [2]
+        
         """
         self._branch_map = {abs(b): [abs(b)] for b in branches}
         # if 13 in self._branch_map.keys():
@@ -71,6 +72,7 @@ class BranchMap(object):
         [2]
         >>> bm.branch_list(-2)
         [-2]
+
         """
         if branch > 0:
             return self._branch_map[branch]
@@ -96,6 +98,7 @@ class BranchMap(object):
         [-5, 2, -4, 1]
         >>> bm.branch_list(-1)
         [-1, 4, -2, 5]
+
         """
         if append_to > 0:
             self._branch_map[append_to].\

@@ -76,38 +76,32 @@ class Surface(object):
             >>> Surface()
             Traceback (most recent call last):
             ...
-            ValueError: Either the genus or the Euler characteristic
-            should be specified, but not both.
+            ValueError: Either the genus or the Euler characteristic should be specified, but not both.
 
             >>> Surface(1,2,euler_char=2)
             Traceback (most recent call last):
             ...
-            ValueError: Either the genus or the Euler characteristic
-            should be specified, but not both.
+            ValueError: Either the genus or the Euler characteristic should be specified, but not both.
 
             >>> Surface(1,-1)
             Traceback (most recent call last):
             ...
-            ValueError: The number of punctures should be a nonnegative
-            integer.
+            ValueError: The number of punctures should be a nonnegative integer.
 
             >>> Surface(num_punctures=0, euler_char=-1)
             Traceback (most recent call last):
             ...
-            ValueError: There is no surface with the specified number of
-            punctures and Euler characteristic.
+            ValueError: There is no surface with the specified number of punctures and Euler characteristic.
 
             >>> Surface(-1)
             Traceback (most recent call last):
             ...
-            ValueError: The genus of an orientable surface should be
-            nonnegative.
+            ValueError: The genus of an orientable surface should be nonnegative.
 
             >>> Surface(0,is_orientable=False)
             Traceback (most recent call last):
             ...
-            ValueError: The genus of a nonorientable surface should be
-            positive.
+            ValueError: The genus of a nonorientable surface should be positive.
 
         """
 
@@ -147,7 +141,7 @@ class Surface(object):
             raise ValueError('The genus of a nonorientable surface '
                              'should be positive.')
 
-    def _repr_(self):
+    def __repr__(self):
         r"""
         Return a string representation of self.
 
@@ -155,7 +149,7 @@ class Surface(object):
 
             >>> from macaw.surface import Surface
             >>> S = Surface(2)
-            >>> S._repr_()
+            >>> S.__repr__()
             'Closed surface of genus 2'
 
         TESTS::
@@ -202,6 +196,7 @@ class Surface(object):
 
             >>> Surface(3,4,is_orientable=False)
             Nonorientable surface of genus 3 with 4 punctures
+
         """
         if self.is_orientable():
             if self.genus() == 0:
@@ -317,6 +312,7 @@ class Surface(object):
             >>> S = Surface(2, 1, False)
             >>> S.euler_char()
             -1
+            
         """
         return self._euler_char
 

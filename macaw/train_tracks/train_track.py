@@ -96,6 +96,7 @@ class TrainTrack(TrainTrack1):
         [[2, 1, 3], [-2, -1, -3]]
         >>> tt.measure()
         [2, 3, 0]
+        
         """
         assert(self.is_measured())
         if side == RIGHT:
@@ -236,12 +237,11 @@ class TrainTrack(TrainTrack1):
 
         An example when a fold is not possible::
 
-            >>> tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
-            ....: [-5], [6, -6] ])
+            >>> tt = TrainTrack([[1, -1], [2], [-2, 3], [5], [4, -4], [-3], [-5], [6, -6]])
             >>> tt.fold(1, 1, 0)
             Traceback (most recent call last):
             ...
-            FoldError: The fold is not possible, because there is a ...
+            FoldError: The fold is not possible, because there is a blocking backward branch.
 
         """
 

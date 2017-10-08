@@ -103,8 +103,7 @@ class TrainTrack(object):
 
     3. A train track on the three times punctured disk:
 
-        >>> TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3], [-5],
-        ....: [6, -6]])
+        >>> TrainTrack([[1, -1], [2], [-2, 3], [5], [4, -4], [-3], [-5], [6, -6]])
         Train track on the sphere with 4 punctures
 
     .. TODO::
@@ -237,8 +236,7 @@ class TrainTrack(object):
         [1, 2]
 
         >>> from macaw.train_tracks.train_track0 import TrainTrack
-        >>> tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
-        ....: [-5], [6, -6] ])
+        >>> tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3], [-5], [6, -6] ])
         >>> tt.branches()
         [1, 2, 3, 4, 5, 6]
 
@@ -255,8 +253,7 @@ class TrainTrack(object):
         >>> tt.switches()
         [1]
 
-        >>> tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
-        ....: [-5], [6, -6] ])
+        >>> tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3], [-5], [6, -6] ])
         >>> tt.switches()
         [1, 2, 3, 4]
 
@@ -343,10 +340,10 @@ class TrainTrack(object):
         >>> tt.num_switches()
         1
 
-        >>> tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
-        ....: [-5], [6, -6] ])
+        >>> tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3], [-5], [6, -6] ])
         >>> tt.num_switches()
         4
+        
         """
         return self._num_switches
 
@@ -397,6 +394,7 @@ class TrainTrack(object):
             -1
             >>> tt.branch_endpoint(-2)
             1
+
             """
         return self._branch_endpoint[START, -branch-1] if branch < 0 \
             else self._branch_endpoint[END, branch-1]
@@ -426,8 +424,7 @@ class TrainTrack(object):
             array([2, 1])
             >>> tt.outgoing_branches(-1, start_side=RIGHT)
             array([-2, -1])
-            >>> tt = TrainTrack([[1, -1], [2], [-2, -3], [5], [6, -6], [-5],
-            ....: [4, -4], [3]])
+            >>> tt = TrainTrack([[1, -1], [2], [-2, -3], [5], [6, -6], [-5], [4, -4], [3]])
             >>> tt.outgoing_branches(3)
             array([ 6, -6])
             >>> tt.outgoing_branches(-3)
@@ -514,8 +511,7 @@ class TrainTrack(object):
         EXAMPLES::
 
             >>> from macaw.train_tracks.train_track0 import TrainTrack
-            >>> tt = TrainTrack([[1, -1], [2], [-2, -3], [5], [6, -6], [-5],
-            ....: [4, -4], [3]])
+            >>> tt = TrainTrack([[1, -1], [2], [-2, -3], [5], [6, -6], [-5], [4, -4], [3]])
             >>> tt.num_outgoing_branches(3)
             2
             >>> tt.num_outgoing_branches(-3)
@@ -551,12 +547,12 @@ class TrainTrack(object):
             >>> tt.switch_valence(-1)
             4
 
-            >>> tt = TrainTrack([[1, -1], [2], [-2, -3], [5], [6, -6], [-5],
-            ....: [4, -4], [3]])
+            >>> tt = TrainTrack([[1, -1], [2], [-2, -3], [5], [6, -6], [-5], [4, -4], [3]])
             >>> tt.switch_valence(2)
             3
             >>> tt.switch_valence(-3)
             3
+
         """
         return self.num_outgoing_branches(switch) +\
             self.num_outgoing_branches(-switch)
@@ -576,8 +572,7 @@ class TrainTrack(object):
             >>> tt.is_trivalent()
             True
 
-            >>> tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3],
-            ....: [-5], [6, -6] ])
+            >>> tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3], [-5], [6, -6] ])
             >>> tt.is_trivalent()
             True
 
@@ -731,8 +726,8 @@ class TrainTrack(object):
             2
             >>> tt.adjacent_cusp(-2, LEFT)
             2
-            >>> tt.adjacent_cusp(1, LEFT)
-            None
+            >>> tt.adjacent_cusp(1, LEFT) is None
+            True
 
         """
         orientation = 0 if branch > 0 else 1
@@ -804,8 +799,7 @@ class TrainTrack(object):
         EXAMPLES::
 
             >>> from macaw.train_tracks.train_track0 import TrainTrack
-            >>> tt = TrainTrack([[1, -1], [2], [-2, 3], [5], [4, -4], [-3],
-            ....: [-5], [6, -6]])
+            >>> tt = TrainTrack([[1, -1], [2], [-2, 3], [5], [4, -4], [-3], [-5], [6, -6]])
             >>> tt.gluing_list()
             [[1, -1], [2], [-2, 3], [5], [4, -4], [-3], [-5], [6, -6]]
 
@@ -849,7 +843,7 @@ class TrainTrack(object):
             array([1, 2, 2])
             >>> tt._set_endpoint(-3, -2)
             >>> tt._branch_endpoint[START]
-            array([ 1, 2, -2])
+            array([ 1,  2, -2])
 
         """
         if branch > 0:
@@ -871,6 +865,7 @@ class TrainTrack(object):
             >>> tt._set_measure(1, 16)
             >>> tt._measure
             array([16, 3, 5], dtype=object)
+
         """
         self._measure[abs(branch)-1] = new_measure
 
@@ -1358,6 +1353,7 @@ class TrainTrack(object):
                    [-1,  0]])
             >>> tt._outgoing_branches
             array([[[ 1,  0]],
+            <BLANKLINE>
                    [[-1,  0]]])
             >>> tt._num_outgoing_branches
             array([[1],
@@ -1470,6 +1466,7 @@ class TrainTrack(object):
             <BLANKLINE>
                    [[-2,  0],
                     [-3, -1]]])
+
         """
         old_sw = self.branch_endpoint(branch)
         old_pos = self.outgoing_branch_index(old_sw, -branch,

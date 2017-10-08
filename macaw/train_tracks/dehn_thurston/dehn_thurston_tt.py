@@ -250,8 +250,7 @@ class DehnThurstonTT(TrainTrack):
         TESTS:
 
             >>> from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
-            >>> tt = DehnThurstonTT([[8, 6, 5], [-8, 2, -6], [-5, -2, 4],
-            ....: [-1, -3, -4], [3, 9, 7], [-9, 1, -7]])
+            >>> tt = DehnThurstonTT([[8, 6, 5], [-8, 2, -6], [-5, -2, 4], [-1, -3, -4], [3, 9, 7], [-9, 1, -7]])
             >>> tt.get_turning(1)
             0
             >>> tt.get_turning(-1)
@@ -284,8 +283,7 @@ class DehnThurstonTT(TrainTrack):
         TESTS:
 
             >>> from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
-            >>> tt = DehnThurstonTT([[10, 6, 5], [-10, 4, -6], [-5, -4, 2],
-            ....: [-8, -7, -2], [7, 9, 13], [-9, 8, -13]])
+            >>> tt = DehnThurstonTT([[10, 6, 5], [-10, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 13], [-9, 8, -13]])
             >>> tt.pants_branch_on_switch(1)
             10
             >>> tt.pants_branch_on_switch(-1)
@@ -312,8 +310,7 @@ class DehnThurstonTT(TrainTrack):
         TESTS:
 
             >>> from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
-            >>> tt = DehnThurstonTT([[8, 6, 5], [-8, 2, -6], [-5, -2, 4],
-            ....: [-1, -3, -4], [3, 9, 7], [-9, 1, -7]])
+            >>> tt = DehnThurstonTT([[8, 6, 5], [-8, 2, -6], [-5, -2, 4], [-1, -3, -4], [3, 9, 7], [-9, 1, -7]])
             >>> tt.elem_move_type(1)
             1
             >>> tt.elem_move_type(-1)
@@ -365,9 +362,7 @@ class DehnThurstonTT(TrainTrack):
         We only twist in the good direction::
 
             >>> from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
-            >>> tt = DehnThurstonTT([[4, 1], [6, -1], [-2, -6, 7, -4, -7],
-            ....: [2, 9, -5, 8, 5], [-8, 3], [-9, -3]], [1, 2, 8, 11, 7, 11, 5,
-            ....: 9, 9])
+            >>> tt = DehnThurstonTT([[4, 1], [6, -1], [-2, -6, 7, -4, -7], [2, 9, -5, 8, 5], [-8, 3], [-9, -3]], [1, 2, 8, 11, 7, 11, 5, 9, 9])
             >>> tt.unzip_fold_general_twist(2, -2, -1)
             >>> tt.gluing_list()
             [[4, 1], [6, -1], [-2, 7, -4, -7, -6], [2, 8, 5, 9, -5], [-8, 3], [-9, -3]]
@@ -378,9 +373,7 @@ class DehnThurstonTT(TrainTrack):
         direction on the right side. The unzip on the right goes into the pants
         branch.
 
-            >>> tt = DehnThurstonTT([[4, 1], [6, -1], [-2, -6, 7, -4, -7],
-            ....: [2, 9, -5, 8, 5], [-8, 3], [-9, -3]], [1, 100, 8, 11, 7, 11,
-            ....: 5, 9, 9])
+            >>> tt = DehnThurstonTT([[4, 1], [6, -1], [-2, -6, 7, -4, -7], [2, 9, -5, 8, 5], [-8, 3], [-9, -3]], [1, 100, 8, 11, 7, 11, 5, 9, 9])
             >>> tt.unzip_fold_general_twist(2, -2, 1)
             >>> tt.gluing_list()
             [[4, 1], [6, -1], [-2, -7, -6, 7, -4], [2, 8, 5, 9, -5], [-8, 3], [-9, -3]]
@@ -390,9 +383,7 @@ class DehnThurstonTT(TrainTrack):
         There is bad twist on both sides, but both unzips go into the pants
         curve.
 
-            >>> tt = DehnThurstonTT([[4, 1], [6, -1], [-2, -6, 7, -4, -7],
-            ....: [2, 9, -5, 8, 5], [-8, 3], [-9, -3]], [1, 100, 8, 11, 7, 11,
-            ....: 5, 9, 9])
+            >>> tt = DehnThurstonTT([[4, 1], [6, -1], [-2, -6, 7, -4, -7], [2, 9, -5, 8, 5], [-8, 3], [-9, -3]], [1, 100, 8, 11, 7, 11, 5, 9, 9])
             >>> tt.unzip_fold_general_twist(2, 2, 1)
             >>> tt.gluing_list()
             [[4, 1], [6, -1], [-2, -7, -6, 7, -4], [2, 8, 5, 9, -5], [-8, 3], [-9, -3]]
@@ -404,9 +395,7 @@ class DehnThurstonTT(TrainTrack):
         orientation of the switch changes.
 
             >>> from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
-            >>> tt = DehnThurstonTT([[4, 1], [6, -1], [-6, 7, -4, -7, -2],
-            ....: [9, -5, 8, 5, 2], [-8, 3], [-9, -3]], [1, 2, 8, 11, 7, 11,
-            ....: 5, 9, 9])
+            >>> tt = DehnThurstonTT([[4, 1], [6, -1], [-6, 7, -4, -7, -2], [9, -5, 8, 5, 2], [-8, 3], [-9, -3]], [1, 2, 8, 11, 7, 11, 5, 9, 9])
             >>> tt.unzip_fold_general_twist(2, 1, -3)
             >>> tt.gluing_list()
             [[4, 1], [6, -1], [2, 5, 9, -5, 8], [-2, -7, -6, 7, -4], [-8, 3], [-9, -3]]
@@ -417,9 +406,7 @@ class DehnThurstonTT(TrainTrack):
         both sides. The unzips also go across.
 
             >>> from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
-            >>> tt = DehnThurstonTT([[4, 1], [6, -1], [-6, 7, -4, -7, -2],
-            ....: [9, -5, 8, 5, 2], [-8, 3], [-9, -3]], [1, 2, 8, 11, 7, 11,
-            ....: 5, 9, 9])
+            >>> tt = DehnThurstonTT([[4, 1], [6, -1], [-6, 7, -4, -7, -2], [9, -5, 8, 5, 2], [-8, 3], [-9, -3]], [1, 2, 8, 11, 7, 11, 5, 9, 9])
             >>> tt.unzip_fold_general_twist(2, -2, -3)
             >>> tt.gluing_list()
             [[4, 1], [6, -1], [2, 5, 9, -5, 8], [-2, -4, -7, -6, 7], [-8, 3], [-9, -3]]
@@ -556,9 +543,7 @@ class DehnThurstonTT(TrainTrack):
         Twisting in the good direction:
 
             >>> from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
-            >>> tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4,
-            ....: -2, 3, 9, -3], [-8, -5], [-6, 5]], [1, 2, 8, 8, 14, 6, 4, 6,
-            ....: 2])
+            >>> tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4, -2, 3, 9, -3], [-8, -5], [-6, 5]], [1, 2, 8, 8, 14, 6, 4, 6, 2])
             >>> tt.unzip_fold_pants_twist(2, -1)
             >>> tt.gluing_list()
             [[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4, -2, 3, 9, -3], [-8, -5], [-6, 5]]
@@ -568,9 +553,7 @@ class DehnThurstonTT(TrainTrack):
         Twisting in the bad direction, train track remains left-turning:
 
             >>> from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
-            >>> tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4,
-            ....: -2, 3, 9, -3], [-8, -5], [-6, 5]], [1, 2, 8, 100, 14, 6, 4,
-            ....: 6, 2])
+            >>> tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4, -2,  3, 9, -3], [-8, -5], [-6, 5]], [1, 2, 8, 100, 14, 6, 4, 6, 2])
             >>> tt.unzip_fold_pants_twist(2, 1)
             >>> tt.gluing_list()
             [[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4, -2, 3, 9, -3], [-8, -5], [-6, 5]]
@@ -581,9 +564,7 @@ class DehnThurstonTT(TrainTrack):
         Twisting in the bad direction, train track becomes right-turning:
 
             >>> from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
-            >>> tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4,
-            ....: -2, 3, 9, -3], [-8, -5], [-6, 5]], [1, 2, 8, 1, 14, 6, 4,
-            ....: 6, 2])
+            >>> tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4, -2, 3, 9, -3], [-8, -5], [-6, 5]], [1, 2, 8, 1, 14, 6, 4, 6, 2])
             >>> tt.unzip_fold_pants_twist(2, 1)
             >>> tt.gluing_list()
             [[-9, 1], [2, -1], [-2, 3, 9, -3, -4], [8, 7, 6, -7, 4], [-8, -5], [-6, 5]]
@@ -645,9 +626,7 @@ class DehnThurstonTT(TrainTrack):
         curves, at switch 1 it goes across.
 
             >>> from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
-            >>> tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4,
-            ....: -2, 3, 9, -3], [-8, -5], [-6, 5]], [1, 2, 8, 1, 14, 6, 4,
-            ....: 6, 2])
+            >>> tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4, -2, 3, 9, -3], [-8, -5], [-6, 5]], [1, 2, 8, 1, 14, 6, 4, 6, 2])
             >>> tt.unzip_fold_first_move(1)
             >>> tt.gluing_list()
             [[1, 3], [-1, 2], [-3, -9, -2, 9, -4], [8, 7, 6, -7, 4], [-8, -5], [-6, 5]]
@@ -671,9 +650,7 @@ class DehnThurstonTT(TrainTrack):
 
         Now testing the cases when lambda23 is present:
 
-            >>> tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2],
-            ....: [-8, -7, -2], [7, 9, 3], [-9, 8, -3]], [100, 20, 2, 7, 7, 4,
-            ....: 7, 7, 1])
+            >>> tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]], [100, 20, 2, 7, 7, 4, 7, 7, 1])
             >>> tt.unzip_fold_first_move(-1)
             >>> tt.gluing_list()
             [[1, 5, 6], [4, -1, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]]
@@ -697,9 +674,7 @@ class DehnThurstonTT(TrainTrack):
 
         Another test for the inverse:
 
-            >>> tt = DehnThurstonTT([[1, 5], [-1, 4], [2, -8, 9, -7, -9],
-            ....: [-2, -5, 6, -4, -6], [7, 3], [8, -3]], [3, 20, 3, 10, 10, 13,
-            ....: 15, 15, 8])
+            >>> tt = DehnThurstonTT([[1, 5], [-1, 4], [2, -8, 9, -7, -9], [-2, -5, 6, -4, -6], [7, 3], [8, -3]], [3, 20, 3, 10, 10, 13, 15, 15, 8])
             >>> tt.unzip_fold_first_move(1)
             >>> tt.unzip_fold_first_move(1, inverse=True)
             >>> tt.gluing_list()
@@ -860,17 +835,16 @@ class DehnThurstonTT(TrainTrack):
         TESTS:
 
             >>> from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
-            >>> tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2],
-            ....: [-8, -7, -2], [7, 9, 3], [-9, 8, -3]])
+            >>> tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]])
             >>> d = tt.standardize_neighboring_branches(2)
             >>> sorted(d.items())
             [(-9, -8), (-8, -9), (-7, 7), (-6, 2), (-5, -3), (-4, 1), (-2, -13), (2, 13), (4, -1), (5, 3), (6, -2), (7, -7), (8, 9), (9, 8)]
 
-            >>> tt2 = DehnThurstonTT([[1, 6], [-1, 4], [-8, -4, -5, 9, 5],
-            ....: [8, -7, -2, -6, 2], [7, 3], [-9, -3]])
+            >>> tt2 = DehnThurstonTT([[1, 6], [-1, 4], [-8, -4, -5, 9, 5], [8, -7, -2, -6, 2], [7, 3], [-9, -3]])
             >>> d = tt2.standardize_neighboring_branches(2)
             >>> sorted(d.items())
             [(-9, -7), (-8, 13), (-7, -3), (-6, 1), (-5, 10), (-4, -9), (-2, 4), (2, -4), (4, 9), (5, -10), (6, -1), (7, 3), (8, -13), (9, 7)]
+
         """
 
         assert(self.elem_move_type(switch) == 2)
@@ -988,9 +962,7 @@ class DehnThurstonTT(TrainTrack):
         A right-turning example and its inverse which is left-turning:
 
             >>> from macaw.train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
-            >>> tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2],
-            ....: [-8, -7, -2], [7, 9, 3], [-9, 8, -3]], [100, 20, 30, 7, 7, 4,
-            ....: 7, 7, 1])
+            >>> tt = DehnThurstonTT([[1, 6, 5], [-1, 4, -6], [-5, -4, 2], [-8, -7, -2], [7, 9, 3], [-9, 8, -3]], [100, 20, 30, 7, 7, 4, 7, 7, 1])
             >>> tt.unzip_fold_second_move(2)
             >>> tt.gluing_list()
             [[1, 6], [-1, 4], [-8, -4, -5, 9, 5], [8, -7, -2, -6, 2], [7, 3], [-9, -3]]
@@ -1004,9 +976,7 @@ class DehnThurstonTT(TrainTrack):
 
         Now we start with a right-turning switch with five branches on each side.
 
-            >>> tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4,
-            ....: -2, 3, 9, -3], [-8, -5], [-6, 5]], [1, 2, 8, 1, 14, 6, 4,
-            ....: 6, 2])
+            >>> tt = DehnThurstonTT([[-9, 1], [2, -1], [4, 8, 7, 6, -7], [-4, -2, 3, 9, -3], [-8, -5], [-6, 5]], [1, 2, 8, 1, 14, 6, 4, 6, 2])
             >>> tt.unzip_fold_second_move(2)
             >>> tt.gluing_list()
             [[-9, 1], [2, -1], [-4, 6, -7, -2, 7], [4, 9, -3, 8, 3], [-8, -5], [-6, 5]]
@@ -1020,9 +990,7 @@ class DehnThurstonTT(TrainTrack):
 
         Here we start with a switch with only two branches on each side.
 
-            >>> tt = DehnThurstonTT([[-9, 1], [2, -1], [-4, 6, -7, -2, 7],
-            ....: [4, 9, -3, 8, 3], [-8, -5], [-6, 5]], [3, 2, 1, 11, 20, 6, 1,
-            ....: 6, 2])
+            >>> tt = DehnThurstonTT([[-9, 1], [2, -1], [-4, 6, -7, -2, 7], [4, 9, -3, 8, 3], [-8, -5], [-6, 5]], [3, 2, 1, 11, 20, 6, 1, 6, 2])
             >>> tt.unzip_fold_second_move(3)
             >>> tt.gluing_list()
             [[-9, 1], [2, -1], [-4, 6], [4, -3], [8, 9, -7, -2, 7], [-8, -6, 5, 3, -5]]
