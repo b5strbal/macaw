@@ -312,7 +312,7 @@ class Surface(object):
             >>> S = Surface(2, 1, False)
             >>> S.euler_char()
             -1
-            
+
         """
         return self._euler_char
 

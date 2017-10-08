@@ -25,8 +25,8 @@ import numpy as np
 from ..constants import LEFT, RIGHT, START, END, BRANCH, CUSP, \
     FORWARD, BACKWARD, INTERVAL
 # from sage.all import vector
-from .train_track import SMALL_COLLAPSIBLE, FoldError
-from .train_track0 import TrainTrack
+import numpy as np
+from .train_track import SMALL_COLLAPSIBLE, FoldError, TrainTrack
 
 
 class Click:
@@ -690,6 +690,32 @@ class CarryingMap(object):
 
         The small train track has to be a measured train track. If there is a way to peel the large train track so that the small train track is carried, then the small train track is not changed. (In this case, the measure on the small train track does not play a role.) If there is no way to peel the large train track so that the small train track is carried, then the small train track is peeled according to the measure to make it carried. 
         """
+        # First we see if there is any obstruction for the peeling and if there is, we try to remove it by isotoping.
+        lg_cusp = self._large_tt.adjacent_cusp(peeled_branch, peeled_side)
+        sm_cusp = self.large_cusp_to_small_cusp(lg_cusp)
+        if self.is_cusp_collapsed(sm_cusp):
+            # If this cusp path is collapsed, that's when we are in trouble.
+            # Trying to isotope it away...
+            sm_sw = self._small_tt.cusp_to_switch(sm_cusp)
+            self.isotope_switch_recursively(-sm_sw)
+
+        if self.is_cusp_collapsed(sm_cusp):
+            # If the the cusp path is still collapsed, then the small train track needs to be split.
+            # TODO: add splitting code
+
+        # If the cusp path is not collapsed, then we can peel.
+        # First we isotope all clicks the part of the large switch that is getting peeled off of the switch. Since this part is is going to be in a middle of a large branch, not at a switch, no switches are allowed here.
+        
+        # The interval finding should not return an error, since the cusp path is not collapsed, hence the large cusp must be in an interval.
+        interval = self.find_interval_containing_large_cusp(lg_cusp)
+        while True:
+            click = interval.get_click((peeled_side+1) % 2)
+            if click == None:
+                break
+            
+        
+        lg_sw = self._large_tt.branch_endpoint(-peeled_branch)
+
         self.append_in_large(BRANCH, peel_off_of, BRANCH, peeled_branch, -1)
 
     def fold_in_large(self, folded_branch, fold_onto_branch, fold_direction):
@@ -944,11 +970,6 @@ class CarryingMap(object):
         self.isotope_switch_as_far_as_possible(switch)
         # TODO: Do we need to do more iterations? If so, is there a way to get stuck in an infinite loop?
  
-
-
-
-
-
 
 def merge_lists(a, b):
     assert len(a) == len(b) + 1
