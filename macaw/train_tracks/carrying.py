@@ -702,6 +702,7 @@ class CarryingMap(object):
         if self.is_cusp_collapsed(sm_cusp):
             # If the the cusp path is still collapsed, then the small train track needs to be split.
             # TODO: add splitting code
+            pass
 
         # If the cusp path is not collapsed, then we can peel.
         # First we isotope all clicks the part of the large switch that is getting peeled off of the switch. Since this part is is going to be in a middle of a large branch, not at a switch, no switches are allowed here.
