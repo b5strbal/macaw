@@ -276,7 +276,7 @@ class DehnThurstonTT(TrainTrack):
         #     if self.outgoing_branch(switch, 0, side) == \
         #        -self.outgoing_branch(-switch, 0, side):
         #         return side
-        # assert(False)
+        # assert False
 
     def pants_branch_on_switch(self, switch):
         """
@@ -418,7 +418,7 @@ class DehnThurstonTT(TrainTrack):
         switch = pants_curve
         turning = self.get_turning(pants_curve)
         nleft, nright = self.num_curves_on_sides(pants_curve)
-        assert(nleft > 0 and nright > 0)
+        assert nleft > 0 and nright > 0
         # by rotating the pants curve, we can assume that the twists on the
         # left
         # are between 0 and nleft-1 if right-turning and between -(nleft-1) and
@@ -586,7 +586,7 @@ class DehnThurstonTT(TrainTrack):
 
         The returned switch is oriented so that the torus is on its left side.
         """
-        assert(self.elem_move_type(switch) == 1)
+        assert self.elem_move_type(switch) == 1
         for b in self.outgoing_branches(switch):
             new_switch = self.branch_endpoint(b)
             if abs(new_switch) != abs(switch):
@@ -600,7 +600,7 @@ class DehnThurstonTT(TrainTrack):
         Return the standard orientation of the switch for the first elementary
         move.
         """
-        assert(self.elem_move_type(switch) == 1)
+        assert self.elem_move_type(switch) == 1
         bdy_switch = self.torus_boundary_switch(switch)
         turning = self.get_turning(bdy_switch)
         if turning == RIGHT:
@@ -694,7 +694,7 @@ class DehnThurstonTT(TrainTrack):
             self.unzip_fold_pants_twist(bdy_switch, -1)
             return
 
-        assert(self.elem_move_type(switch) == 1)
+        assert self.elem_move_type(switch) == 1
         switch = self.orientation_of_switch_first_move(switch)
         # debug = True
         if debug:
@@ -847,7 +847,7 @@ class DehnThurstonTT(TrainTrack):
 
         """
 
-        assert(self.elem_move_type(switch) == 2)
+        assert self.elem_move_type(switch) == 2
         branch_to_standard = {}
         turning = self.get_turning(switch)
 
@@ -905,9 +905,9 @@ class DehnThurstonTT(TrainTrack):
                     branch_to_standard[branches[idx-1]] = 6+6*side
                     branch_to_standard[branches[idx]] = 3+6*side
                 else:
-                    assert(False)
+                    assert False
             else:
-                assert(False)
+                assert False
 
         # extend with negatives
         for b in branch_to_standard.keys():
@@ -1005,7 +1005,7 @@ class DehnThurstonTT(TrainTrack):
 
         """
         # debug=True
-        assert(self.elem_move_type(switch) == 2)
+        assert self.elem_move_type(switch) == 2
         branch_to_standard = self.standardize_neighboring_branches(switch)
         if debug:
             print "branch_to_standard:", branch_to_standard
@@ -1116,7 +1116,7 @@ class DehnThurstonTT(TrainTrack):
                 self._pants_branches[abs(switch)-1] = abs(b)
                 break
         else:
-            assert(False)
+            assert False
 
 
 def pop_fold(train_track, branch_map, debug=False):

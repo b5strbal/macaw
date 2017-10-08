@@ -96,9 +96,9 @@ class TrainTrack(TrainTrack1):
         [[2, 1, 3], [-2, -1, -3]]
         >>> tt.measure()
         [2, 3, 0]
-        
+
         """
-        assert(self.is_measured())
+        assert self.is_measured()
         if side == RIGHT:
             return self.peel(-switch, LEFT, branch_map, debug=debug,
                              preferred_peeled_side=preferred_peeled_side)
@@ -117,12 +117,12 @@ class TrainTrack(TrainTrack1):
         branches = [self.outgoing_branch(-switch, 0, start_side=RIGHT),
                     self.outgoing_branch(switch, 0)]
 
-        assert(abs(branches[0]) != abs(branches[1]))
+        assert abs(branches[0]) != abs(branches[1])
 
         lens = [len(self.outgoing_branches(-switch)),
                 len(self.outgoing_branches(switch))]
 
-        assert(lens[LEFT] > 1 or lens[RIGHT] > 1)
+        assert lens[LEFT] > 1 or lens[RIGHT] > 1
 
         measures = [self.branch_measure(b) for b in branches]
 
@@ -547,11 +547,11 @@ class TrainTrack(TrainTrack1):
         - BALAZS STRENNER (2017-08-15): rewrite using new backend
 
         """
-        assert(self.is_branch_large(branch))
-        assert(self.is_trivalent())
+        assert self.is_branch_large(branch)
+        assert self.is_trivalent()
         top_switch = self.branch_endpoint(branch)
         bottom_switch = self.branch_endpoint(-branch)
-        assert(abs(top_switch) != abs(bottom_switch))
+        assert abs(top_switch) != abs(bottom_switch)
         top_left = self.outgoing_branch(-top_switch, 0)
         top_right = self.outgoing_branch(-top_switch, 1)
         bottom_left = self.outgoing_branch(-bottom_switch, 0)
@@ -651,11 +651,11 @@ class TrainTrack(TrainTrack1):
 
 
         """
-        assert(self.branch_type(branch) == SMALL_COLLAPSIBLE)
-        assert(self.is_trivalent())
+        assert self.branch_type(branch) == SMALL_COLLAPSIBLE
+        assert self.is_trivalent()
         top_switch = self.branch_endpoint(branch)
         bottom_switch = self.branch_endpoint(-branch)
-        assert(abs(top_switch) != abs(bottom_switch))
+        assert abs(top_switch) != abs(bottom_switch)
         if self.outgoing_branch(top_switch, 0, LEFT) == -branch:
             branch_turning = LEFT
         else:

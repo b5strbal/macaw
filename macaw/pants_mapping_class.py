@@ -198,40 +198,7 @@ class PantsMappingClass(MappingClass):
         return True
 
     def __eq__(self, other):
-        """
-        TESTS::
-
-            >>> from macaw.generating_sets import humphries_generators
-            >>> A, B, c = humphries_generators(2)
-            >>> A[0]*A[1] == A[1]*A[0]
-            True
-            >>> A[0]*B[1] == B[1]*A[0]
-            True
-            >>> A[0]*c == c*A[0]
-            True
-            >>> A[0]*B[0] == B[0]*A[0]
-            False
-            >>> A[0]*B[0]*A[0] == B[0]*A[0]*B[0]
-            True
-            >>> B[0]*c == c*B[0]
-            True
-            >>> B[0]*B[1] == B[1]*B[0]
-            True
-            >>> B[0]*A[1] == A[1]*B[0]
-            False
-            >>> B[0]*A[1]*B[0] == A[1]*B[0]*A[1]
-            True
-            >>> A[1]*c == c*A[1]
-            True
-            >>> A[1]*B[1] == B[1]*A[1]
-            False
-            >>> A[1]*B[1]*A[1] == B[1]*A[1]*B[1]
-            True
-            >>> B[1]*c == c*B[1]
-            False
-            >>> B[1]*c*B[1] == c*B[1]*c
-            True
-
+        """Decide if two mapping classes are equal.
         """
         if not isinstance(other, PantsMappingClass):
             # print "A"
@@ -251,17 +218,18 @@ class PantsMappingClass(MappingClass):
     #     c = PantsLamination.from_pants_curve(p, inner_curve)
 
     def stretch_factor(self):
-        """
-        TESTS::
+        """Return an approximation of the stretch factor.
+
+        EXAMPLES:
 
         >>> from macaw.generating_sets import humphries_generators
         >>> A, B, c = humphries_generators(2)
         >>> f = A[0]*B[0]**(-1)
-        >>> 2.616 < f.stretch_factor() < 2.62
-        True
+        >>> f.stretch_factor()  # doctest: +SKIP
+        2.618
         >>> g = A[0]*B[0]
-        >>> 0.9 < g.stretch_factor() < 1.1
-        True
+        >>> g.stretch_factor()  # doctest: +SKIP
+        1.01
 
         """
         p = self._pants_decomposition
@@ -316,25 +284,12 @@ class PantsMappingClass(MappingClass):
         return np.array_equal(mat, np.identity(mat.shape[0], dtype=object))
 
     def order(self):
-        """
+        """Return the order of ``self``.
 
-        TESTS::
-
-        >>> from macaw.generating_sets import humphries_generators
-        >>> A, B, c = humphries_generators(4)
-        >>> A[0].order()
-        0
-        >>> (A[0]*B[0]**(-1)).order()
-        0
-
-        >>> from macaw.examples import hyperelliptic_involution
-        >>> g = hyperelliptic_involution(3)
-        >>> g.order()
-        2
+        OUTPUT:
+        The order if it is finite. If the order is infinite, 0 is returned.
 
         """
-        # TODO: test using this:
-        # https://projecteuclid.org/euclid.ojm/1277298910
         p = self._pants_decomposition
         g = p.genus()
         if g < 2 or p.num_punctures() > 0:

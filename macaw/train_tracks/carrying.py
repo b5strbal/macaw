@@ -141,7 +141,7 @@ class CarryingMap(object):
         # TODO rewrite this
         tt = train_track
         max_num_branches = tt.num_branches_if_made_trivalent()
-        assert(len(tt.branches()) <= max_num_branches)
+        assert len(tt.branches()) <= max_num_branches
 
         # Identity array of arbitrary-precision Python ints.
         # Keep in mind that we fill in ones also in the rows that are not
@@ -267,7 +267,7 @@ class CarryingMap(object):
             idx += self._cusp_index_offset
         elif typ == BRANCH:
             return idx
-        assert(False)
+        assert False
 
     def _branch_or_interval_idx(self, typ, branch_or_interval):
         """Return the index of a branch of the large train track of an interval.
@@ -277,7 +277,7 @@ class CarryingMap(object):
             idx += self._interval_index_offset
         elif typ == BRANCH:
             return idx
-        assert(False)
+        assert False
 
     def get_intersections(self, typ, branch_or_interval):
         """Return the intersection data with large branch or and interval.
@@ -951,7 +951,7 @@ class CarryingMap(object):
 
 
 def merge_lists(a, b):
-    assert(len(a) == len(b) + 1)
+    assert len(a) == len(b) + 1
     ls = [a[0]]
     for i in range(len(b)):
         ls.append(b[i])
@@ -963,7 +963,7 @@ def is_smaller_or_equal(array1, array2):
     """Decide if all entries of the first array are less than or equal the
     corresponding entries of the second array.
     """
-    assert(array1.size == array2.size)
+    assert array1.size == array2.size
     return all(array2-array1 >= 0)
 
 
@@ -971,7 +971,7 @@ def is_smaller(array1, array2):
     """Decide if all entries of the first array are less than the
     corresponding entries of the second array.
     """
-    assert(array1.size == array2.size)
+    assert array1.size == array2.size
     return all(array2-array1 > 0)
 
 
@@ -980,7 +980,7 @@ def is_equal(array1, array2):
     second array.
 
     """
-    assert(array1.size == array2.size)
+    assert array1.size == array2.size
     return all(array2 == array1)
 
 

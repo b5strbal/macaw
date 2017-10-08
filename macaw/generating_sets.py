@@ -58,7 +58,7 @@ def humphries_generators(genus, right_most_included=False):
     g = genus
     p = PantsDecomposition.humphries(g)
     dim = p.homology_dimension()
-    assert(dim == 2*g)
+    assert dim == 2*g
 
     # The g curves of the multicurve A are the elements 0,...,g-1 of the
     # homology basis. The g curves of the multicurve B are numbered g,....,
@@ -114,25 +114,3 @@ def humphries_generators(genus, right_most_included=False):
         A.append(PantsMappingClass(p, [PantsTwist([], 3*g-3)], mat))
 
     return (A, B, c)
-
-
-A, B, c = humphries_generators(2)
-f = A[0]*A[1]*B[0]*B[1]
-p = f._pants_decomposition
-
-
-def test():
-    print (A[0]*A[1] == A[1]*A[0]) is True
-    print (A[0]*B[1] == B[1]*A[0]) is True
-    print (A[0]*c == c*A[0]) is True
-    print (A[0]*B[0] == B[0]*A[0]) is False
-    print (A[0]*B[0]*A[0] == B[0]*A[0]*B[0]) is True
-    print (B[0]*c == c*B[0]) is True
-    print (B[0]*B[1] == B[1]*B[0]) is True
-    print (B[0]*A[1] == A[1]*B[0]) is False
-    print (B[0]*A[1]*B[0] == A[1]*B[0]*A[1]) is True
-    print (A[1]*c == c*A[1]) is True
-    print (A[1]*B[1] == B[1]*A[1]) is False
-    print (A[1]*B[1]*A[1] == B[1]*A[1]*B[1]) is True
-    print (B[1]*c == c*B[1]) is False
-    print (B[1]*c*B[1] == c*B[1]*c) is True

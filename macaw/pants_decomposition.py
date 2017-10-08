@@ -268,7 +268,7 @@ class PantsDecomposition(Surface):
         get enough generators. We fix this by adding in a generator for all but
         one boundary components of the surface.
         """
-        # assert(self.homology_dimension() = size of the basis constructed)
+        # assert self.homology_dimension() = size of the basis constructed
         pass
 
     def __repr__(self):
@@ -595,7 +595,7 @@ class PantsDecomposition(Surface):
 
         The boundary curve is oriented in a way that its left side is the torus.
         """
-        assert(self.elementary_move_type(pants_curve) == TYPE_1)
+        assert self.elementary_move_type(pants_curve) == TYPE_1
         pant = self.adjacent_pants(pants_curve)[LEFT][0][PANT]
         for k in range(3):
             if abs(self.adjacent_curves(pant)[k]) != pants_curve:

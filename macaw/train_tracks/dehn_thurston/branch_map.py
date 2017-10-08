@@ -52,7 +52,7 @@ class BranchMap(object):
         [4]
         >>> bm._branch_map[2]
         [2]
-        
+
         """
         self._branch_map = {abs(b): [abs(b)] for b in branches}
         # if 13 in self._branch_map.keys():
@@ -152,7 +152,7 @@ class BranchMap(object):
            ls[0] == 4 and len(ls) > 1 and ls[1] == 13:
             return RIGHT
 
-        assert(False)
+        assert False
 
         # if ls[0] in [1, -4, -9, 13] or \
         #    ls[0] == 4 and (len(ls)==1 or ls[1] != 13) or\
@@ -305,7 +305,7 @@ class BranchMap(object):
         return True
 
     def subtract(self, subtract_from, subtracted_branch):
-        assert(self.is_subpath(subtracted_branch, subtract_from))
+        assert self.is_subpath(subtracted_branch, subtract_from)
         n = len(self.branch_list(subtracted_branch))
         if subtract_from > 0:
             del self._branch_map[subtract_from][:n]

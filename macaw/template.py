@@ -107,7 +107,7 @@ class TrainTrackToTemplate:
             is_neutral = False
             orientation = None
             if start == -end:
-                assert(tt.pants_branch_on_switch(start) == abs(br))
+                assert tt.pants_branch_on_switch(start) == abs(br)
                 is_neutral = True
             if start == end:
                 start_ind = tt.outgoing_branch_index(start, br)

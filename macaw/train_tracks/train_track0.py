@@ -343,7 +343,7 @@ class TrainTrack(object):
         >>> tt = TrainTrack([ [1, -1], [2], [-2, 3], [5], [4, -4], [-3], [-5], [6, -6] ])
         >>> tt.num_switches()
         4
-        
+
         """
         return self._num_switches
 
@@ -781,7 +781,7 @@ class TrainTrack(object):
                 if self.adjacent_cusp(sb, (side+1) % 2) == cusp:
                     return sb
 
-        assert(False)
+        assert False
 
     def cusp_to_switch(self, cusp):
         """Return the switch corresponding to a cusp.
@@ -1104,7 +1104,7 @@ class TrainTrack(object):
 
     # def insert_branches(self, switch, pos, branch_list, start_side=LEFT):
     #     ls = self.outgoing_branches(switch)
-    #     assert(pos >= 0)
+    #     assert pos >= 0
     #     if start_side == LEFT:
     #         ls[pos:pos] = branch_list
     #     else:
