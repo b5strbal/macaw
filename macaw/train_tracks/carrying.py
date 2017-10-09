@@ -25,7 +25,6 @@ import numpy as np
 from ..constants import LEFT, RIGHT, START, END, BRANCH, CUSP, \
     FORWARD, BACKWARD, INTERVAL
 # from sage.all import vector
-import numpy as np
 from .train_track import SMALL_COLLAPSIBLE, FoldError, TrainTrack
 
 
@@ -285,6 +284,14 @@ class CarryingMap(object):
         idx = self._branch_or_interval_idx(typ, branch_or_interval)
         return self._path_coordinates[:, idx]
 
+    def _get_zero_intersection_array(self):
+        """Return a temporary intersection array filled with zeros.
+
+        This array is not part of self._path_coordinates, but its length and type is the same as slices of that array.
+        """
+        temp = self._path_coordinates[:, 0]
+        return np.zeros(temp.shape[0], dtype=temp.dtype)
+
     def path_coordinates(self, typ, branch_or_cusp):
         """Return the path coordinates (intersection with branches and intervals) of a branch or cusp of the small train track.
         """
@@ -525,6 +532,32 @@ class CarryingMap(object):
     def set_small_switch_to_click(self, small_switch, click):
         self._small_switch_to_click[abs(small_switch)-1] = click
 
+    def paths_left_or_right_of_interval(self, interval, side):
+        """Return the array of paths outgoing from the large branch of the interval in the positive direction, to the left of the interval.
+        """
+        pass
+
+    def paths_from_click(self, click):
+        """Return the array of paths outgoing from a click.
+        """
+        total = self._get_zero_intersection_array()
+        def add(typ, branch_or_cusp):
+            if not self.is_branch_or_cusp_collapsed(typ, branch_or_cusp):
+                idx = self._path_idx(typ, br)
+                total[idx] += 1
+        # TODO: fix orientation issue.
+        for sw in self.switches_in_click(click):
+            for br in small_tt.outgoing_branches(sw):
+                add(BRANCH, br)
+            for cusp in small_tt.outgoing_cusps(sw):
+                add(CUSP, cusp)
+        return total
+
+
+    def follow_path(self, interval, paths_on_side, side):
+        """Follows a path from an interval into a branch of the large train track.
+        """
+        paths_in_int = self.get_intersections_with_interval(interval)
 
     def find_interval_containing_large_cusp(self, large_cusp):
         """Find the interval containing a cusp of the large train track.
@@ -576,18 +609,8 @@ class CarryingMap(object):
                 diff = interval_total-total
                 return interval, diff
 
-            def add(typ, branch_or_cusp):
-                if not self.is_branch_or_cusp_collapsed(typ, branch_or_cusp):
-                    idx = self._path_idx(typ, br)
-                    interval_total[idx] += 1
-
             click = interval.get_click((RIGHT+offset) % 2)
-            # TODO: fix orientation issue.
-            for sw in self.switches_in_click(click):
-                for br in small_tt.outgoing_branches(sw):
-                    add(BRANCH, br)
-                for cusp in small_tt.outgoing_cusps(sw):
-                    add(CUSP, cusp)
+            interval_total += self.paths_from_click(click)
 
             if all(interval_total >= total) and any(interval_total > total):
                 # the cusp is not in an interval but in a click
@@ -908,6 +931,12 @@ class CarryingMap(object):
                 self.delete_click(current_click, LEFT)
             i -= 1
             br = branches[i]
+
+    def isotope_switch_a_little(self, switch):
+        """Isotope switch of the small train track in the positive direction through one branch.
+        """
+        small_tt = self._small_tt
+        
 
     def isotope_switch_as_far_as_possible(self, switch):
         """Isotope a switch of the small train track in the positive direction
