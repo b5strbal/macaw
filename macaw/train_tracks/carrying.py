@@ -236,8 +236,7 @@ class CarryingMap(object):
         pass
 
     def paths_in_large_branch(self, branch):
-        """Return the 1D array counting the branches and cusp paths in a branch
-        of the large train track.
+        """Return a view of the array counting the branches and cusp paths in a branch of the large train track.
 
         INPUT:
 
@@ -246,8 +245,7 @@ class CarryingMap(object):
 
         OUTPUT:
 
-        a 1D array, containing how many times each branch and cusp path of the
-        small train track shows up in this branch.
+        a view of the 1D array containing how many times each branch and cusp path of the small train track shows up in this branch.
 
         """
         return self.get_intersections(BRANCH, branch)
@@ -550,13 +548,21 @@ class CarryingMap(object):
         interval = self.large_switch_to_extremal_interval(
             large_sw, start_side)
         while interval is not None:
-            yield (INTERVAL, interval, total)
             total += self.get_intersections_with_interval(interval)
+            yield (INTERVAL, interval, total)
             click = interval.get_click((side+1) % 2)
-            yield (CLICK, click, total)
             total += self.paths_from_click(click)
+            yield (CLICK, click, total)
             interval = click.get_interval((side+1) % 2)
-        yield (None, None, total)
+        # yield (None, None, total)
+
+    def accumulate_outgoing_paths(self, large_switch, start_side):
+        """Iterator accumulating the outgoing paths from a switch of the large train track, along outgoing branches starting from the specified side.
+        """
+        total = self._get_zero_intersection_array()
+        for br in self._large_tt.outgoing_branches(large_switch, start_side):
+            total += self.paths_in_large_branch(br)
+            yield (br, total)
 
     def paths_from_click(self, click):
         """Return the array of paths outgoing from a click.
@@ -580,6 +586,14 @@ class CarryingMap(object):
         """
         paths_in_int = self.get_intersections_with_interval(interval)
 
+    def find_interval_or_click_from_paths_on_side(self, large_switch, paths, side):
+        """Find the interval of a position from the array of paths on one side.
+        """
+        for (typ, num, interval_total) in self.accumulate_intersections_at_large_switch(
+            large_switch, side):
+            if all(interval_total >= paths):
+                return typ, num, interval_total-paths
+
     def find_interval_containing_large_cusp(self, large_cusp):
         """Find the interval containing a cusp of the large train track.
 
@@ -598,38 +612,27 @@ class CarryingMap(object):
         If it is contained in a click, then an error is raised.
         """
         large_tt = self._large_tt
-        small_tt = self._small_tt
         large_switch = large_tt.cusp_to_switch(large_cusp)
 
         # count the total number of strands on the left of the cusp in the
         # branches of the large train track
-        count = 0
-        for br in large_tt.outgoing_branches(large_switch):
-            x = self.paths_in_large_branch(br)
-            if count == 0:
-                total = x
-            else:
-                total += x
-
-            if large_tt.branch_next_to_cusp(large_cusp, LEFT) == br:
+        for branch, total in self.accumulate_outgoing_paths(large_switch, LEFT):
+            if large_tt.branch_next_to_cusp(large_cusp, LEFT) == branch:
                 break
 
-        # now counting the intersections with the intervals on the left until
-        # we reach the previously counted total
-        for (typ, num, interval_total) in self.accumulate_intersections_at_large_switch(
-            large_switch, LEFT):
-            if all(interval_total >= total):
-                if prev_typ == INTERVAL:
-                    # we have found the right interval
-                    diff = interval_total-total
-                    return prev_num, diff
-                elif prev_typ == CLICK:
-                    if any(interval_total > total):
-                    # the cusp is not in an interval but in a click
-                        raise ValueError("The large cusp is contained in a click, not in an interval!")
+        typ, num, diff = self.find_interval_or_click_from_paths_on_side(
+            large_switch, LEFT, total
+        )
 
-            prev_typ = typ
-            prev_num = num
+        if typ == INTERVAL:
+            return num, diff
+        elif typ == CLICK:
+            if any(diff > 0):
+                raise ValueError("The large cusp is contained in a click, not in an interval!")
+            else:
+                # otherwise the click is at the very beginning of the next interval
+                click = num
+                return click.get_interval(RIGHT), diff
 
     def large_switch_to_extremal_interval(self, large_switch, side):
         """Return the leftmost or rightmost interval corresponding to a switch of the large train track.
