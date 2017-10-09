@@ -531,7 +531,7 @@ class CarryingMap(object):
         self._small_switch_to_click[abs(small_switch)-1] = click
 
     def paths_left_or_right_of_interval(self, interval, side):
-        """Return the array of paths outgoing from the large branch of the interval in the positive direction, to the left or right of the interval.
+        """Return the array of paths outgoing from a large switch of the interval in the positive direction, to the left or right of the interval.
         """
         large_switch = self.interval_to_large_switch(interval)
         for (typ, num, total) in self.accumulate_intersections_at_large_switch(
@@ -539,6 +539,13 @@ class CarryingMap(object):
             if typ == INTERVAL and num == interval:
                 return total
 
+    def paths_left_or_right_of_large_branch(self, large_branch, side):
+        """Return the array of paths outgoing from a large switch on the specified side of an outgoing branch.
+        """
+        large_switch = self._large_tt.branch_endpoint(-large_branch)
+        for branch, total in self.accumulate_outgoing_paths(large_switch, side):
+            if branch == large_branch:
+                return total-self.get_intersections(BRANCH, large_branch)
 
     def accumulate_intersections_at_large_switch(
         self, large_switch, start_side):
@@ -586,13 +593,35 @@ class CarryingMap(object):
         """
         paths_in_int = self.get_intersections_with_interval(interval)
 
-    def find_interval_or_click_from_paths_on_side(self, large_switch, paths, side):
-        """Find the interval of a position from the array of paths on one side.
+    def position_in_branch_to_large_switch(self, large_branch, paths_on_side, side):
+        """Convert the position on a branch of the large train track to position at the ending switch of the branch.
+        """
+        large_tt = self._large_tt
+        large_switch = large_tt.branch_endpoint(large_branch)
+        total = self.paths_left_or_right_of_large_branch(-large_branch, (side+1) % 2)
+        return total + paths_on_side
+
+    def position_in_large_switch_to_interval(self, large_switch, paths_on_side,
+    side):
+        """Convert the position at a switch of the large train track to position in an interval.
         """
         for (typ, num, interval_total) in self.accumulate_intersections_at_large_switch(
             large_switch, side):
             if all(interval_total >= paths):
                 return typ, num, interval_total-paths
+
+    def position_in_interval_to_large_switch(self, interval, paths_on_side, side):
+        """Convert the position at an interval to position at the large switch."""
+        total = self.paths_left_or_right_of_interval(interval, side)
+        return paths_on_side + total
+
+    def position_in_large_switch_to_branch(self, large_switch, paths_on_side,
+    side):
+        """Convert the position at a switch of the large train track to position in an outgoing large branch."""
+        large_tt = self._large_tt
+        for branch, total in self.accumulate_outgoing_paths(large_switch, side):
+            if all(total >= paths_on_side):
+                return paths_on_side-(total-self.get_intersections(BRANCH, branch))
 
     def find_interval_containing_large_cusp(self, large_cusp):
         """Find the interval containing a cusp of the large train track.
@@ -620,7 +649,7 @@ class CarryingMap(object):
             if large_tt.branch_next_to_cusp(large_cusp, LEFT) == branch:
                 break
 
-        typ, num, diff = self.find_interval_or_click_from_paths_on_side(
+        typ, num, diff = self.position_in_large_switch_to_interval(
             large_switch, LEFT, total
         )
 
