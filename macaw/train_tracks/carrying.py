@@ -253,7 +253,7 @@ class CarryingMap(object):
         return self.get_intersections(BRANCH, branch)
 
     def get_intersections_with_interval(self, interval):
-        """Return the intersection data of paths with a
+        """Return a view on the intersections of paths with a
         specified interval.
         """
         return self.get_intersections(INTERVAL, interval)
@@ -279,7 +279,7 @@ class CarryingMap(object):
         assert False
 
     def get_intersections(self, typ, branch_or_interval):
-        """Return the intersection data with large branch or and interval.
+        """Return a view on the intersections with a large branch or an interval.
         """
         idx = self._branch_or_interval_idx(typ, branch_or_interval)
         return self._path_coordinates[:, idx]
@@ -533,9 +533,30 @@ class CarryingMap(object):
         self._small_switch_to_click[abs(small_switch)-1] = click
 
     def paths_left_or_right_of_interval(self, interval, side):
-        """Return the array of paths outgoing from the large branch of the interval in the positive direction, to the left of the interval.
+        """Return the array of paths outgoing from the large branch of the interval in the positive direction, to the left or right of the interval.
         """
-        pass
+        large_switch = self.interval_to_large_switch(interval)
+        for (typ, num, total) in self.accumulate_intersections_at_large_switch(
+            large_switch, side):
+            if typ == INTERVAL and num == interval:
+                return total
+
+
+    def accumulate_intersections_at_large_switch(
+        self, large_switch, start_side):
+        """Iterator accumulating intersections with a switch of the large train track from the specified side.
+        """
+        total = self._get_zero_intersection_array()
+        interval = self.large_switch_to_extremal_interval(
+            large_sw, start_side)
+        while interval is not None:
+            yield (INTERVAL, interval, total)
+            total += self.get_intersections_with_interval(interval)
+            click = interval.get_click((side+1) % 2)
+            yield (CLICK, click, total)
+            total += self.paths_from_click(click)
+            interval = click.get_interval((side+1) % 2)
+        yield (None, None, total)
 
     def paths_from_click(self, click):
         """Return the array of paths outgoing from a click.
@@ -595,28 +616,20 @@ class CarryingMap(object):
 
         # now counting the intersections with the intervals on the left until
         # we reach the previously counted total
-        interval = self.large_switch_to_extremal_interval(large_switch, LEFT)
-        count = 0
-        while True:
-            x = self.get_intersections_with_interval(interval)
-            if count == 0:
-                interval_total = x
-            else:
-                interval_total += x
-
+        for (typ, num, interval_total) in self.accumulate_intersections_at_large_switch(
+            large_switch, LEFT):
             if all(interval_total >= total):
-                # we have found the right interval
-                diff = interval_total-total
-                return interval, diff
+                if prev_typ == INTERVAL:
+                    # we have found the right interval
+                    diff = interval_total-total
+                    return prev_num, diff
+                elif prev_typ == CLICK:
+                    if any(interval_total > total):
+                    # the cusp is not in an interval but in a click
+                        raise ValueError("The large cusp is contained in a click, not in an interval!")
 
-            click = interval.get_click((RIGHT+offset) % 2)
-            interval_total += self.paths_from_click(click)
-
-            if all(interval_total >= total) and any(interval_total > total):
-                # the cusp is not in an interval but in a click
-                raise ValueError("The large cusp is contained in a click, not in an interval!")
-
-            interval = click.get_interval((RIGHT+offset) % 2)
+            prev_typ = typ
+            prev_num = num
 
     def large_switch_to_extremal_interval(self, large_switch, side):
         """Return the leftmost or rightmost interval corresponding to a switch of the large train track.
