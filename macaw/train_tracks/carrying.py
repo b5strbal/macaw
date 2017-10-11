@@ -28,25 +28,32 @@ from .train_track import SMALL_COLLAPSIBLE, FoldError, TrainTrack
 
 class CarryingMap(object):
     """
-    A carrying relationship between two train tracks.
+    A train track carried on another train track.
+
+    We represent the carried (small) train track in a neighborhood of the carrying (large) train train track as follows. For each branch of the small train track, we record the number of times in enters each branch of the large train track. For each switch, we record which switch of the large train track it maps to. 
+    
+    Small switches (e.g., switches of the small train track) are groups to clicks. Two small switches are in the same click if they are connected by a sequence of "collapsed branches": branches that do not go into any branch of the large train track.
+
+    At each large switch, the clicks divide the cross section to intervals. Every small branch passing through the large switch passes through one of the intervals. We also keep track of how many times each small branch passes through each interval.
+
+    At each switch of the large train track (large switch for short), each tree of small train tracks
     """
-    def __init__(self, large_tt, small_tt,
-                 paths,
-                 cusp_index_offset,
-                 cusp_map):
+    def __init__(self, large_tt, small_tt, small_switch_to_click, cusp_map, 
+                    clicks_at_large_switches, 
+                    large_branch_preimages, interval_preimages):
         """l = number of branches of the large train track
         s = number of branches of the small train track
         c = number of cusps of the small train track
 
         INPUT:
 
-        - ``large_tt`` -- the carrying train track
+        - ``large_tt`` -- the large (carrying) train track
 
-        - ``small_tt`` -- the carried train track
+        - ``small_tt`` -- the small (carried) train track
 
-        - ``paths`` -- [branch_paths, cusp_paths]: Two 2D arrays whose rows
-        contain the branch and cusp paths of the small train
-        track in the large train track. Shape: [(s, l), (c,l)].
+        - ``paths`` -- a 2D array whose rows
+        correspond to branches and cusps of the small train
+        track. The columns correspond to branches of the large train track and intervals.
 
         - ``cusp_map`` -- A 1D array specifying the image of any cusp in the
           small train track in the large train track.
@@ -55,36 +62,92 @@ class CarryingMap(object):
         self._large_tt = large_tt
         self._small_tt = small_tt
 
-        # 2D array containing how many times paths map onto branches of the large train track and how many times they intersect intervals.
-        # Rows correspond to paths, columns to branches of the large train track and intervals.
-        self._path_coordinates = np.ndarray(
-            (num_sm_branches+num_cusps, num_intervals+num_lg_branches),
-            dtype=object)
+        max_num_small_switches = small_tt.num_switches_if_made_trivalent()
+        max_num_large_switches = large_tt.num_switches_if_made_trivalent()
+        max_num_small_branches = small_tt.num_branches_if_made_trivalent()
+        max_num_large_branches = large_tt.num_branches_if_made_trivalent()
+        max_num_intervals = max_num_large_switches+max_num_small_switches
 
-        # self._unused_interval_indices = set()
+        if isinstance(cusp_map, np.ndarray):
+            self._cusp_map = cusp_map
+        elif isinstance(cusp_map, dict):
+            self._cusp_map = np.zeros(max_num_small_switches, dtype=int)
+            for small_cusp in cusp_map:
+                self._cusp_map[small_cusp-1] = cusp_map[small_cusp]
 
-        # The first ``cusp_index_offset`` rows of self._transition_matrix
+        if isinstance(small_switch_to_click, np.ndarray):
+            self._small_switch_to_click = small_switch_to_click
+        elif isinstance(small_switch_to_click, dict):
+            self._small_switch_to_click = np.zeros(max_num_small_switches, dtype=int)
+            for small_sw in small_switch_to_click:
+                click = small_switch_to_click[small_sw]
+                self._small_switch_to_click[abs(small_sw)-1] = \
+                    np.sign(small_sw) * click
+
+
+        self._click_to_interval = np.ndarray((2, max_num_small_switches),
+                                     dtype=int)
+        self._interval_to_click = np.ndarray(
+            (2, max_num_intervals), dtype=int)
+        # self._interval_to_index = np.ndarray(num_intervals, dtype=int)
+        self._interval_to_large_switch = np.ndarray(
+            max_num_intervals, dtype=int)
+        self._large_switch_to_extermal_interval = np.ndarray(
+            (2, max_num_large_switches), dtype=int)
+
+        interval = 1
+        for large_sw in clicks_at_large_switches:
+            self._large_switch_to_extermal_interval[LEFT][large_sw-1] =\
+                interval
+            self._interval_to_large_switch[interval-1] = large_sw
+            click_list = clicks_at_large_switches[large_sw]
+            for click in click_list:
+                self.set_interval_to_click(interval, RIGHT, click)
+                self.set_click_to_interval(click, LEFT, interval)
+                interval += 1
+                self.set_interval_to_click(interval, LEFT, click)
+                self.set_interval_to_click(click, RIGHT, interval)
+                self._interval_to_large_switch[interval-1] = large_sw
+            self._large_switch_to_extermal_interval[RIGHT][large_sw-1] =\
+                interval
+
+        # The first ``self._cusp_index_offset`` rows of self._paths
         # correspond to branches, the rest
         # correspond to cusps.
-        self._cusp_index_offset = integer
+        self._cusp_index_offset = max_num_small_switches
 
-        # The first ``interval_index_offset`` columns of self._transition_matrix correspond to branches of the large train track. The rest corresponds to intervals.
-        self._interval_index_offset = integer
+        # The first ``interval_index_offset`` columns of self._paths correspond to branches of the large train track. The rest corresponds to intervals.
+        self._interval_index_offset = max_num_large_switches
 
-        num_intervals = 10
-        num_clicks = 8
-        num_large_sw = 10
+        # 2D array containing how many times paths map onto branches of the large train track and how many times they intersect intervals.
+        # Rows correspond to paths, columns to branches of the large train track and intervals.
+        self._paths = np.ndarray(
+            (max_num_small_branches+max_num_small_switches, 
+             max_num_large_branches+max_num_intervals),
+            dtype=object)
 
-        self._small_switch_to_click = np.ndarray(num_clicks, dype=int)
+        for typ in [BRANCH, CUSP]:
+            whole_dict = large_branch_preimages[typ]
+            for small_br_or_cusp in whole_dict:
+                large_br_dict = whole_dict[small_br_or_cusp]
+                for large_br in large_br_dict:
+                    count = large_br_dict[large_br]
+                    self.add_intersection(typ, small_br_or_cusp, BRANCH, large_br, count)
+
+        for typ in [BRANCH, CUSP]:
+            intersections = interval_preimages[typ]        
+            for large_sw in intersections:
+                intersection_list = intersections[large_sw]
+                interval = self.large_switch_to_extremal_interval(large_sw, LEFT)
+                for intersection_dict in intersection_list:
+                    for small_br_or_cusp in intersection_dict:
+                        count = intersection_dict[small_br_or_cusp]
+                        self.add_intersection(typ, small_br_or_cusp, INTERVAL, interval)
+                    click = self.interval_to_click(interval, RIGHT)
+                    interval = self.click_to_interval(click, RIGHT)
+                                
 
 
-        self._click_to_interval = np.ndarray((2, num_clicks), dtype=int)
-        self._interval_to_click = np.ndarray((2, num_intervals), dtype=int)
-        # self._interval_to_index = np.ndarray(num_intervals, dtype=int)
-        self._interval_to_large_switch = np.ndarray(num_clicks, dtype=int)
-        self._large_switch_to_extermal_interval = np.ndarray((2, num_large_sw), dtype=int)
-
-        self._cusp_map = np.ndarray(num_cusps, dtype=int)
 
     # ------------------------------------------------------------------
     # CONSTRUCTORS
@@ -118,7 +181,6 @@ class CarryingMap(object):
         hb_between_branches = np.zeros((2, max_num_branches, max_num_branches),
                                        dtype=object)
 
-        max_num_switches = tt.num_switches_if_made_trivalent()
 
         # The number of cusps equals the number of switches for trivalent train
         # tracks, so the latter is a good number for the number of rows.
@@ -230,7 +292,7 @@ class CarryingMap(object):
         """Return a view on the intersections with a large branch or an interval.
         """
         idx = self._branch_or_interval_idx(typ, branch_or_interval)
-        return self._path_coordinates[:, idx]
+        return self._paths[:, idx]
 
     def paths_in_large_branch(self, branch):
         """Return a view of the array counting the branches and cusp paths in a branch of the large train track.
@@ -256,9 +318,9 @@ class CarryingMap(object):
     def _get_zero_intersection_array(self):
         """Return a temporary intersection array filled with zeros.
 
-        This array is not part of self._path_coordinates, but its length and type is the same as slices of that array.
+        This array is not part of self._paths, but its length and type is the same as slices of that array.
         """
-        temp = self._path_coordinates[:, 0]
+        temp = self._paths[:, 0]
         return np.zeros(temp.shape[0], dtype=temp.dtype)
 
     def _path_idx(self, typ, branch_or_cusp):
@@ -275,7 +337,7 @@ class CarryingMap(object):
         """Return the path coordinates (intersection with branches and intervals) of a branch or cusp of the small train track.
         """
         idx = self._path_idx(typ, branch_or_cusp)
-        return self._path_coordinates[idx]
+        return self._paths[idx]
 
     def is_branch_or_cusp_collapsed(self, typ, branch_or_cusp):
         """Decide if a branch or cusp of the small train track is collapsed.
@@ -526,7 +588,7 @@ class CarryingMap(object):
         corrected_side = side if click > 0 else (side+1)%2
         self._click_to_interval[corrected_side][abs(click)-1] = np.sign(click)*interval
 
-    def set_interval_to_click(self, click, side):
+    def set_interval_to_click(self, interval, side, click):
         """Set the click on the specified side of the interval."""
         corrected_side = side if interval > 0 else (side+1)%2
         self._interval_to_click[corrected_side][abs(interval)-1] = np.sign(interval)*click
@@ -1001,6 +1063,7 @@ class CarryingMap(object):
             self.append_path(BRANCH, br, min_path, with_sign=-1)
         for cusp in small_tt.outgoing_cusps(switch):
             self.append_path(CUSP, cusp, min_path, with_sign=-1)
+        # TODO: to be finished
 
     def isotope_switch_as_far_as_possible(self, switch):
         """Isotope a switch of the small train track in the positive direction
