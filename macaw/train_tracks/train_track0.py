@@ -260,6 +260,23 @@ class TrainTrack(object):
         """
         return filter(self.is_switch, range(1, self._switch_buffer_length()+1))
 
+    def cusps(self):
+        """Iterator over the cusps of the train track.
+
+        EXAMPLES::
+
+        >>> from macaw.train_tracks.train_track import TrainTrack
+        >>> tt = TrainTrack([[1, 2], [-1, -2]])
+        >>> list(tt.cusps())
+        [1, 2]
+
+        """
+        for branch in self.branches():
+            for sgn in [1, -1]:
+                cusp = self.adjacent_cusp(sgn*branch, RIGHT)
+                if cusp is not None:
+                    yield cusp
+
     def is_branch(self, branch):
         """Decide if there is a branch in the train track with the given
         number.
@@ -707,11 +724,12 @@ class TrainTrack(object):
         """Return the index of the cusp next to a branch.
 
         INPUT:
-
         - ``branch`` -- an oriented branch of the train track
-
         - ``side`` -- LEFT or RIGHT. The cusp is looked up on the specified
         side of the starting half-branch of branch.
+
+        OUTPUT:
+        The number of the cusp. If there is no cusp there, because ``branch`` is leftmost or rightmost branch, then ``None`` is returned.
 
         EXAMPLES:
 
