@@ -38,9 +38,8 @@ class CarryingMap(object):
 
     At each switch of the large train track (large switch for short), each tree of small train tracks
     """
-    def __init__(self, large_tt, small_tt, small_switch_to_click, cusp_map, 
-                    clicks_at_large_switches, 
-                    large_branch_preimages, interval_preimages):
+    def __init__(self, large_tt, small_tt, cusp_map, 
+                    large_branch_preimages, large_switch_data):
         """l = number of branches of the large train track
         s = number of branches of the small train track
         c = number of cusps of the small train track
@@ -68,86 +67,63 @@ class CarryingMap(object):
         max_num_large_branches = large_tt.num_branches_if_made_trivalent()
         max_num_intervals = max_num_large_switches+max_num_small_switches
 
-        if isinstance(cusp_map, np.ndarray):
-            self._cusp_map = cusp_map
-        elif isinstance(cusp_map, dict):
-            self._cusp_map = np.zeros(max_num_small_switches, dtype=int)
-            for small_cusp in cusp_map:
-                self._cusp_map[small_cusp-1] = cusp_map[small_cusp]
+        self._cusp_map = np.zeros(max_num_small_switches, dtype=int)
+        for small_cusp in cusp_map:
+            self._cusp_map[small_cusp-1] = cusp_map[small_cusp]
 
-        if isinstance(small_switch_to_click, np.ndarray):
-            self._small_switch_to_click = small_switch_to_click
-        elif isinstance(small_switch_to_click, dict):
-            self._small_switch_to_click = np.zeros(max_num_small_switches, dtype=int)
-            for small_sw in small_switch_to_click:
-                click = small_switch_to_click[small_sw]
-                self._small_switch_to_click[abs(small_sw)-1] = \
-                    np.sign(small_sw) * click
-
-
-        self._click_to_interval = np.ndarray((2, max_num_small_switches),
+        self._small_switch_to_click = np.zeros(
+            max_num_small_switches, dtype=int)
+        self._click_to_interval = np.zeros((2, max_num_small_switches),
                                      dtype=int)
-        self._interval_to_click = np.ndarray(
+        self._interval_to_click = np.zeros(
             (2, max_num_intervals), dtype=int)
-        # self._interval_to_index = np.ndarray(num_intervals, dtype=int)
-        self._interval_to_large_switch = np.ndarray(
+        self._interval_to_large_switch = np.zeros(
             max_num_intervals, dtype=int)
-        self._large_switch_to_extermal_interval = np.ndarray(
+        self._large_switch_to_extremal_interval = np.zeros(
             (2, max_num_large_switches), dtype=int)
-
-        interval = 1
-        for large_sw in clicks_at_large_switches:
-            self._large_switch_to_extermal_interval[LEFT][large_sw-1] =\
-                interval
-            self._interval_to_large_switch[interval-1] = large_sw
-            click_list = clicks_at_large_switches[large_sw]
-            for click in click_list:
-                self.set_interval_to_click(interval, RIGHT, click)
-                self.set_click_to_interval(click, LEFT, interval)
-                interval += 1
-                self.set_interval_to_click(interval, LEFT, click)
-                self.set_interval_to_click(click, RIGHT, interval)
-                self._interval_to_large_switch[interval-1] = large_sw
-            self._large_switch_to_extermal_interval[RIGHT][large_sw-1] =\
-                interval
-
-        # The first ``self._cusp_index_offset`` rows of self._paths
-        # correspond to branches, the rest
-        # correspond to cusps.
-        self._cusp_index_offset = max_num_small_switches
-
-        # The first ``interval_index_offset`` columns of self._paths correspond to branches of the large train track. The rest corresponds to intervals.
-        self._interval_index_offset = max_num_large_switches
-
         # 2D array containing how many times paths map onto branches of the large train track and how many times they intersect intervals.
         # Rows correspond to paths, columns to branches of the large train track and intervals.
-        self._paths = np.ndarray(
+        self._paths = np.zeros(
             (max_num_small_branches+max_num_small_switches, 
              max_num_large_branches+max_num_intervals),
             dtype=object)
-
-        for typ in [BRANCH, CUSP]:
-            whole_dict = large_branch_preimages[typ]
-            for small_br_or_cusp in whole_dict:
-                large_br_dict = whole_dict[small_br_or_cusp]
-                for large_br in large_br_dict:
-                    count = large_br_dict[large_br]
-                    self.add_intersection(typ, small_br_or_cusp, BRANCH, large_br, count)
-
-        for typ in [BRANCH, CUSP]:
-            intersections = interval_preimages[typ]        
-            for large_sw in intersections:
-                intersection_list = intersections[large_sw]
-                interval = self.large_switch_to_extremal_interval(large_sw, LEFT)
-                for intersection_dict in intersection_list:
-                    for small_br_or_cusp in intersection_dict:
-                        count = intersection_dict[small_br_or_cusp]
-                        self.add_intersection(typ, small_br_or_cusp, INTERVAL, interval)
-                    click = self.interval_to_click(interval, RIGHT)
-                    interval = self.click_to_interval(click, RIGHT)
-                                
+        # The first ``self._cusp_index_offset`` rows of self._paths
+        # correspond to branches, the rest correspond to cusps.
+        self._cusp_index_offset = max_num_small_switches
+        # The first ``interval_index_offset`` columns of self._paths correspond to branches of the large train track. The rest corresponds to intervals.
+        self._interval_index_offset = max_num_large_switches
 
 
+        interval = 0
+        click = 0
+        for large_sw in large_switch_data:
+            data = large_switch_data[large_sw]
+            data_it = iter(data)
+            first_interval = True
+            while True:
+                intersection_data = next(data_it)
+                interval += 1
+                self._interval_to_large_switch[interval-1] = large_sw
+                if not first_interval:
+                    self.set_interval_to_click(interval, LEFT, click)
+                    self.set_click_to_interval(click, RIGHT, interval)
+                first_interval = False
+                for typ in [BRANCH, CUSP]:
+                    intersections = intersection_data[typ]
+                    for branch_or_cusp in intersections:
+                        count = intersections[branch_or_cusp]
+                        self.add_intersection_with_interval(
+                            typ, branch_or_cusp, interval)
+                try:
+                    click_set = next(data_it)
+                except StopIteration:
+                    break
+                click += 1
+                self.set_interval_to_click(interval, RIGHT, click)
+                self.set_click_to_interval(click, LEFT, interval)
+                for small_sw in click_set:
+                    self.set_small_switch_to_click(small_sw, click)
+        
 
     # ------------------------------------------------------------------
     # CONSTRUCTORS
@@ -283,7 +259,7 @@ class CarryingMap(object):
         """
         idx = abs(branch_or_interval)-1
         if typ == INTERVAL:
-            idx += self._interval_index_offset
+            return idx + self._interval_index_offset
         elif typ == BRANCH:
             return idx
         assert False
@@ -328,7 +304,7 @@ class CarryingMap(object):
         """
         idx = abs(branch_or_cusp)-1
         if typ == CUSP:
-            idx += self._cusp_index_offset
+            return idx + self._cusp_index_offset
         elif typ == BRANCH:
             return idx
         assert False
@@ -551,26 +527,25 @@ class CarryingMap(object):
         x = self.get_intersections_with_interval(interval)
         x[:] = new_data
 
-    def add_intersection_with_interval(self, typ, branch_or_cusp, interval,
+    def add_intersection_with_interval(self, b_c_typ, branch_or_cusp, interval,
                                        with_sign=1):
-        """Add an intersection of a branch or cusp with an interval (or
+        """Add to an intersection of a branch or cusp with an interval (or
         subtract if ``with_sign`` is -1).
         """
         x = self.get_intersections_with_interval(interval)
-        idx = self._path_idx(typ, branch_or_cusp)
+        idx = self._path_idx(b_c_typ, branch_or_cusp)
         x[idx] += with_sign
 
-    def add_intersection(self, typ1, branch_or_cusp, typ2, branch_or_interval,
-                          with_sign=1):
-        """Add an intersection of a small branch or cusp with a large branch or interval (or subtract if ``with_sign`` is -1).
+    def add_intersection(self, b_c_typ, branch_or_cusp, b_i_typ, branch_or_interval, with_sign=1):
+        """Add to an intersection of a small branch or cusp with a large branch or interval (or subtract if ``with_sign`` is -1).
         """
-        x = self.get_intersections(typ2, branch_or_interval)
-        idx = self._path_idx(typ, branch_or_cusp)
+        x = self.get_intersections(b_i_typ, branch_or_interval)
+        idx = self._path_idx(b_c_typ, branch_or_cusp)
         x[idx] += with_sign
 
     def add_interval_to_other_interval(self, added_interval, add_to_interval,
                                        with_sign=1):
-        """Add the intersection data of one interval to that of another
+        """Add to the intersection data of one interval to that of another
         interval.
         """
         x1 = self.get_intersections_with_interval(add_to_interval)
