@@ -107,16 +107,20 @@ class CarryingMap(object):
                 if not first_interval:
                     self.set_interval_to_click(interval, LEFT, click)
                     self.set_click_to_interval(click, RIGHT, interval)
+                else:
+                    self._large_switch_to_extremal_interval[LEFT][large_sw-1] =\
+                        interval
                 first_interval = False
                 for typ in [BRANCH, CUSP]:
                     intersections = intersection_data[typ]
                     for branch_or_cusp in intersections:
                         count = intersections[branch_or_cusp]
                         self.add_intersection_with_interval(
-                            typ, branch_or_cusp, interval)
+                            typ, branch_or_cusp, interval, count)
                 try:
                     click_set = next(data_it)
                 except StopIteration:
+                    self._large_switch_to_extremal_interval[RIGHT][large_sw-1] = interval
                     break
                 click += 1
                 self.set_interval_to_click(interval, RIGHT, click)
@@ -124,6 +128,14 @@ class CarryingMap(object):
                 for small_sw in click_set:
                     self.set_small_switch_to_click(small_sw, click)
         
+        for b_c_typ in [BRANCH, CUSP]:
+            preimage_list = large_branch_preimages[b_c_typ]
+            for sm_branch_or_cusp in preimage_list:
+                preimage = preimage_list[sm_branch_or_cusp]
+                for large_br in preimage:
+                    count = preimage[large_br]
+                    self.add_intersection(b_c_typ, sm_branch_or_cusp,
+                        BRANCH, large_br, count)
 
     # ------------------------------------------------------------------
     # CONSTRUCTORS
@@ -252,7 +264,7 @@ class CarryingMap(object):
         """Return the switch of the large train track containing the click.
         """
         interval = self.click_to_interval(click, LEFT)
-        return interval_to_large_switch(interval)
+        return self.interval_to_large_switch(interval)
 
     def _branch_or_interval_idx(self, typ, branch_or_interval):
         """Return the index of a branch of the large train track of an interval.
