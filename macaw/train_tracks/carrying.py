@@ -89,9 +89,9 @@ class CarryingMap(object):
             dtype=object)
         # The first ``self._cusp_index_offset`` rows of self._paths
         # correspond to branches, the rest correspond to cusps.
-        self._cusp_index_offset = max_num_small_switches
+        self._cusp_index_offset = max_num_small_branches
         # The first ``interval_index_offset`` columns of self._paths correspond to branches of the large train track. The rest corresponds to intervals.
-        self._interval_index_offset = max_num_large_switches
+        self._interval_index_offset = max_num_large_branches
 
 
         interval = 0
@@ -149,60 +149,17 @@ class CarryingMap(object):
         is a new copy.
 
         """
-        # TODO rewrite this
-        tt = train_track
-        max_num_branches = tt.num_branches_if_made_trivalent()
-        assert len(tt.branches()) <= max_num_branches
-
-        # Identity array of arbitrary-precision Python ints.
-        # Keep in mind that we fill in ones also in the rows that are not
-        # actually branches.
-        train_paths = np.identity(max_num_branches, dtype=object)
-
-        half_branch_map = np.zeros((2, max_num_branches), dtype=np.int)
-        for br in tt.branches():
-            half_branch_map[START, br-1] = br
-            half_branch_map[END, br-1] = -br
-
-        # Initially all half-branches are at position 0 between any other
-        # branchpath.
-        hb_between_branches = np.zeros((2, max_num_branches, max_num_branches),
-                                       dtype=object)
-
-
-        # The number of cusps equals the number of switches for trivalent train
-        # tracks, so the latter is a good number for the number of rows.
-        cusp_paths = np.zeros((max_num_switches, max_num_branches),
-                              dtype=object)
-
-        cusp_end_half_branches = np.zeros(max_num_switches, dytpe=np.int)
-        # branch_to_cusp = np.zeros((2, max_num_branches), dtype=np.int)
-        # count = 0
-        # for b in tt.branches():
-        #     for sgn in [-1, 1]:
-        #         br = sgn*b
-        #         idx = 0 if sgn == 1 else 1
-        #         sw = tt.branch_endpoint(-br)
-        #         if tt.outgoing_branch(sw, 0, RIGHT) != br:
-        #             branch_to_cusp[idx, b-1] = count
-        #             count += 1
-
-        switch_pos_to_cusp_idx = np.zeros(train_track._outgoing_branches.shape,
-                                          dtype=np.int)
-        count = 0
-        for sw in tt.switches():
-            for sgn in [-1, 1]:
-                or_sw = sgn * sw
-                idx = 0 if sgn == 1 else 1
-                for pos in range(tt.num_outgoing_branches(or_sw)-1):
-                    switch_pos_to_cusp_idx[idx, sw-1, pos] = count
-                    count += 1
-
-        return cls(train_track, train_track.copy(),
-                   train_paths,
-                   half_branch_map,
-                   hb_between_branches,
-                   branch_to_cusp_idx)
+        return cls(
+            small_tt=train_track,
+            large_tt=train_track.copy(),
+            cusp_map={x:x for x in train_track.cusps()},
+            large_branch_preimages=[
+                {small_br: {small_br: 1} for small_br in train_track.branches()},
+                {}
+                # {small_cusp: {large_br: 0 for large_br in train_track.branches()} for small_cusp in train_track.cusps()}
+            ],
+            large_switch_data={large_sw: [[{}, {}], {large_sw}, [{}, {}]] for large_sw in train_track.switches()}
+            )
 
     # ------------------------------------------------------------------
     # GETTERS
