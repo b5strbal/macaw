@@ -54,6 +54,51 @@ class PathReduction(object):
     def __one(self, start, end):
         self.path = self.path[:start] + self.path[end:] #splices out portion that was identified as backtracing
 
+    def __four(self, start, end, orientation):
+        """
+        Reduces illegal path beginning from a starting point, going to the point to left that a teardrop
+        cannot form around, circles around that point, and goes back to the starting point.
+
+        TODO: Calculate orientation in a separate function? Need orientation for the pants curve
+            we are performing the reduction on. This should come from a PantsDecomposition object.
+
+        INPUT:
+        - ``start`` -- the starting index inclusive of the illegal move
+        - ``end`` -- the ending index exclusive of the illegal move
+        - ``orientation`` -- string representation ("CC" or "C") of the orientation of the pants curve
+                            that the illegal path is starting from
+        """
+        boundary = ""
+        if orientation == "C":
+            boundary = "++"
+        else:
+            boundary = "--"
+        self.path = self.path[:start] + [boundary, "C"] + self.path[end:]
+
+    def __five(self, start, end, orientation):
+        """
+        Reduces illegal path beginning from starting point, going to the point to the right that a teardrop
+        can form around, circles around that point, makes a teardrop around the third point from the second
+        point, and ends back at the second point.
+
+        INPUT:
+        - ``start`` -- the starting index inclusive of the illegal move
+        - ``end`` -- the ending index exclusive of the illegal move
+        - ``orientation`` -- string representation ("CC" or "C") of the orientation of the pants curve
+                            that the illegal path is starting from
+        """
+        boundary = ""
+        if orientation == "C":
+            boundary = "--"
+        else:
+            boundary = "++"
+
+        # assuming the sign of the starting point is not part of the illegal move
+        hole_two_sign = self.path[start: start + 1]
+
+        self.path = self.path[:start] + [boundary, self.path[start - 1 : start], hole_two_sign] + self.path[end:]
+        # the sign for the gate of the starting point may be unnecessary (the second additional element)
+
     """Reduces illegal path with teardrop and straight-path assuming an 8-character start to end encoding
 
     INPUT:
