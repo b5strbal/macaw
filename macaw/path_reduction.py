@@ -3,6 +3,7 @@ class PathReduction(object):
 
     A path can be represented as a list of operators
 
+    (1, 2, 3, ...) -> node that the path goes through
     (+) -> going through a positive gate
     (-) -> going through a negative gate
     (++) -> going around boundary along pants curve and returning
@@ -28,6 +29,21 @@ class PathReduction(object):
     def __repr__(self):
         return "Path with form " + repr(self.path)
 
+    def __type(self, s):
+        if s == "+" or s == "-":
+            return 1
+        elif s == "++" or s == "--":
+            return 2
+        elif s == "C" or s == "A":
+            return 3
+        else:
+            return 0
+
+    def __matches_six(self, subpath):
+        if self.__type(subpath[5]) == 3:
+            subpath.reverse()
+        return subpath[0] == subpath[4] and self.__type(subpath[0]) == 0 and self.__type(subpath[7]) == 0 and subpath[1] == subpath[3] and subpath[3] == subpath[5] and self.__type(subpath[1]) == 1 and self.__type(subpath[2]) == 3 and self.__type(subpath[6]) == 1
+
     """Reduces illegal path with redundant straight-path
 
     INPUT:
@@ -38,63 +54,42 @@ class PathReduction(object):
     def __one(self, start, end):
         self.path = self.path[:start] + self.path[end:] #splices out portion that was identified as backtracing
 
-    """Reduces illegal path with teardrop and straight-path
+    """Reduces illegal path with teardrop and straight-path assuming an 8-character start to end encoding
 
     INPUT:
 
     - ``start`` -- the starting index inclusive of illegal portion
     - ``end`` -- the ending index exclusive of illegal portion
+
+    EXAMPLE
+    self.path = ['1', '+', 'C', '+', '1', '+', '-', '2']
+    self.__six(0)
+    print(self)
+    >> Path with form ['1', '+', '-', '2', '--', '2']
     """
-    def __four(self, start, end, orientation):
-        """
-        Reduces illegal path beginning from a starting point, going to the point to left that a teardrop
-        cannot form around, circles around that point, and goes back to the starting point.
-
-        TODO: Calculate orientation in a separate function? Need orientation for the pants curve
-            we are performing the reduction on. This should come from a PantsDecomposition object.
-
-        INPUT:
-        - ``start`` -- the starting index inclusive of the illegal move
-        - ``end`` -- the ending index exclusive of the illegal move
-        - ``orientation`` -- string representation ("CC" or "C") of the orientation of the pants curve
-                            that the illegal path is starting from
-        """
-        boundary = ""
-        if orientation == "C":
-            boundary = "++"
+    def __six(self, start):
+        reverse = self.__type(self.path[start + 5]) == 3
+        if reverse == True:
+            s1 = self.path[start+1]
+            t1 = self.path[start+5]
+            self.path[start+1:start+6] = []
+            self.path.insert(start+1, s1)
+            self.path.insert(start+1, self.path[start])
+            if t1 == "C":
+                self.path.insert(start+1, "--")
+            else:
+                self.path.insert(start+1, "++")
         else:
-            boundary = "--"
-        self.path = self.path[:start] + [boundary, "C"] + self.path[end:]
+            s1 = self.path[start+6]
+            t1 = self.path[start+2]
+            self.path[start+2:start+7] = []
+            if t1 == "C":
+                self.path.insert(start+2, "--")
+            else:
+                self.path.insert(start+2, "++")
+            self.path.insert(start+2, self.path[start+3])
+            self.path.insert(start+2, s1)
 
-    def __five(self, start, end, orientation):
-        """
-        Reduces illegal path beginning from starting point, going to the point to the right that a teardrop
-        can form around, circles around that point, makes a teardrop around the third point from the second
-        point, and ends back at the second point.
-
-        INPUT:
-        - ``start`` -- the starting index inclusive of the illegal move
-        - ``end`` -- the ending index exclusive of the illegal move
-        - ``orientation`` -- string representation ("CC" or "C") of the orientation of the pants curve
-                            that the illegal path is starting from
-        """
-        boundary = ""
-        if orientation == "C":
-            boundary = "--"
-        else:
-            boundary = "++"
-
-        # assuming the sign of the starting point is not part of the illegal move
-        hole_two_sign = self.path[start: start + 1]
-
-        self.path = self.path[:start] + [boundary, self.path[start - 1 : start], hole_two_sign] + self.path[end:]
-        # the sign for the gate of the starting point may be unnecessary (the second additional element)
-
-
-    def __six(self, start, end): #TODO
-        print("Work in progress...")
-
-    def find_orientation(self, pants_curve):
 
     """Main function that reduces paths
     """
@@ -106,3 +101,7 @@ class PathReduction(object):
             sample = self.path[i:i+interval] #this is where you check if the sample matches an illegal type
             #you may need to swap interval with the size of each specific illegal path
             #TODO if an illegal path is detected, call your function
+            if(len(self.path) >= i+8):
+                sample6 = self.path[i:i+8]
+                if self.__matches_six(sample6):
+                    self.__six(i)
