@@ -33,20 +33,20 @@ class PathDecomposition(object):
     INPUT:
 
     - ``start`` -- the starting index inclusive of illegal portion
-    - ``end`` -- the ending index inclusive of illegal portion
+    - ``end`` -- the ending index exclusive of illegal portion
     """
     def __one(self, start, end):
-        self.path = self.path[:start, + self.path[end :] #splices out portion that was identified as backtracing
+        self.path = self.path[:start] + self.path[end:] #splices out portion that was identified as backtracing
 
     """Reduces illegal path with teardrop and straight-path
 
     INPUT:
 
     - ``start`` -- the starting index inclusive of illegal portion
-    - ``end`` -- the ending index inclusive of illegal portion
+    - ``end`` -- the ending index exclusive of illegal portion
     """
     def __six(self, start, end): #TODO
-
+        print("Work in progress...")
 
     """Main function that reduces paths
     """
