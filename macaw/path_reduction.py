@@ -1,4 +1,4 @@
-class PathDecomposition(object):
+class PathReduction(object):
     """An representation of topological paths that can be reduced
 
     A path can be represented as a list of operators
