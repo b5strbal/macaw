@@ -15,8 +15,8 @@ class PathReduction(object):
     - ``path`` -- a list of operators encoded as strings
 
     EXAMPLES:
-        from macaw import PathDecomposition
-        PathDecomposition([''])
+        from macaw import PathReduction
+        PathRediction([''])
         Path with form ['']
 
     """
