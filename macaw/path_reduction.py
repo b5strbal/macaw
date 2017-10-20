@@ -11,6 +11,9 @@ class PathReduction(object):
     (C) -> a teardrop around hole clockwise
     (A) -> a teardrop around hole anticlockwise
 
+    (L) -> teardrop or boundary starting from the left
+    (R) -> teardrop or boundary starting from the right
+
     INPUT:
 
     - ``path`` -- a list of operators encoded as strings
@@ -54,6 +57,14 @@ class PathReduction(object):
     def __one(self, start, end):
         self.path = self.path[:start] + self.path[end:] #splices out portion that was identified as backtracing
 
+    def __two(self, start, end):
+        """
+            curves involved are in cyclic order
+            Takes two arrays as input
+
+        """
+
+
     def __four(self, start, end, orientation):
         """
         Reduces illegal path beginning from a starting point, going to the point to left that a teardrop
@@ -67,6 +78,12 @@ class PathReduction(object):
         - ``end`` -- the ending index exclusive of the illegal move
         - ``orientation`` -- string representation ("CC" or "C") of the orientation of the pants curve
                             that the illegal path is starting from
+
+        EXAMPLE
+        self.path = [1, +, -, 3, ++, -, 3, -, +, 1]
+        self.__four(0, 9, C)
+        print(self)
+        >> Path with form
         """
         boundary = ""
         if orientation == "C":
