@@ -382,6 +382,12 @@ class PantsDecomposition(Surface):
         """
         return len(self._gluing_list)
 
+    def pants(self):
+        """
+        Return the numbers of the pairs of pants of the pants decomposition.
+        """
+        return range(self.num_pants())
+
     def pants_curves(self):
         """
         EXAMPLES::
