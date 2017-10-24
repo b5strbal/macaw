@@ -4,6 +4,15 @@ from macaw.constants import LEFT, RIGHT, FORWARD, BACKWARD
 from macaw.train_tracks.train_track import TrainTrack
 
 
+# Branch types
+ARC_TO_PLUS_1 = 0
+ARC_TO_MINUS_1 = 1
+SELF_CONN_LEFT = 2
+SELF_CONN_RIGHT = 3
+PANTS_CURVE_FORWARD = 4
+PANTS_CURVE_BACKWARD = 5
+
+
 def a(n):
     return 2*n-2 if n > 0 else -2*n-1
 
@@ -115,7 +124,7 @@ class DehnThurstonTT(TrainTrack):
         measure = [abs(twisting[c]) for c in ipc]
 
         for pant in p.pants():
-            curves = p.adjacent_curves(pant)
+            curves = p.pant_to_pants_curves(pant)
             bdy_intersections = [intersections[abs(c)] for c in curves]   
 
             self_conn, pairs = get_self_connecting_and_pairing_measures(bdy_intersections)
@@ -331,6 +340,77 @@ class DehnThurstonTT(TrainTrack):
         """
         return self._pants_curve_to_switch[abs(pants_curve)-1] * np.sign(pants_curve)
 
+    def dt_branch_type(self, branch):
+        """
+        Return the type of a branch of self.
+
+        INPUT:
+        - ``branch`` -- an (oriented) branch of the self
+
+        OUTPUT:
+
+        - ARC_TO_PLUS_1 -- for an arc going from one boundary to the boundary following in the cyclic order
+        - ARC_TO_MINUS_1 -- for an arc going from one boundary to the boundary preceding in the cyclic order
+        - SELF_CONN_LEFT -- for an self-connecting arc (teardrop) going to the other boundary, turning left, going around and returning.
+        - SELF_CONN_RIGHT -- same, but turning to the right
+        - PANTS_CURVE_FORWARD -- for a pants branch which is oriented in the same direction as the pants curve
+        - PANTS_CURVE_BACKWARD -- for a pants branch which is oriented in the opposite direction as the pants curve
+        
+        EXAMPLE:
+
+        >>> from macaw.pants_decomposition import PantsDecomposition
+        >>> from macaw.train_tracks.dehn_thurston.dehn_thurston_tt2 import DehnThurstonTT
+        >>> p = PantsDecomposition([[1, 2, 3], [-3, 4, 5]])
+        >>> tt = DehnThurstonTT(p, turning={3:RIGHT})
+        >>> br = tt.outgoing_branch(1, 2, RIGHT)
+        >>> tt.dt_branch_type(br) == SELF_CONN_RIGHT
+        True
+        >>> tt.dt_branch_type(-br) == SELF_CONN_LEFT
+        True
+        >>> br = tt.outgoing_branch(1, 0, RIGHT)
+        >>> tt.dt_branch_type(br) == PANTS_CURVE_FORWARD
+        True
+        >>> tt.dt_branch_type(-br) == PANTS_CURVE_BACKWARD
+        True
+
+        >>> p = PantsDecomposition([[1, 2, 3], [-3, -2, -1]])
+        >>> tt = DehnThurstonTT(p, turning={1:LEFT, 2:LEFT, 3:LEFT}, pants_types=[0,0])
+        >>> sw = tt.pants_curve_to_switch(1) 
+        >>> br = tt.outgoing_branch(sw, 1)
+        >>> tt.dt_branch_type(br) == ARC_TO_MINUS_1
+        True
+        >>> br = tt.outgoing_branch(sw, 2)
+        >>> tt.dt_branch_type(br) == ARC_TO_PLUS_1
+        True
+
+        """
+        begin_switch = self.branch_endpoint(-branch)
+        end_switch = self.branch_endpoint(branch)
+        pants_branch = self.outgoing_branch(begin_switch, 0,
+         self.get_switch_turning(begin_switch)) 
+        pants_curve = self.switch_to_pants_curve(begin_switch)
+        if pants_branch == branch:
+            if pants_curve > 0:
+                return PANTS_CURVE_FORWARD
+            else:
+                return PANTS_CURVE_BACKWARD
+        elif begin_switch == end_switch:
+            # self-connecting
+            if self.outgoing_branch_index(begin_switch, branch) < self.outgoing_branch_index(begin_switch, -branch):
+                return SELF_CONN_RIGHT
+            else:
+                return SELF_CONN_LEFT
+        else:
+            begin_pants_curve = self.half_branch_to_pants_curve(branch)
+            end_pants_curve = self.half_branch_to_pants_curve(-branch)
+            p = self._pants_decomposition
+            begin_idx = p.bdy_index_left_of_pants_curve(begin_pants_curve)
+            end_idx = p.bdy_index_left_of_pants_curve(end_pants_curve)
+            if end_idx == (begin_idx + 1) % 3:
+                return ARC_TO_PLUS_1
+            elif end_idx == (begin_idx - 1) % 3:
+                return ARC_TO_MINUS_1
+
     def is_pants_branch(self, branch):
         """
         Decide in a branch is a pants branch.
@@ -349,8 +429,7 @@ class DehnThurstonTT(TrainTrack):
         False
 
         """
-        switch = self.branch_endpoint(-branch)
-        return self.outgoing_branch(switch, 0, self.get_switch_turning(switch)) == branch
+        return self.dt_branch_type(branch) in [PANTS_CURVE_BACKWARD, PANTS_CURVE_FORWARD]        
 
     def half_branch_to_pants_curve(self, branch):
         """
@@ -399,32 +478,7 @@ class DehnThurstonTT(TrainTrack):
         False
 
         """
-        return self.branch_endpoint(branch) == self.branch_endpoint(-branch)
-
-    def self_connecting_direction(self, branch):
-        """
-        Determine the direction of a self-connecting branch, that is, whether the teardrop turns left or right when approaches the boundary component it surrounds.
-
-        EXAMPLE:
-
-        >>> from macaw.pants_decomposition import PantsDecomposition
-        >>> from macaw.train_tracks.dehn_thurston.dehn_thurston_tt2 import DehnThurstonTT
-        >>> p = PantsDecomposition([[1, 2, 3], [-3, 4, 5]])
-        >>> tt = DehnThurstonTT(p, turning={3:RIGHT})
-        >>> br = tt.outgoing_branch(1, 2, RIGHT)
-        >>> tt.self_connecting_direction(br) == RIGHT
-        True
-        >>> tt.self_connecting_direction(-br) == LEFT
-        True
-
-        """
-        if not self.is_self_connecting(branch):
-            raise ValueError("The specified branch is not self-connecting.")
-        switch = self.branch_endpoint(branch)
-        if self.outgoing_branch_index(switch, branch) < self.outgoing_branch_index(switch, -branch):
-            return RIGHT
-        else:
-            return LEFT
+        return self.dt_branch_type(branch) in [SELF_CONN_LEFT, SELF_CONN_RIGHT]
 
     def branch_encoding(self, branch):
         """
@@ -471,7 +525,7 @@ class DehnThurstonTT(TrainTrack):
         end = abs(end_pants_curve)
         end_side = LEFT if end_pants_curve > 0 else RIGHT
         if self.is_self_connecting(branch):
-            direction = self.self_connecting_direction(branch)
+            direction = LEFT if self.dt_branch_type(branch) == SELF_CONN_LEFT else RIGHT
             return [start, start_side, direction, end_side, end]
         elif self.is_pants_branch(branch):
             switch = self.branch_endpoint(-branch)
@@ -482,3 +536,47 @@ class DehnThurstonTT(TrainTrack):
                 return [-pants_curve, BACKWARD, -pants_curve]
         else:
             return [start, start_side, end_side, end]
+
+    def branches_next_to_pants_curve(self, pants_curve, side):
+        """
+        Return the list of branches on the specified side of the pants curve.a
+        """
+        switch = self.pants_curve_to_switch(pants_curve)
+        if self.get_pants_curve_turning(pants_curve) == LEFT:
+            if side == LEFT:
+                return self.outgoing_branches(-switch, RIGHT)[1:]
+            else:
+                return self.outgoing_branches(switch, RIGHT)[1:]
+        else:
+            if side == LEFT:
+                return self.outgoing_branches(switch, LEFT)[1:]
+            else:
+                return self.outgoing_branches(-switch, LEFT)[1:]
+
+    def apply_half_twist(self, pant, bdy_idx, direction):
+        """
+        Change the marking of the pants decomposition in a pair of pants by a half-twist. 
+
+        As a result, some branches of the train track won't follow the template and they have to be isotoped to a different position. 
+
+        INPUT:
+        - ``pant`` -- the pair of pants where the half-twist happens
+        - ``bdy_idx`` -- the index of the boundary (0, 1, or 2) about which the half-twist happens
+        - ``direction`` -- LEFT or RIGHT, the direction of the half-twist. LEFT means counterclockwise, RIGHT means clockwise when the the pair of pants is looked from above and the two inner boundaries are swapped.
+
+        """
+        p = self._pants_decomposition
+        pants_curve = p.pant_to_pants_curves(pant)[bdy_idx]
+        for branch in self.branches_next_to_pants_curve(pants_curve, LEFT):
+            typ = self.dt_branch_type(branch)
+            if typ == ARC_TO_MINUS_1:
+                pass
+            elif typ == ARC_TO_PLUS_1:
+                pass
+            elif typ == SELF_CONN_LEFT:
+                pass
+            elif typ == SELF_CONN_RIGHT:
+                pass
+
+        self._pants_decomposition.apply_half_twist_on_marking(pant, bdy_idx)
+        

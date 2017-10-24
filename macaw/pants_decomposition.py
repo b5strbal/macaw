@@ -80,7 +80,7 @@ class PantsDecomposition(Surface):
         #     raise ValueError('Sage preparser issue')
 
         num_pants = len(gluing_list)
-        self._adjacent_pants = {}
+        self._pants_curve_to_pants = {}
         #gluing_cnt = 0
         # inner_pants_curves = set()
         # non_ori_bdy_set = set()
@@ -96,23 +96,23 @@ class PantsDecomposition(Surface):
                     raise ValueError('Pants curves should be numbered '
                                      'by non-zero integers')
                 pants_curve = abs(bdy)
-                # self._adjacent_pants[pants_curve] =
-                if pants_curve not in self._adjacent_pants.keys():
-                    self._adjacent_pants[pants_curve] = [[], []]
+                # self._pants_curve_to_pants[pants_curve] =
+                if pants_curve not in self._pants_curve_to_pants.keys():
+                    self._pants_curve_to_pants[pants_curve] = [[], []]
                 side = LEFT if bdy>0 else RIGHT
-                self._adjacent_pants[pants_curve][side].append((i, j))
+                self._pants_curve_to_pants[pants_curve][side].append((i, j))
 
                     # inner_pants_curves.add(pants_curve)
                 #     if bdy < 0:
-                #         adjacent_pants[pants_curve][1] = i
+                #         pants_curve_to_pants[pants_curve][1] = i
                 #     else:
-                #         adjacent_pants[pants_curve][0] = i
+                #         pants_curve_to_pants[pants_curve][0] = i
                 #     inner_pants_curves.add(pants_curve)
                 # else:
                 #     if bdy < 0:
-                #         adjacent_pants[pants_curve] = [None, i]
+                #         pants_curve_to_pants[pants_curve] = [None, i]
                 #     else:
-                #         adjacent_pants[pants_curve] = [i, None]
+                #         pants_curve_to_pants[pants_curve] = [i, None]
 
 
         self._index_of_inner_pants_curve = {}
@@ -126,7 +126,7 @@ class PantsDecomposition(Surface):
                     is_orientable = self._compute_orientable())
         #print self.__repr__()
 
-        # self._adjacent_pants = adjacent_pants
+        # self._pants_curve_to_pants = pants_curve_to_pants
         # self._inner_pants_curves = inner_pants_curves
         # self._non_ori_bdy_set = non_ori_bdy_set
 
@@ -214,7 +214,7 @@ class PantsDecomposition(Surface):
         """
         edge_ls = []
         for c in self.inner_pants_curves():
-            left, right = self.adjacent_pants(c)
+            left, right = self.pants_curve_to_pants(c)
             if len(left) == 1: # orientation-preserving gluing
                 edge_ls.append((left[0], right[0], 0))
             elif len(left) == 2: # orientation-reversion gluing
@@ -224,7 +224,7 @@ class PantsDecomposition(Surface):
                 # two pants on the right
                 edge_ls.append((right[0], right[1], 1))
         for pant in range(self.num_pants()):
-            # curves = self.adjacent_curves(pant)
+            # curves = self.pant_to_pants_curves(pant)
             edge_ls.extend([(pant, (pant, i), 0) for i in range(3)])
         graph = nx.Graph()
         graph.add_weighted_edges_from(edge_ls)
@@ -295,9 +295,9 @@ class PantsDecomposition(Surface):
             0
 
         """
-        return self.adjacent_pants(pants_curve)[LEFT][0][BDY_IDX]
+        return self.pants_curve_to_pants(pants_curve)[LEFT][0][BDY_IDX]
 
-    def adjacent_pants(self, pants_curve):
+    def pants_curve_to_pants(self, pants_curve):
         """
         Return the pants adjacent to the pants curve.
 
@@ -308,55 +308,55 @@ class PantsDecomposition(Surface):
 
             >>> from macaw import PantsDecomposition
             >>> p = PantsDecomposition([[1, 2, 3], [-3, -2, -1]])
-            >>> p.adjacent_pants(1)
+            >>> p.pants_curve_to_pants(1)
             [[(0, 0)], [(1, 2)]]
-            >>> p.adjacent_pants(2)
+            >>> p.pants_curve_to_pants(2)
             [[(0, 1)], [(1, 1)]]
-            >>> p.adjacent_pants(3)
+            >>> p.pants_curve_to_pants(3)
             [[(0, 2)], [(1, 0)]]
-            >>> p.adjacent_pants(-1)
+            >>> p.pants_curve_to_pants(-1)
             [[(1, 2)], [(0, 0)]]
-            >>> p.adjacent_pants(-2)
+            >>> p.pants_curve_to_pants(-2)
             [[(1, 1)], [(0, 1)]]
-            >>> p.adjacent_pants(-3)
+            >>> p.pants_curve_to_pants(-3)
             [[(1, 0)], [(0, 2)]]
 
             >>> p = PantsDecomposition([[1, 2, -2]])
-            >>> p.adjacent_pants(1)
+            >>> p.pants_curve_to_pants(1)
             [[(0, 0)], []]
-            >>> p.adjacent_pants(2)
+            >>> p.pants_curve_to_pants(2)
             [[(0, 1)], [(0, 2)]]
-            >>> p.adjacent_pants(-1)
+            >>> p.pants_curve_to_pants(-1)
             [[], [(0, 0)]]
-            >>> p.adjacent_pants(-2)
+            >>> p.pants_curve_to_pants(-2)
             [[(0, 2)], [(0, 1)]]
 
             >>> p = PantsDecomposition([[1, 2, 2]])
-            >>> p.adjacent_pants(2)
+            >>> p.pants_curve_to_pants(2)
             [[(0, 1), (0, 2)], []]
 
             >>> p = PantsDecomposition([[1, -2, -2]])
-            >>> p.adjacent_pants(2)
+            >>> p.pants_curve_to_pants(2)
             [[], [(0, 1), (0, 2)]]
 
             >>> p = PantsDecomposition([[1, -1, 2], [-2, 4, 3], [-3, 5, 6], [-5, -4, -6]])
-            >>> p.adjacent_pants(3)
+            >>> p.pants_curve_to_pants(3)
             [[(1, 2)], [(2, 0)]]
 
         """
         if pants_curve > 0:
-            return self._adjacent_pants[pants_curve]
-        return list(reversed(self._adjacent_pants[-pants_curve]))
+            return self._pants_curve_to_pants[pants_curve]
+        return list(reversed(self._pants_curve_to_pants[-pants_curve]))
 
-    def adjacent_curves(self, pant):
+    def pant_to_pants_curves(self, pant):
         """
         EXAMPLES::
 
             >>> from macaw import PantsDecomposition
             >>> p = PantsDecomposition([[1, 2, 3], [-3, -2, -1]])
-            >>> p.adjacent_curves(0)
+            >>> p.pant_to_pants_curves(0)
             [1, 2, 3]
-            >>> p.adjacent_curves(1)
+            >>> p.pant_to_pants_curves(1)
             [-3, -2, -1]
 
         """
@@ -406,7 +406,7 @@ class PantsDecomposition(Surface):
             [1, 2, 3, 4, 5, 6]
 
         """
-        return range(1, len(self._adjacent_pants)+1)
+        return range(1, len(self._pants_curve_to_pants)+1)
 
     def inner_pants_curves(self):
         """
@@ -427,7 +427,7 @@ class PantsDecomposition(Surface):
 
         """
         def is_inner(c):
-            a = self.adjacent_pants(c)
+            a = self.pants_curve_to_pants(c)
             return len(a[0]) + len(a[1]) == 2
         return filter(is_inner, self.pants_curves())
 
@@ -517,8 +517,19 @@ class PantsDecomposition(Surface):
     def elementary_move_type(self, pants_curve):
         if pants_curve in self.boundary_pants_curves():
             return BOUNDARY
-        left, right = self.adjacent_pants(pants_curve)
+        left, right = self.pants_curve_to_pants(pants_curve)
         return TYPE_1 if left[0][PANT] == right[0][PANT] else TYPE_2
+
+    def apply_half_twist_on_marking(self, pant, bdy_idx):
+        """
+        Modify the pants decomposition when the marking of a pair of pants is changed by a half-twist. The effect of this is simply changing the cyclic orientation of the boundary curves.
+
+        INPUT:
+        - ``pant`` -- the pair of pants in the decompositions when twising occurs
+        - ``bdy_idx`` -- the index of the boundary curve (0, 1 or 2) which is fixed. The other two boundaries get interchanged.
+        """
+        ls = self._gluing_list[pant] 
+        ls[(bdy_idx+1)%3], ls[(bdy_idx+2)%3] = ls[(bdy_idx+2)%3], ls[(bdy_idx+1)%3] 
 
     def apply_elementary_move(self, pants_curve):
         """Create a new pants decomposition by changing one pants curve.
@@ -584,7 +595,7 @@ class PantsDecomposition(Surface):
             # do a first elementary move
             return PantsDecomposition(self._gluing_list)
 
-        ap = [self.adjacent_pants(pants_curve)[i][0] for i in [LEFT, RIGHT]]
+        ap = [self.pants_curve_to_pants(pants_curve)[i][0] for i in [LEFT, RIGHT]]
         # print ap
         gl = list(self._gluing_list)
         # print gl
@@ -602,10 +613,10 @@ class PantsDecomposition(Surface):
         The boundary curve is oriented in a way that its left side is the torus.
         """
         assert self.elementary_move_type(pants_curve) == TYPE_1
-        pant = self.adjacent_pants(pants_curve)[LEFT][0][PANT]
+        pant = self.pants_curve_to_pants(pants_curve)[LEFT][0][PANT]
         for k in range(3):
-            if abs(self.adjacent_curves(pant)[k]) != pants_curve:
-                torus_boundary_curve = abs(self.adjacent_curves(pant)[k])
+            if abs(self.pant_to_pants_curves(pant)[k]) != pants_curve:
+                torus_boundary_curve = abs(self.pant_to_pants_curves(pant)[k])
                 return torus_boundary_curve, k
 
     @classmethod

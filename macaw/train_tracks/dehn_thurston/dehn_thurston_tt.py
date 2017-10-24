@@ -110,7 +110,7 @@ class DehnThurstonTT(TrainTrack):
             # the three pants curves bounding the pair of pants
             # the number of the switch on each pants curve coincides with the
             # number of the pants curve
-            curves = p.adjacent_curves(pant)
+            curves = p.pant_to_pants_curves(pant)
             m = [coordinates[abs(c)][0] for c in curves]
 
             # self-connecting branches: lambda_11, lambda_22, lambda_33
