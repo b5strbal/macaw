@@ -2,7 +2,7 @@
 import numpy as np
 from macaw.constants import LEFT, RIGHT, FORWARD, BACKWARD
 from macaw.train_tracks.train_track import TrainTrack
-from macaw.train_tracks.dehn_thurston.paths import Paths
+from macaw.train_tracks.dehn_thurston.numpy_list import ManyLists
 
 # Branch types
 ARC_TO_PLUS_1 = 0
@@ -239,7 +239,7 @@ class DehnThurstonTT(TrainTrack):
                 measure.append(abs(self_conn[self_conn_idx-1]))
 
         super(DehnThurstonTT, self).__init__(gluing_list, measure)
-        self._paths = Paths(20, 50)
+        self._encodings = ManyLists(20, 50)
         self._branch_to_path_idx = np.zeros(
             self.num_branches_if_made_trivalent(), dtype=int)
         self._current_path_idx = 1
@@ -541,7 +541,7 @@ class DehnThurstonTT(TrainTrack):
         # if a path is already cached, we return it
         path_idx = self.branch_to_path_idx(branch)
         if path_idx != 0:
-            path = self._paths.get_path(path_idx) 
+            path = self._encodings.get_list(path_idx) 
             return path.view()
         else:
             raise ValueError("No encoding has been computed for "
@@ -574,8 +574,8 @@ class DehnThurstonTT(TrainTrack):
                 encoding = [-mod_pants_curve, BACKWARD, FORWARD, -mod_pants_curve]
         else:
             encoding = [start, start_side, end_side, end]
-        path = self._paths.get_path(path_idx)
-        path.append_to_path(encoding)
+        path = self._encodings.get_list(path_idx)
+        path.append(encoding)
 
     def branches_next_to_pants_curve(self, pants_curve, side):
         """
@@ -623,14 +623,14 @@ class DehnThurstonTT(TrainTrack):
             typ = self.dt_branch_type(branch)
             end_curve = self.half_branch_to_pants_curve(-branch)
             if typ == ARC_TO_MINUS_1:
-                self._paths[branch] = \
+                self._encodings[branch] = \
                     self.concatenate_encodings([branch, -end_curve])
             elif typ == ARC_TO_PLUS_1:
-                self._paths[branch] = \
+                self._encodings[branch] = \
                     self.concatenate_encodings([-pants_curve, branch,
                      -end_curve])
             elif typ in [SELF_CONN_LEFT, SELF_CONN_RIGHT]:
-                self._paths[branch] = \
+                self._encodings[branch] = \
                     self.concatenate_encodings([pants_curve, branch,
                      -pants_curve])
             else:
