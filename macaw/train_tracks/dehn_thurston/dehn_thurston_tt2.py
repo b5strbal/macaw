@@ -506,6 +506,9 @@ class DehnThurstonTT(TrainTrack):
         >>> from macaw.constants import LEFT, RIGHT, FORWARD, BACKWARD
         >>> p = PantsDecomposition([[1, 2, 3], [-3, 4, 5]])
         >>> tt = DehnThurstonTT(p, turning={3:RIGHT})
+
+        Teardrops:
+
         >>> br = tt.outgoing_branch(1, 2, RIGHT)
         >>> tt.compute_branch_encoding(br)
         >>> all(tt.branch_encoding(br) == [4, LEFT, RIGHT, LEFT, LEFT, 4])
@@ -518,12 +521,17 @@ class DehnThurstonTT(TrainTrack):
         True
         >>> all(tt.branch_encoding(-br) == [4, RIGHT, RIGHT, LEFT, RIGHT, 4])
         True
+
+        Pants branches:
+
         >>> br = tt.outgoing_branch(1, 0, RIGHT)
         >>> tt.compute_branch_encoding(br)
         >>> all(tt.branch_encoding(br) == [4, FORWARD, BACKWARD, 4])
         True
         >>> all(tt.branch_encoding(-br) == [4, BACKWARD, FORWARD, 4])
         True
+
+        Arcs connecting different boundaries:
         
         >>> p = PantsDecomposition([[1, 2, 3], [-3, -2, -1]])
         >>> tt = DehnThurstonTT(p, turning={1:LEFT, 2:LEFT, 3:LEFT}, pants_types=[0,0])
