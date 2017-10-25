@@ -508,21 +508,21 @@ class DehnThurstonTT(TrainTrack):
         >>> tt = DehnThurstonTT(p, turning={3:RIGHT})
         >>> br = tt.outgoing_branch(1, 2, RIGHT)
         >>> tt.compute_branch_encoding(br)
-        >>> all(tt.branch_encoding(br) == [3, LEFT, RIGHT, LEFT, LEFT, 3])
+        >>> all(tt.branch_encoding(br) == [4, LEFT, RIGHT, LEFT, LEFT, 4])
         True
-        >>> all(tt.branch_encoding(-br) == [3, LEFT, LEFT, RIGHT, LEFT, 3])
+        >>> all(tt.branch_encoding(-br) == [4, LEFT, LEFT, RIGHT, LEFT, 4])
         True
         >>> br = tt.outgoing_branch(-1, 1)
         >>> tt.compute_branch_encoding(br)
-        >>> all(tt.branch_encoding(br) == [3, RIGHT, LEFT, RIGHT, RIGHT, 3])
+        >>> all(tt.branch_encoding(br) == [4, RIGHT, LEFT, RIGHT, RIGHT, 4])
         True
-        >>> all(tt.branch_encoding(-br) == [3, RIGHT, RIGHT, LEFT, RIGHT, 3])
+        >>> all(tt.branch_encoding(-br) == [4, RIGHT, RIGHT, LEFT, RIGHT, 4])
         True
         >>> br = tt.outgoing_branch(1, 0, RIGHT)
         >>> tt.compute_branch_encoding(br)
-        >>> all(tt.branch_encoding(br) == [3, FORWARD, BACKWARD, 3])
+        >>> all(tt.branch_encoding(br) == [4, FORWARD, BACKWARD, 4])
         True
-        >>> all(tt.branch_encoding(-br) == [3, BACKWARD, FORWARD, 3])
+        >>> all(tt.branch_encoding(-br) == [4, BACKWARD, FORWARD, 4])
         True
         
         >>> p = PantsDecomposition([[1, 2, 3], [-3, -2, -1]])
@@ -530,18 +530,19 @@ class DehnThurstonTT(TrainTrack):
         >>> sw = tt.pants_curve_to_switch(1) 
         >>> br = tt.outgoing_branch(sw, 1)
         >>> tt.compute_branch_encoding(br)
-        >>> all(tt.branch_encoding(br) == [1, RIGHT, RIGHT, 2])
+        >>> all(tt.branch_encoding(br) == [2, RIGHT, RIGHT, 3])
         True
         >>> br = tt.outgoing_branch(sw, 2)
         >>> tt.compute_branch_encoding(br)
-        >>> all(tt.branch_encoding(br) == [1, RIGHT, RIGHT, 3])
+        >>> all(tt.branch_encoding(br) == [2, RIGHT, RIGHT, 4])
         True
 
         """
         # if a path is already cached, we return it
         path_idx = self.branch_to_path_idx(branch)
         if path_idx != 0:
-            return self._paths.get_path(path_idx)
+            path = self._paths.get_path(path_idx) 
+            return path.view()
         else:
             raise ValueError("No encoding has been computed for "
                             "the specified branch.")
@@ -554,24 +555,27 @@ class DehnThurstonTT(TrainTrack):
         path_idx = self.find_available_path_idx_for_branch(branch)
 
         start_pants_curve = self.half_branch_to_pants_curve(branch)
-        start = abs(start_pants_curve)
+
+        # We add one in the encoding to ensure that all vertices of the template have number at least 2. This is necessary, because LEFT, RIGHT, FORWARD and BACKWARD take values 0 and 1.
+        start = abs(start_pants_curve) + 1
         start_side = LEFT if start_pants_curve > 0 else RIGHT
         end_pants_curve = self.half_branch_to_pants_curve(-branch)
-        end = abs(end_pants_curve)
+        end = abs(end_pants_curve) + 1
         end_side = LEFT if end_pants_curve > 0 else RIGHT
         if self.is_self_connecting(branch):
             direction = LEFT if self.dt_branch_type(branch) == SELF_CONN_LEFT else RIGHT
             encoding = [start, start_side, direction, (direction+1)%2, end_side, end]
         elif self.is_pants_branch(branch):
             switch = self.branch_endpoint(-branch)
-            pants_curve = self.switch_to_pants_curve(switch)
-            if pants_curve > 0:
-                encoding = [pants_curve, FORWARD, BACKWARD, pants_curve]
+            mod_pants_curve = self.switch_to_pants_curve(switch) + 1
+            if mod_pants_curve > 0:
+                encoding = [mod_pants_curve, FORWARD, BACKWARD, mod_pants_curve]
             else:
-                encoding = [-pants_curve, BACKWARD, FORWARD, -pants_curve]
+                encoding = [-mod_pants_curve, BACKWARD, FORWARD, -mod_pants_curve]
         else:
             encoding = [start, start_side, end_side, end]
-        self._paths.append_to_path(path_idx, encoding) 
+        path = self._paths.get_path(path_idx)
+        path.append_to_path(encoding)
 
     def branches_next_to_pants_curve(self, pants_curve, side):
         """
