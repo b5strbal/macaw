@@ -2,7 +2,7 @@
 import numpy as np
 from macaw.constants import LEFT, RIGHT, FORWARD, BACKWARD
 from macaw.train_tracks.train_track import TrainTrack
-
+from macaw.train_tracks.dehn_thurston.paths import Paths
 
 # Branch types
 ARC_TO_PLUS_1 = 0
@@ -239,6 +239,21 @@ class DehnThurstonTT(TrainTrack):
                 measure.append(abs(self_conn[self_conn_idx-1]))
 
         super(DehnThurstonTT, self).__init__(gluing_list, measure)
+        self._paths = Paths(20, 50)
+        self._branch_to_path_idx = np.zeros(
+            self.num_branches_if_made_trivalent(), dtype=int)
+        self._current_path_idx = 1
+
+    def branch_to_path_idx(self, branch):
+        """
+        Return the path index of a branch. If there is no path associated to the branch, zero is returned.
+        """
+        return np.sign(branch)*self._branch_to_path_idx[abs(branch)-1]
+
+    def find_available_path_idx_for_branch(self, branch):
+        self._branch_to_path_idx[abs(branch)-1] = self._current_path_idx
+        self._current_path_idx += 1
+        return np.sign(branch)*(self._current_path_idx-1)
 
     def set_turning(self, inner_pants_curves, turning_dict, twisting_dict):
         """
@@ -488,36 +503,56 @@ class DehnThurstonTT(TrainTrack):
 
         >>> from macaw.pants_decomposition import PantsDecomposition
         >>> from macaw.train_tracks.dehn_thurston.dehn_thurston_tt2 import DehnThurstonTT
+        >>> from macaw.constants import LEFT, RIGHT, FORWARD, BACKWARD
         >>> p = PantsDecomposition([[1, 2, 3], [-3, 4, 5]])
         >>> tt = DehnThurstonTT(p, turning={3:RIGHT})
         >>> br = tt.outgoing_branch(1, 2, RIGHT)
-        >>> tt.branch_encoding(br) == [3, LEFT, RIGHT, LEFT, 3]
+        >>> tt.compute_branch_encoding(br)
+        >>> all(tt.branch_encoding(br) == [3, LEFT, RIGHT, LEFT, LEFT, 3])
         True
-        >>> tt.branch_encoding(-br) == [3, LEFT, LEFT, LEFT, 3]
+        >>> all(tt.branch_encoding(-br) == [3, LEFT, LEFT, RIGHT, LEFT, 3])
         True
         >>> br = tt.outgoing_branch(-1, 1)
-        >>> tt.branch_encoding(br) == [3, RIGHT, LEFT, RIGHT, 3]
+        >>> tt.compute_branch_encoding(br)
+        >>> all(tt.branch_encoding(br) == [3, RIGHT, LEFT, RIGHT, RIGHT, 3])
         True
-        >>> tt.branch_encoding(-br) == [3, RIGHT, RIGHT, RIGHT, 3]
+        >>> all(tt.branch_encoding(-br) == [3, RIGHT, RIGHT, LEFT, RIGHT, 3])
         True
         >>> br = tt.outgoing_branch(1, 0, RIGHT)
-        >>> tt.branch_encoding(br) == [3, FORWARD, 3]
+        >>> tt.compute_branch_encoding(br)
+        >>> all(tt.branch_encoding(br) == [3, FORWARD, BACKWARD, 3])
         True
-        >>> tt.branch_encoding(-br) == [3, BACKWARD, 3]
+        >>> all(tt.branch_encoding(-br) == [3, BACKWARD, FORWARD, 3])
         True
         
         >>> p = PantsDecomposition([[1, 2, 3], [-3, -2, -1]])
         >>> tt = DehnThurstonTT(p, turning={1:LEFT, 2:LEFT, 3:LEFT}, pants_types=[0,0])
         >>> sw = tt.pants_curve_to_switch(1) 
         >>> br = tt.outgoing_branch(sw, 1)
-        >>> tt.branch_encoding(br) == [1, RIGHT, RIGHT, 2]
+        >>> tt.compute_branch_encoding(br)
+        >>> all(tt.branch_encoding(br) == [1, RIGHT, RIGHT, 2])
         True
         >>> br = tt.outgoing_branch(sw, 2)
-        >>> tt.branch_encoding(br) == [1, RIGHT, RIGHT, 3]
+        >>> tt.compute_branch_encoding(br)
+        >>> all(tt.branch_encoding(br) == [1, RIGHT, RIGHT, 3])
         True
 
-
         """
+        # if a path is already cached, we return it
+        path_idx = self.branch_to_path_idx(branch)
+        if path_idx != 0:
+            return self._paths.get_path(path_idx)
+        else:
+            raise ValueError("No encoding has been computed for "
+                            "the specified branch.")
+
+    def compute_branch_encoding(self, branch):
+        path_idx = self.branch_to_path_idx(branch)
+        if path_idx != 0:
+            raise ValueError("Branch encoding is already computed for"
+                            " this branch.")
+        path_idx = self.find_available_path_idx_for_branch(branch)
+
         start_pants_curve = self.half_branch_to_pants_curve(branch)
         start = abs(start_pants_curve)
         start_side = LEFT if start_pants_curve > 0 else RIGHT
@@ -526,20 +561,21 @@ class DehnThurstonTT(TrainTrack):
         end_side = LEFT if end_pants_curve > 0 else RIGHT
         if self.is_self_connecting(branch):
             direction = LEFT if self.dt_branch_type(branch) == SELF_CONN_LEFT else RIGHT
-            return [start, start_side, direction, end_side, end]
+            encoding = [start, start_side, direction, (direction+1)%2, end_side, end]
         elif self.is_pants_branch(branch):
             switch = self.branch_endpoint(-branch)
             pants_curve = self.switch_to_pants_curve(switch)
             if pants_curve > 0:
-                return [pants_curve, FORWARD, pants_curve]
+                encoding = [pants_curve, FORWARD, BACKWARD, pants_curve]
             else:
-                return [-pants_curve, BACKWARD, -pants_curve]
+                encoding = [-pants_curve, BACKWARD, FORWARD, -pants_curve]
         else:
-            return [start, start_side, end_side, end]
+            encoding = [start, start_side, end_side, end]
+        self._paths.append_to_path(path_idx, encoding) 
 
     def branches_next_to_pants_curve(self, pants_curve, side):
         """
-        Return the list of branches on the specified side of the pants curve.a
+        Return the list of branches on the specified side of the pants curve.
         """
         switch = self.pants_curve_to_switch(pants_curve)
         if self.get_pants_curve_turning(pants_curve) == LEFT:
@@ -552,6 +588,18 @@ class DehnThurstonTT(TrainTrack):
                 return self.outgoing_branches(switch, LEFT)[1:]
             else:
                 return self.outgoing_branches(-switch, LEFT)[1:]
+
+    def concatenate_encodings(self, branch_list):
+        """
+        Concatenate the encodings of the branches in a list.
+        """
+        encoding = []
+        for branch in branch_list:
+            new_encoding = self.branch_encoding(branch)
+            if len(encoding) > 0 and encoding[-1] != new_encoding[0]:
+                raise ValueError("The specified branches cannot be concatenated: the endpoint of a branch is not the same as the startpoint of the next.")
+            encoding += new_encoding[1:]
+        return encoding
 
     def apply_half_twist(self, pant, bdy_idx, direction):
         """
@@ -569,14 +617,20 @@ class DehnThurstonTT(TrainTrack):
         pants_curve = p.pant_to_pants_curves(pant)[bdy_idx]
         for branch in self.branches_next_to_pants_curve(pants_curve, LEFT):
             typ = self.dt_branch_type(branch)
+            end_curve = self.half_branch_to_pants_curve(-branch)
             if typ == ARC_TO_MINUS_1:
-                pass
+                self._paths[branch] = \
+                    self.concatenate_encodings([branch, -end_curve])
             elif typ == ARC_TO_PLUS_1:
-                pass
-            elif typ == SELF_CONN_LEFT:
-                pass
-            elif typ == SELF_CONN_RIGHT:
-                pass
+                self._paths[branch] = \
+                    self.concatenate_encodings([-pants_curve, branch,
+                     -end_curve])
+            elif typ in [SELF_CONN_LEFT, SELF_CONN_RIGHT]:
+                self._paths[branch] = \
+                    self.concatenate_encodings([pants_curve, branch,
+                     -pants_curve])
+            else:
+                assert False
 
         self._pants_decomposition.apply_half_twist_on_marking(pant, bdy_idx)
         
