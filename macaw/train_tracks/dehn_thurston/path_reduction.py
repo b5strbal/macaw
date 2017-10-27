@@ -76,8 +76,13 @@ class PathReduction(object):
         """
             curves involved are in cyclic order
             Takes two arrays as input
-
         """
+        c1 = self.path[start]
+        t2 = self.path[start + 4]
+        T1 = 'RL' if t2 == 'R' else 'LR'
+        self.path[start:end] = []
+        opath = [c1, T1, c1]
+        self.path[start:start] = opath
 
     def __three(self, start, end):
         """
