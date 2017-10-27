@@ -16,6 +16,24 @@ class NumpyList(object):
         self._length_view = length_view
         self._is_reversed = is_reversed
 
+    def __iter__(self):
+        return self
+
+    def __getitem__(self, key):
+        return self._array[key]
+
+    def __setitem__(self, key, item):
+        self._array[key] = item
+
+    def __repr__(self):
+        return repr(self._array)
+
+    def delete(self, key):
+        self._array = np.delete(self._array, key)
+
+    def insert(self, key, item):
+        self._array = np.insert(self._array, key, item)
+
     def length(self):
         """
         Return the length of the list.
@@ -73,7 +91,7 @@ class NumpyList(object):
 
     def replace_interval(self, begin_pos, end_pos, inserted_list):
         """
-        Replace part of ``self`` with a different list. 
+        Replace part of ``self`` with a different list.
 
         INPUT:
         - ``begin_pos`` -- the starting position of the interval (inclusive)
@@ -158,14 +176,14 @@ class ManyLists(object):
 
         """
         self._lists = np.zeros((num_lists, max_len), dtype=int)
-        self._list_lengths = np.zeros(num_lists, dtype=int)    
+        self._list_lengths = np.zeros(num_lists, dtype=int)
 
     def get_list(self, idx):
         """
         Return the NumpyList at the specified index.
 
         INPUT:
-        - ``idx`` -- the index of the list. If negative, a reversed 
+        - ``idx`` -- the index of the list. If negative, a reversed
             list is returned.
 
         """
@@ -175,7 +193,6 @@ class ManyLists(object):
             is_reversed = True
         else:
             assert False
-        return NumpyList(self._lists[abs(idx)-1], 
+        return NumpyList(self._lists[abs(idx)-1],
             self._list_lengths[abs(idx)-1:abs(idx)],
             is_reversed)
-
