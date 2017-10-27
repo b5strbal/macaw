@@ -41,7 +41,7 @@ class PathReduction(object):
     """
     #TODO concrete examples for documentation
     def __init__(self, path):
-        self.path = NumpyList(np.array(path), np.array(len(path)), False)
+        self.path = NumpyList(np.array(path), np.array([len(path)]), False)
 
     """Defines the representation of the object in print stream"""
     def __repr__(self):
@@ -86,10 +86,11 @@ class PathReduction(object):
 
         INPUT:
         - ``start`` -- the starting index inclusive of the illegal move
-        - ``end`` -- the ending index exclusive of the illegal move
+        - ``end`` -- the ending index inclusive of the illegal move
         """
+        s = sign(end - start)
         c1 = self.path[start]
-        t2 = self.path[start + 4]
+        t2 = self.path[start + s * 4]
         t1 = 'L' if t2 == 'R' else 'R'
         T1 = 'RL' if t2 == 'R' else 'LR'
         self.path[start:end] = []
@@ -191,6 +192,8 @@ class PathReduction(object):
     def reduce(self):
         interval = 3 #during iteration, the interval determines the groupings in which the function will check for illegal paths
         #TODO adjust to account for sizes of illegal paths
+        while:
+            #TODO add function
         for i in range(len(self.path) - interval): #iterate through path list, but substract interval to avoid index out of bounds
             sample = self.path[i:i+interval] #this is where you check if the sample matches an illegal type
             #you may need to swap interval with the size of each specific illegal path
