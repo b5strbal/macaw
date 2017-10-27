@@ -1,4 +1,5 @@
-#TODO switch all arrays to "numpy" arrays
+import numpy as np
+from train_tracks.dehn_thurston.numpy_list import NumpyList
 
 class PathReduction(object):
     """An representation of topological paths that can be reduced
@@ -28,7 +29,7 @@ class PathReduction(object):
     """
     #TODO concrete examples for documentation
     def __init__(self, path):
-        self.path = path
+        self.path = NumpyList(np.array(path))
 
     """Defines the representation of the object in print stream"""
     def __repr__(self):
