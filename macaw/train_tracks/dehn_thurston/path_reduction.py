@@ -41,7 +41,7 @@ class PathReduction(object):
     """
     #TODO concrete examples for documentation
     def __init__(self, path):
-        self.path = NumpyList(np.array(path), np.array([len(path)]), False)
+        self.path = NumpyList(np.array(path, dtype="S3"), np.array([len(path)]), False)
 
     """Defines the representation of the object in print stream"""
     def __repr__(self):
@@ -92,15 +92,21 @@ class PathReduction(object):
         INPUT:
         - ``start`` -- the starting index inclusive of the illegal move
         - ``end`` -- the ending index inclusive of the illegal move
+
+        EXAMPLE
+        self.path = ['1', '+', '-', '2', 'L', '-', '+', '1']
+        self.__three(0, 8)
+        print(self)
         """
-        s = sign(end - start)
+        s = np.sign(end - start)
         c1 = self.path[start]
+        c2 = self.path[start + s * 3]
         t2 = self.path[start + s * 4]
         t1 = 'L' if t2 == 'R' else 'R'
-        T1 = 'RL' if t2 == 'R' else 'LR'
-        self.path[start:end] = []
+        T1 = 'L' + str(6 - int(c1) - int(c2)) + 'R' if t2 == 'R' else 'R' + str(6 - int(c1) - int(c2)) + 'L'
+        self.path.delete(slice(start, end))
         opath = [c1, t1, c1, T1, c1]
-        self.path[start:start] = opath
+        self.path.insert(start, opath)
 
 
     def __four(self, start, end):
@@ -118,7 +124,7 @@ class PathReduction(object):
                             that the illegal path is starting from
 
         EXAMPLE
-        self.path = [1, +, -, 3, ++, -, 3, -, +, 1]
+        self.path = ['1', '+', '-', '3', '++', '-', '3', '-', '+', '1']
         self.__four(0, 9, C)
         print(self)
         >> Path with form
@@ -201,8 +207,6 @@ class PathReduction(object):
     def reduce(self):
         interval = 3 #during iteration, the interval determines the groupings in which the function will check for illegal paths
         #TODO adjust to account for sizes of illegal paths
-        while:
-            #TODO add function
         for i in range(len(self.path) - interval): #iterate through path list, but substract interval to avoid index out of bounds
             sample = self.path[i:i+interval] #this is where you check if the sample matches an illegal type
             #you may need to swap interval with the size of each specific illegal path
