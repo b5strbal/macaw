@@ -103,7 +103,7 @@ class PathReduction(object):
         self.path[start:start] = opath
 
 
-    def __four(self, start, end, orientation):
+    def __four(self, start, end):
         """
         Reduces illegal path beginning from a starting point, going to the point to left that a teardrop
         cannot form around, circles around that point, and goes back to the starting point.
@@ -123,12 +123,16 @@ class PathReduction(object):
         print(self)
         >> Path with form
         """
-        boundary = ""
-        if orientation == "L":
-            boundary = "++"
-        else:
-            boundary = "--"
-        self.path = self.path[:start] + [boundary, "L"] + self.path[end:]
+        c1 = self.path[start]
+        g1 = self.path[start + 1]
+        c3 = self.path[end - 1]
+        g2 = self.path[start + 2]
+        t2 = self.path[start + 4]
+        t1 = 'L' if t2 == 'R' else 'R'
+        t3 = 'L' if t2 == 'R' else 'R'
+        self.path[start:end] = []
+        opath = [c1, t1, c1, g1, g2, c3, t3, c3]
+        self.path[start:start] = opath
 
     def __five(self, start, end, orientation):
         """
