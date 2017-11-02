@@ -76,6 +76,13 @@ class PathReduction(object):
         """
             curves involved are in cyclic order
             Takes two arrays as input
+
+            EXAMPLE
+                self.path = [c1, g1, g2, c2, t2, c2, g2, g1, c1]
+                self.__two(0, 9)
+                print(self)
+                >> Path with form [c1, T1, c1]
+
         """
         c1 = self.path[start]
         t2 = self.path[start + 4]
@@ -94,9 +101,10 @@ class PathReduction(object):
         - ``end`` -- the ending index inclusive of the illegal move
 
         EXAMPLE
-        self.path = ['1', '+', '-', '2', 'L', '-', '+', '1']
-        self.__three(0, 8)
-        print(self)
+            self.path = [c1, g1, g2, c2, t2, c2, g2, g1, c1]
+            self.__three(0, 9)
+            print(self)
+            >> Path with form [c1, t1, c1, T1, c1]
         """
         s = np.sign(end - start)
         c1 = self.path[start]
@@ -124,10 +132,10 @@ class PathReduction(object):
                             that the illegal path is starting from
 
         EXAMPLE
-        self.path = ['1', '+', '-', '3', '++', '-', '3', '-', '+', '1']
-        self.__four(0, 9, C)
-        print(self)
-        >> Path with form
+            self.path = [c1, g1, g2, c2, t2, c2, g2, g1, c3]
+            self.__four(0, 9)
+            print(self)
+            >> Path with form [c1, t1, c1, g1, g2, c3, t3, c3]
         """
         c1 = self.path[start]
         g1 = self.path[start + 1]
@@ -140,7 +148,7 @@ class PathReduction(object):
         opath = [c1, t1, c1, g1, g2, c3, t3, c3]
         self.path[start:start] = opath
 
-    def __five(self, start, end, orientation):
+    def __five(self, start, end):
         """
         Reduces illegal path beginning from starting point, going to the point to the right that a teardrop
         can form around, circles around that point, makes a teardrop around the third point from the second
@@ -151,18 +159,22 @@ class PathReduction(object):
         - ``end`` -- the ending index exclusive of the illegal move
         - ``orientation`` -- string representation ("CC" or "L") of the orientation of the pants curve
                             that the illegal path is starting from
+
+        EXAMPLE
+            self.path = [c1, g1, g2, c2, t2, c2, T2, c2]
+            self.__five(0, 8)
+            print(self)
+            >> Path with form [c1, t1, c1, g1, g2, c2]
         """
-        boundary = ""
-        if orientation == "L":
-            boundary = "--"
-        else:
-            boundary = "++"
-
-        # assuming the sign of the starting point is not part of the illegal move
-        hole_two_sign = self.path[start: start + 1]
-
-        self.path = self.path[:start] + [boundary, self.path[start - 1 : start], hole_two_sign] + self.path[end:]
-        # the sign for the gate of the starting point may be unnecessary (the second additional element)
+        c1 = self.path[start]
+        t2 = self.path[start + 4]
+        t1 = 'L' if t2 == 'R' else 'R'
+        c2 = self.path[start + 3]
+        g1 = self.path[start + 1]
+        g2 = self.path[start + 2]
+        self.path[start:end] = []
+        opath = [c1, t1, c1, g1, g2, c2]
+        self.path[start:start] = opath
 
     """Reduces illegal path with teardrop and straight-path assuming an 8-character start to end encoding
 
