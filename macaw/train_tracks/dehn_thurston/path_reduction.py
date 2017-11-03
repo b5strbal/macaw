@@ -96,9 +96,9 @@ class PathReduction(object):
         s = np.sign(end - start)
         #splices out portion that was identified as backtracing
         if s > 0:
-            self.path.delete(slice(start, end + 1))
+            self.path.delete_interval(start, end + 1)
         else:
-            self.path.delete(slice(end, start + 1))
+            self.path.delete_interval(end, start + 1)
 
     """
     Reduces illegal path that goes from starting point to another point and then circles around
@@ -119,11 +119,9 @@ class PathReduction(object):
         opath = [c1, T1, c1]
         #delete illegal portion and insert edited path
         if s > 0:
-            self.path.delete(slice(start, end + 1))
-            self.path.insert(start, opath)
+            self.replace_interval(start, end+1, opath)
         else:
-            self.path.delete(slice(end, start + 1))
-            self.path.insert(end, opath)
+            self.replace_interval(end, start+1, opath)
 
     """
     Reduces illegal path beginning from starting point, going to the cyclic predecessors,
@@ -150,11 +148,9 @@ class PathReduction(object):
         #delete illegal portion and insert edited path
         opath = [c1, t1, c1, T1, c1]
         if s > 0:
-            self.path.delete(slice(start, end + 1))
-            self.path.insert(start, opath)
+            self.replace_interval(start, end+1, opath)
         else:
-            self.path.delete(slice(end, start + 1))
-            self.path.insert(end, opath)
+            self.replace_interval(end, start+1, opath)
 
     """
     Reduces illegal path beginning from a starting point, going to the point to left that a teardrop
@@ -173,7 +169,7 @@ class PathReduction(object):
         print(self)
         >> Path with form [c1, t1, c1, g1, g2, c3, t3, c3]
     """
-    def four(self, start, end):
+    def __four(self, start, end):
         #assign respective values as outlined in schema
         s = np.sign(end - start)
         c1 = self.path[start]
@@ -186,11 +182,9 @@ class PathReduction(object):
         #delete illegal portion and insert edited path
         opath = [c1, t1, c1, g1, g2, c3, t3, c3]
         if s > 0:
-            self.path.delete(slice(start, end + 1))
-            self.path.insert(start, opath)
+            self.replace_interval(start, end+1, opath)
         else:
-            self.path.delete(slice(end, start + 1))
-            self.path.insert(end, opath)
+            self.replace_interval(end, start+1, opath)
 
     """
     Reduces illegal path beginning from starting point, going to the point to the right that a teardrop
@@ -207,7 +201,7 @@ class PathReduction(object):
         print(self)
         >> Path with form [c1, t1, c1, g1, g2, c2]
     """
-    def five(self, start, end):
+    def __five(self, start, end):
         #assign respective values as outlined in schema
         s = np.sign(end - start)
         c1 = self.path[start]
@@ -219,11 +213,9 @@ class PathReduction(object):
         #delete illegal portion and insert edited path
         opath = [c1, t1, c1, g1, g2, c2]
         if s > 0:
-            self.path.delete(slice(start, end + 1))
-            self.path.insert(start, opath)
+            self.replace_interval(start, end+1, opath)
         else:
-            self.path.delete(slice(end, start + 1))
-            self.path.insert(end, opath)
+            self.replace_interval(end, start+1, opath)
 
     """
     Reduces illegal path with teardrop and straight-path assuming an 8-character start to end encoding
@@ -260,11 +252,9 @@ class PathReduction(object):
                 t2 = 'L'
             opath = [c1, t1, c1, g1, g2, c2, t2, c2]
         if s > 0:
-            self.path.delete(slice(start, end + 1))
-            self.path.insert(start, opath)
+            self.replace_interval(start, end+1, opath)
         else:
-            self.path.delete(slice(end, start + 1))
-            self.path.insert(end, opath)
+            self.replace_interval(end, start+1, opath)
 
     """
     Main function that reduces paths

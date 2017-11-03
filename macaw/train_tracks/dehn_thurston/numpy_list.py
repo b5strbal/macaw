@@ -28,12 +28,6 @@ class NumpyList(object):
     def __repr__(self):
         return repr(self._array)
 
-    def delete(self, key):
-        self._array = np.delete(self._array, key)
-
-    def insert(self, key, item):
-        self._array = np.insert(self._array, key, item)
-
     def length(self):
         """
         Return the length of the list.
