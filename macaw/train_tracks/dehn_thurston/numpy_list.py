@@ -26,7 +26,7 @@ class NumpyList(object):
         self._array[key] = item
 
     def __repr__(self):
-        return repr(self._array)
+        return repr(self.view())
 
     def length(self):
         """
