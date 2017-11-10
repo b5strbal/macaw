@@ -69,15 +69,27 @@ class PathReduction(object):
             return 0
 
     """
-    ------------
-    NOTE: THIS FUNCTION IS DEPRECATist or numpy arraED
-
-    def __matches_six(self, subpath):
-        if self.__type(subpath[5]) == 3:
-            subpath.reverse()
-        return subpath[0] == subpath[4] and self.__type(subpath[0]) == 0 and self.__type(subpath[7]) == 0 and subpath[1] == subpath[3] and subpath[3] == subpath[5] and self.__type(subpath[1]) == 1 and self.__type(subpath[2]) == 3 and self.__type(subpath[6]) == 1
-    ------------
+    Gets the successor of an inputted curve
     """
+    def __get_successor(self, curve):
+        if curve == "1":
+            return "2"
+        elif curve == "2":
+            return "3"
+        else:
+            return "1"
+
+    """
+    Gets the other curve given two curves
+    """
+    def __get_third(self, c1, c2):
+        if c1 != "1" and c2 != "1":
+            return "1"
+        elif c1 != "2" and c2 != "2":
+            return "2"
+        else:
+            return "3"
+
 
     """
     Removes illegal path with redundant straight-path
@@ -95,10 +107,12 @@ class PathReduction(object):
     def __one(self, start, end):
         s = np.sign(end - start)
         #splices out portion that was identified as backtracing
+        c1 = self.path[start]
+        opath = [c1]
         if s > 0:
             self.path.replace_interval(start, end+1, opath)
         else:
-            self.path.replace_interval(end, start+1, opath)
+            self.path.replace_interval(end, start+1, opath[::-1])
 
     """
     Reduces illegal path that goes from starting point to another point and then circles around
@@ -121,7 +135,7 @@ class PathReduction(object):
         if s > 0:
             self.path.replace_interval(start, end+1, opath)
         else:
-            self.path.replace_interval(end, start+1, opath)
+            self.path.replace_interval(end, start+1, opath[::-1])
 
     """
     Reduces illegal path beginning from starting point, going to the cyclic predecessors,
@@ -150,7 +164,7 @@ class PathReduction(object):
         if s > 0:
             self.path.replace_interval(start, end+1, opath)
         else:
-            self.path.replace_interval(end, start+1, opath)
+            self.path.replace_interval(end, start+1, opath[::-1])
 
     """
     Reduces illegal path beginning from a starting point, going to the point to left that a teardrop
@@ -169,7 +183,7 @@ class PathReduction(object):
         print(self)
         >> Path with form [c1, t1, c1, g1, g2, c3, t3, c3]
     """
-    def four(self, start, end):
+    def __four(self, start, end):
         #assign respective values as outlined in schema
         s = np.sign(end - start)
         c1 = self.path[start]
@@ -184,7 +198,7 @@ class PathReduction(object):
         if s > 0:
             self.path.replace_interval(start, end+1, opath)
         else:
-            self.path.replace_interval(end, start+1, opath)
+            self.path.replace_interval(end, start+1, opath[::-1])
 
     """
     Reduces illegal path beginning from starting point, going to the point to the right that a teardrop
@@ -215,7 +229,7 @@ class PathReduction(object):
         if s > 0:
             self.path.replace_interval(start, end+1, opath)
         else:
-            self.path.replace_interval(end, start+1, opath)
+            self.path.replace_interval(end, start+1, opath[::-1])
 
     """
     Reduces illegal path with teardrop and straight-path assuming an 8-character start to end encoding
@@ -254,25 +268,46 @@ class PathReduction(object):
         if s > 0:
             self.path.replace_interval(start, end+1, opath)
         else:
-            self.path.replace_interval(end, start+1, opath)
+            self.path.replace_interval(end, start+1, opath[::-1])
 
     """
-    Main function that reduces paths
+    Replaces invalid path with corresponding pattern type
     """
-    #TODO concrete examples for documentation and begin working on illegal path checking
+    def __replace(self, patternType, start, end):
+        if patternType == 0:
+            if self.path[start] == self.path[end]:
+                self.__one(start, end)
+                return 0
+        elif patternType == 1:
+            if self.__get_successor(self.path[start + 1]) == self.path[start + 3]:
+                self.__two(start, end)
+                return 0
+            elif self.__get_successor(self.path[start + 1]) == self.path[start + 3]:
+                self.__three(start, end)
+                return 0
+            elif self.path[start + 1] == self.path[start + 3]:
+                self.__four(start, end)
+                return 0
+        elif patternType == 2:
+            self.__five(start, end)
+            return 0
+        elif patternType == 3:
+            self.__six(start, end)
+            return 0
+        elif patternType == 4:
+            self.__five(end, start)
+            return 0
+        elif patternType == 5:
+            self.__six(end, start)
+            return 0
+        else:
+            return -1
+
+
+    """
+    Main function that searches for and reduces paths
+    """
     def reduce(self):
-        interval = 3 #during iteration, the interval determines the groupings in which the function will check for illegal paths
-        #TODO adjust to account for sizes of illegal paths
-        for i in range(len(self.path) - interval): #iterate through path list, but substract interval to avoid index out of bounds
-            sample = self.path[i:i+interval] #this is where you check if the sample matches an illegal type
-            #you may need to swap interval with the size of each specific illegal path
-            #TODO if an illegal path is detected, call your function
-            if(len(self.path) >= i+8):
-                sample6 = self.path[i:i+8]
-                if self.__matches_six(sample6):
-                    self.__six(i)
-
-    def kmp(self, path):
         """
         KMP string search algorithm to find the patterns:
         1. [c1, g1, g2, c2, g2, g1, c1] = [0,1,1,0,1,1,0] = "0110110"
@@ -309,23 +344,24 @@ class PathReduction(object):
         # 0 - pattern1, 1 - pattern234, 2- pattern5, 3- pattern67, 4 - pattern5_rev, 5 - pattern67_rev
         # a match for pattern1 is a match for pattern1_rev
         # a match for pattern234 is a match for pattern2_rev
-        matches = [[], [], [], [], [], []]
 
         # algorithm here -- try to do it all in one pass?
+        #TODO implement search using Aho-Corasick algorithm
         for index in range(0, 6):
             i = 0
             j = 0
             pat = patterns[index]
-            while i <= len(path) - len(pat):
-                while j < len(pat) and path[i + j] == pat[j]:
+            while i <= self.path.length() - len(pat):
+                while j < len(pat) and self.__type(self.path[i + j]) == pat[j]:
                     j += 1
                 if j == 0:
                     i += 1
                 else:
                     if j == len(pat):
-                        matches[index].append(i)
-                    next_alignment = tables[index][j - 1]
-                    i = i + j - next_alignment
-                    j = next_alignment
-
-        return matches
+                        self.__replace(index, i, i + j - 1)
+                        i = max(0, i - len(pat))
+                        j = 0;
+                    else:
+                        next_alignment = tables[index][j - 1]
+                        i = i + j - next_alignment
+                        j = next_alignment
