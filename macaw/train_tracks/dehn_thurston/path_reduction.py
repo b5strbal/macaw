@@ -164,7 +164,7 @@ class PathReduction(object):
     - ``end`` -- the ending index inclusive of the illegal move
 
     EXAMPLE
-        self.path = [c1, g1, g2, c2, t2, c2, g2, g1, c3] #TODO should the last g1 be g3 since you are going to c3?
+        self.path = [c1, g1, g2, c2, t2, c2, g2, g1, c3]
         self.__four(0, 8)
         print(self)
         >> Path with form [c1, t1, c1, g1, g2, c3, t3, c3]
@@ -271,3 +271,55 @@ class PathReduction(object):
                 sample6 = self.path[i:i+8]
                 if self.__matches_six(sample6):
                     self.__six(i)
+
+    def kmp(self, path):
+        """
+        KMP string search algorithm to find the patterns:
+        1. [c1, g1, g2, c2, g2, g1, c1] = [0,1,1,0,1,1,0] = "0110110"
+        2/3/4. [c1, g1, g2, c2, t2, c2, g2, g1, c1] = [0,1,1,0,2,0,1,1,0] = "011020110"
+        5. [c1, g1, g2, c2, t2, c2, T2, c2] = [0,1,1,0,2,0,3,0] = "01102030"
+        6/7. [c1, g1, g2, c2, T2, c2] = [0,1,1,0,3,0] = "011030"
+
+        """
+        pattern1 = [0, 1, 1, 0, 1, 1, 0]          # reverse is same
+        pattern234 = [0, 1, 1, 0, 2, 0, 1, 1, 0]    # reverse is same
+        pattern5 = [0, 1, 1, 0, 2, 0, 3, 0]
+        pattern67 = [0, 1, 1, 0, 3, 0]
+        pattern5_rev = [0, 3, 0, 2, 0, 1, 1, 0]
+        pattern67_rev = [0, 3, 0, 1, 1, 0]
+        patterns = [pattern1, pattern234, pattern5, pattern67, pattern5_rev, pattern67_rev]
+
+        # failure tables
+        failure1 = [0, 0, 0, 1, 2, 3, 4]      # reverse is same
+        failure234 = [0, 0, 0, 1, 0, 1, 2, 3, 4]  # reverse is same
+        failure5 = [0, 0, 0, 1, 0, 1, 0, 1]
+        failure67 = [0, 0, 0, 1, 0, 1]
+        # reversed patterns
+        failure5_rev = [0, 0, 1, 0, 1, 0, 0, 1]
+        failure67_rev = [0, 0, 1, 0, 0, 1]
+        tables = [failure1, failure234, failure5, failure67, failure5_rev, failure67_rev]
+
+        # each list corresponds to matches for the respective patterns
+        # 0 - pattern1, 1 - pattern234, 2- pattern5, 3- pattern67, 4 - pattern5_rev, 5 - pattern67_rev
+        # a match for pattern1 is a match for pattern1_rev
+        # a match for pattern234 is a match for pattern2_rev
+        matches = [[], [], [], [], [], []]
+
+        # algorithm here -- try to do it all in one pass?
+        i = 0
+        j = 0
+        for index in range(0, 6):
+            pat = patterns[index]
+            while i <= len(path) - len(pat):
+                while j <= len(pat) and path[i + j] == pat[j]:
+                    j += 1
+                if j == 0:
+                    i += 1
+                else:
+                    if j == len(pat):
+                        matches[index].append(i)
+                    next_alignment = tables[index][j - 1]
+                    i = i + j - next_alignment
+                    j = next_alignment
+
+        return matches
