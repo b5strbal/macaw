@@ -312,12 +312,12 @@ class PathReduction(object):
         matches = [[], [], [], [], [], []]
 
         # algorithm here -- try to do it all in one pass?
-        i = 0
-        j = 0
         for index in range(0, 6):
+            i = 0
+            j = 0
             pat = patterns[index]
             while i <= len(path) - len(pat):
-                while j <= len(pat) and path[i + j] == pat[j]:
+                while j < len(pat) and path[i + j] == pat[j]:
                     j += 1
                 if j == 0:
                     i += 1
