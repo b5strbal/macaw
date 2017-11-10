@@ -280,6 +280,12 @@ class PathReduction(object):
         5. [c1, g1, g2, c2, t2, c2, T2, c2] = [0,1,1,0,2,0,3,0] = "01102030"
         6/7. [c1, g1, g2, c2, T2, c2] = [0,1,1,0,3,0] = "011030"
 
+        INPUT:
+        List that represents self.path that has been converted with the __type function
+
+        OUTPUT:
+        List of indexes of matches for each pattern
+
         """
         pattern1 = [0, 1, 1, 0, 1, 1, 0]          # reverse is same
         pattern234 = [0, 1, 1, 0, 2, 0, 1, 1, 0]    # reverse is same
