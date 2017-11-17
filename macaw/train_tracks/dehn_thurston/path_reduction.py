@@ -107,13 +107,20 @@ class PathReduction(object):
         self.path = [c1, g1, g2, c2, g2, g1, c1]
         self.__two(0, 6)
         print(self)
-        >> Path with form []
+        >> Path with form [c1]
     """
     def __one(self, start, end):
         s = np.sign(end - start)
         #splices out portion that was identified as backtracing
-        c1 = self.path[start]
-        opath = [c1]
+        if self.path[start] == self.path[end]:
+            c1 = self.path[start]
+            opath = [c1]
+        else:
+            c1 = self.path[start]
+            c2 = self.path[end]
+            g1 = self.path[start + s*1]
+            g2 = self.path[end - s*1]
+            opath = [c1, g1, g2, c2]
         if s > 0:
             self.path.replace_interval(start, end+1, opath)
         else:
@@ -146,6 +153,7 @@ class PathReduction(object):
         #assign respective values as outlined in schema
         s = np.sign(end - start)
         c1 = self.path[start]
+        c2 = self.path[start + s * 3]
         t2 = self.path[start + s * 4]
         T1 = 'R' + c2 + 'L' if t2 == 'R' else 'L' + c2 + 'R'
         opath = [c1, T1, c1]
@@ -383,9 +391,8 @@ class PathReduction(object):
     """
     def __replace(self, patternType, start, end):
         if patternType == 0:
-            if self.path[start] == self.path[end]:
-                self.__one(start, end)
-                return 0
+            self.__one(start, end)
+            return 0
         elif patternType == 1:
             if self.path[start] != self.path[start + 3] and self.path[start + 3] != self.path[start + 8] and self.path[start] != self.path[start + 8]:
                 self.__four(start, end)
