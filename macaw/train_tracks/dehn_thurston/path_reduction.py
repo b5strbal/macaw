@@ -115,6 +115,19 @@ class PathReduction(object):
             self.path.replace_interval(end, start+1, opath[::-1])
 
     """
+    TEST CASE 1
+        Input: [2,-,-,3,-,+,1];
+        output: [2,-,+,1];
+
+        >>> from path_reduction import PathReduction
+        >>> foo = PathReduction(['2', '-', '-', '3', '-', '+', '1'])
+        >>> foo.reduce()
+        >>> print(foo.path)
+        array(['2','-','+','1'],
+            dtype='|S3')
+    """
+
+    """
     Reduces illegal path that goes from starting point to another point and then circles around
     the curve. Ouputs a teardrop around the destination curve
 
@@ -136,6 +149,19 @@ class PathReduction(object):
             self.path.replace_interval(start, end+1, opath)
         else:
             self.path.replace_interval(end, start+1, opath[::-1])
+
+    """
+    TEST CASE 2
+        Input: [2,-,-,3,L,3,-,-,2];
+        Output: [2, L3R, 2];
+
+        >>> from path_reduction import PathReduction
+        >>> foo = PathReduction(['2','-','-','3','L','3','-','-','2'])
+        >>> foo.reduce()
+        >>> print(foo.path)
+        array(['2','L3R','2'],
+            dtype='|S3')
+    """
 
     """
     Reduces illegal path beginning from starting point, going to the cyclic predecessors,
@@ -165,6 +191,19 @@ class PathReduction(object):
             self.path.replace_interval(start, end+1, opath)
         else:
             self.path.replace_interval(end, start+1, opath[::-1])
+
+    """
+    TEST CASE 3
+        Input: [3, -, -, 2, L, 2, -, -, 3];
+        Output: [3, R, 3, R1L, 3];
+
+        >>> from path_reduction import PathReduction
+        >>> foo = PathReduction(['3','-','-','2','L','2','-','-','3'])
+        >>> foo.reduce()
+        >>> print(foo.path)
+        array(['3','R','3','R1L','3'],
+            dtype='|S3')
+    """
 
     """
     Reduces illegal path beginning from a starting point, going to the point to left that a teardrop
@@ -201,6 +240,20 @@ class PathReduction(object):
             self.path.replace_interval(end, start+1, opath[::-1])
 
     """
+    TEST CASE 4
+        Input: [3,-,-,2,L,2,-,+,1];
+        Output: [3,R,3,-,+,1,R,1];
+
+        >>> from path_reduction import PathReduction
+        >>> foo = PathReduction(['3','-','-','2','L','2','-','+','1'])
+        >>> foo.reduce()
+        >>> print(foo.path)
+        array(['3','R','3','-','+','1','R','1'],
+            dtype='|S3')
+
+    """
+
+    """
     Reduces illegal path beginning from starting point, going to the point to the right that a teardrop
     can form around, circles around that point, makes a teardrop around the third point from the second
     point, and ends back at the second point.
@@ -230,6 +283,19 @@ class PathReduction(object):
             self.path.replace_interval(start, end+1, opath)
         else:
             self.path.replace_interval(end, start+1, opath[::-1])
+
+    """
+    TEST CASE 5
+        Input: [1,+,-,2,R,2,R3L,2];
+        Output: [1,L,1,+,-,2];
+
+        >>> from path_reduction import PathReduction
+        >>> foo = PathReduction(['1','+','-','2','R','2','R3L','2'])
+        >>> foo.reduce()
+        >>> print(foo.path)
+        array(['1','L','1','+','-','2'],
+            dtype='|S3')
+    """
 
     """
     Reduces illegal path with teardrop and straight-path assuming an 8-character start to end encoding
@@ -269,6 +335,42 @@ class PathReduction(object):
             self.path.replace_interval(start, end+1, opath)
         else:
             self.path.replace_interval(end, start+1, opath[::-1])
+
+    """
+    TEST CASE 6.1
+        Input: [1,+,-,2,R1L,2];
+        Output: [1,R,1,+,-,2];
+
+        >>> from path_reduction import PathReduction
+        >>> foo = PathReduction(['1','+','-','2','R1L','2'])
+        >>> foo.reduce()
+        >>> print(foo.path)
+        array(['1','R','1','+','-','2'],
+            dtype='|S3')
+
+    TEST CASE 6.2
+        Input: [1,+,-,2,R3L,2];
+        Output: [1,R,1,+,-,2,R,2];
+
+        >>> from path_reduction import PathReduction
+        >>> foo = PathReduction(['1','+','-','2','R3L','2'])
+        >>> foo.reduce()
+        >>> print(foo.path)
+        array(['1','R','1','+','-','2','R','2'],
+            dtype='|S3')
+
+    TEST CASE 6.3
+        Input: [2,+,-,1,R3L,1];
+        Output: [2,L,2,+,-,1,L,1];
+
+        >>> from path_reduction import PathReduction
+        >>> foo = PathReduction(['2','+','-','1','R3L','1'])
+        >>> foo.reduce()
+        >>> print (foo.path)
+        array(['1','R','1','+','-','2','R','2'],
+            dtype='|S3')
+
+    """
 
     """
     Replaces invalid path with corresponding pattern type
