@@ -38,15 +38,20 @@ class PathReduction(object):
         Path with form ['']
 
     """
+
     #TODO concrete examples for documentation
     def __init__(self, path):
-        self.path = NumpyList(np.array(path, dtype="S3"), np.array([len(path)]), False)
+        VIEW_LENGTH = len(path)
+        MAX_BUFFER_SIZE = 30
+        for i in range(MAX_BUFFER_SIZE):
+            path.append('')
+        self.path = NumpyList(np.array(path, dtype="S3"), np.array([VIEW_LENGTH]), False)
 
     """
     Defines the representation of the object in print stream
     """
     def __repr__(self):
-        return "Path with form " + repr(self.path)
+        return "Path with form " + repr(self.path.view())
 
     """
     Returns a number which represents the type of element represented
@@ -194,8 +199,8 @@ class PathReduction(object):
 
     """
     TEST CASE 3
-        Input: [3, -, -, 2, L, 2, -, -, 3];
-        Output: [3, R, 3, R1L, 3];
+        Input: [3, -, -, 2, L, 2, -, -, 3]
+        Output: [3, R, 3, R1L, 3]
 
         >>> from path_reduction import PathReduction
         >>> foo = PathReduction(['3','-','-','2','L','2','-','-','3'])
@@ -217,7 +222,7 @@ class PathReduction(object):
     - ``end`` -- the ending index inclusive of the illegal move
 
     EXAMPLE
-        self.path = [c1, g1, g2, c2, t2, c2, g2, g1, c3]
+        self.path = [c1, g1, g2, c2, t2, c2, g2, g3, c3]
         self.__four(0, 8)
         print(self)
         >> Path with form [c1, t1, c1, g1, g2, c3, t3, c3]
@@ -228,12 +233,13 @@ class PathReduction(object):
         c1 = self.path[start]
         g1 = self.path[start + s * 1]
         g2 = self.path[start + s * 2]
+        g3 = self.path[start + s * 7]
         t2 = self.path[start + s * 4]
         c3 = self.path[start + s * 8]
         t1 = 'L' if t2 == 'R' else 'R'
         t3 = 'L' if t2 == 'R' else 'R'
         #delete illegal portion and insert edited path
-        opath = np.array([c1, t1, c1, g1, g2, c3, t3, c3])
+        opath = np.array([c1, t1, c1, g1, g3, c3, t3, c3])
         if s > 0:
             self.path.replace_interval(start, end+1, opath)
         else:
@@ -321,7 +327,7 @@ class PathReduction(object):
         c2 = self.path[start + s * 3]
         T2 = self.path[start + s * 4]
         if T2[1] == c1:
-            t1 = 'L' if T2.startswith('R') else 'R'
+            t1 = 'R' if T2.startswith('R') else 'L'
             opath = [c1, t1, c1, g1, g2, c2]
         else: #T2 contains c3
             if (int(c1) + 1) % 3 == int(c2): #c2 is cyclic successor
@@ -367,7 +373,7 @@ class PathReduction(object):
         >>> foo = PathReduction(['2','+','-','1','R3L','1'])
         >>> foo.reduce()
         >>> print (foo.path)
-        array(['1','R','1','+','-','2','R','2'],
+        array(['2','L','2','+','-','1','L','1'],
             dtype='|S3')
 
     """
@@ -381,15 +387,17 @@ class PathReduction(object):
                 self.__one(start, end)
                 return 0
         elif patternType == 1:
-            if self.__get_successor(self.path[start + 1]) == self.path[start + 3]:
+            if self.path[start] != self.path[start + 3] and self.path[start + 3] != self.path[start + 8] and self.path[start] != self.path[start + 8]:
+                self.__four(start, end)
+                return 0;
+            if self.__get_successor(self.path[start]) == self.path[start + 3]:
                 self.__two(start, end)
                 return 0
-            elif self.__get_successor(self.path[start + 1]) == self.path[start + 3]:
+            elif self.path[start] == self.__get_successor(self.path[start + 3]):
                 self.__three(start, end)
                 return 0
-            elif self.path[start + 1] == self.path[start + 3]:
-                self.__four(start, end)
-                return 0
+            else:
+                return -1
         elif patternType == 2:
             self.__five(start, end)
             return 0
@@ -460,10 +468,15 @@ class PathReduction(object):
                     i += 1
                 else:
                     if j == len(pat):
-                        self.__replace(index, i, i + j - 1)
-                        i = max(0, i - len(pat))
-                        j = 0;
+                        status = self.__replace(index, i, i + j - 1)
+                        if status == 0:
+                            i = max(0, i - len(pat))
+                            j = 0;
+                        else:
+                            next_alignment = tables[index][j - 1]
+                            i += j - next_alignment
+                            j = next_alignment
                     else:
                         next_alignment = tables[index][j - 1]
-                        i = i + j - next_alignment
+                        i += j - next_alignment
                         j = next_alignment
