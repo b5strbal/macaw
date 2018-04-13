@@ -13,6 +13,10 @@ python setup.py install
 ```
 from the directory containing the `setup.py` file. Without root access you can run ``python setup.py install --user``.
 
+## Dependencies
+
+The program currently runs under Python 2.7, and requires the Numpy and NetworkX packages. It does not require Sage.
+
 ## Current functionality
 
 1) Defining the Humphries generators on closed surfaces.
