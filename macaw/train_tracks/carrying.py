@@ -27,19 +27,30 @@ from .train_track import SMALL_COLLAPSIBLE, FoldError, TrainTrack
 
 
 class CarryingMap(object):
+    """A train track carried on another train track.
+
+    We represent the carried (small) train track in a neighborhood of the
+    carrying (large) train train track as follows. For each branch of the small
+    train track, we record the number of times in enters each branch of the
+    large train track. For each switch, we record which switch of the large
+    train track it maps to.
+
+    Small switches (e.g., switches of the small train track) are groups to
+    clicks. Two small switches are in the same click if they are connected by a
+    sequence of "collapsed branches": branches that do not go into any branch
+    of the large train track.
+
+    At each large switch, the clicks divide the cross section to intervals.
+    Every small branch passing through the large switch passes through one of
+    the intervals. We also keep track of how many times each small branch
+    passes through each interval.
+
+    At each switch of the large train track (large switch for short), each tree
+    of small train tracks
+
     """
-    A train track carried on another train track.
-
-    We represent the carried (small) train track in a neighborhood of the carrying (large) train train track as follows. For each branch of the small train track, we record the number of times in enters each branch of the large train track. For each switch, we record which switch of the large train track it maps to. 
-    
-    Small switches (e.g., switches of the small train track) are groups to clicks. Two small switches are in the same click if they are connected by a sequence of "collapsed branches": branches that do not go into any branch of the large train track.
-
-    At each large switch, the clicks divide the cross section to intervals. Every small branch passing through the large switch passes through one of the intervals. We also keep track of how many times each small branch passes through each interval.
-
-    At each switch of the large train track (large switch for short), each tree of small train tracks
-    """
-    def __init__(self, large_tt, small_tt, cusp_map, 
-                    large_branch_preimages, large_switch_data):
+    def __init__(self, large_tt, small_tt, cusp_map,
+                 large_branch_preimages, large_switch_data):
         """l = number of branches of the large train track
         s = number of branches of the small train track
         c = number of cusps of the small train track
@@ -50,9 +61,9 @@ class CarryingMap(object):
 
         - ``small_tt`` -- the small (carried) train track
 
-        - ``paths`` -- a 2D array whose rows
-        correspond to branches and cusps of the small train
-        track. The columns correspond to branches of the large train track and intervals.
+        - ``paths`` -- a 2D array whose rows correspond to branches and cusps
+        of the small train track. The columns correspond to branches of the
+        large train track and intervals.
 
         - ``cusp_map`` -- A 1D array specifying the image of any cusp in the
           small train track in the large train track.
@@ -81,18 +92,21 @@ class CarryingMap(object):
             max_num_intervals, dtype=int)
         self._large_switch_to_extremal_interval = np.zeros(
             (2, max_num_large_switches), dtype=int)
-        # 2D array containing how many times paths map onto branches of the large train track and how many times they intersect intervals.
-        # Rows correspond to paths, columns to branches of the large train track and intervals.
+        # 2D array containing how many times paths map onto branches of the
+        # large train track and how many times they intersect intervals. Rows
+        # correspond to paths, columns to branches of the large train track and
+        # intervals.
         self._paths = np.zeros(
-            (max_num_small_branches+max_num_small_switches, 
+            (max_num_small_branches+max_num_small_switches,
              max_num_large_branches+max_num_intervals),
             dtype=object)
         # The first ``self._cusp_index_offset`` rows of self._paths
         # correspond to branches, the rest correspond to cusps.
         self._cusp_index_offset = max_num_small_switches
-        # The first ``interval_index_offset`` columns of self._paths correspond to branches of the large train track. The rest corresponds to intervals.
+        # The first ``interval_index_offset`` columns of self._paths correspond
+        # to branches of the large train track. The rest corresponds to
+        # intervals.
         self._interval_index_offset = max_num_large_switches
-
 
         interval = 0
         click = 0
@@ -123,7 +137,6 @@ class CarryingMap(object):
                 self.set_click_to_interval(click, LEFT, interval)
                 for small_sw in click_set:
                     self.set_small_switch_to_click(small_sw, click)
-        
 
     # ------------------------------------------------------------------
     # CONSTRUCTORS
@@ -156,7 +169,6 @@ class CarryingMap(object):
         # branchpath.
         hb_between_branches = np.zeros((2, max_num_branches, max_num_branches),
                                        dtype=object)
-
 
         # The number of cusps equals the number of switches for trivalent train
         # tracks, so the latter is a good number for the number of rows.
@@ -216,7 +228,7 @@ class CarryingMap(object):
 
     def large_cusp_to_small_cusp(self, large_cusp):
         """Return the small cusp that maps to a large cusp.
-        
+
         OUTPUT:
         the corresponding small cusp or (if no small cusp maps to the large cusp) None
         """
@@ -230,7 +242,7 @@ class CarryingMap(object):
         """
         corrected_side = side if click > 0 else (side+1)%2
         return np.sign(click)*self._click_to_interval[corrected_side][abs(click)-1]
-    
+
     def interval_to_click(self, interval, side):
         """Return the click on the specified side of the interval.
         """
@@ -245,7 +257,7 @@ class CarryingMap(object):
     def large_switch_to_extremal_interval(self, large_switch, side):
         """Return the leftmost or rightmost interval corresponding to a switch of the large train track.
         """
-        corrected_side = side if large_switch > 0 else (side+1)%2        
+        corrected_side = side if large_switch > 0 else (side+1)%2
         return np.sign(large_switch) * self._large_switch_to_extremal_interval[corrected_side][abs(large_switch)-1]
 
     def click_to_large_switch(self, click):
@@ -271,7 +283,8 @@ class CarryingMap(object):
         return self._paths[:, idx]
 
     def paths_in_large_branch(self, branch):
-        """Return a view of the array counting the branches and cusp paths in a branch of the large train track.
+        """Return a view of the array counting the branches and cusp paths in a
+        branch of the large train track.
 
         INPUT:
 
@@ -280,7 +293,8 @@ class CarryingMap(object):
 
         OUTPUT:
 
-        a view of the 1D array containing how many times each branch and cusp path of the small train track shows up in this branch.
+        a view of the 1D array containing how many times each branch and cusp
+        path of the small train track shows up in this branch.
 
         """
         return self.get_intersections(BRANCH, branch)
@@ -294,7 +308,9 @@ class CarryingMap(object):
     def _get_zero_intersection_array(self):
         """Return a temporary intersection array filled with zeros.
 
-        This array is not part of self._paths, but its length and type is the same as slices of that array.
+        This array is not part of self._paths, but its length and type is the
+        same as slices of that array.
+
         """
         temp = self._paths[:, 0]
         return np.zeros(temp.shape[0], dtype=temp.dtype)
@@ -310,7 +326,8 @@ class CarryingMap(object):
         assert False
 
     def path_coordinates(self, typ, branch_or_cusp):
-        """Return the path coordinates (intersection with branches and intervals) of a branch or cusp of the small train track.
+        """Return the path coordinates (intersection with branches and
+        intervals) of a branch or cusp of the small train track.
         """
         idx = self._path_idx(typ, branch_or_cusp)
         return self._paths[idx]
@@ -337,21 +354,25 @@ class CarryingMap(object):
     #     return self._paths[idx]
 
     def collapsed_branches_from_small_switch(self, small_switch):
-        """Iterator on the collapsed branches emanating from a switch of the small train track."""
+        """Iterator on the collapsed branches emanating from a switch of the
+        small train track."""
         for br in self._small_tt.outgoing_branches(small_switch):
             if self.is_branch_collapsed(br):
                 yield br
 
     def get_connected_switches(self, branch, reversed_direction=False):
-        """Return an iterator for the switches connected to the endpoint of a branch by collapsed branches. 
+        """Return an iterator for the switches connected to the endpoint of a
+        branch by collapsed branches.
 
-        The specified branch is not allowed to use as a connection. Hence the outcome is a component of a click minus a switch.
-        
+        The specified branch is not allowed to use as a connection. Hence the
+        outcome is a component of a click minus a switch.
+
         The returned switches all look in the same direction as ``branch``.
 
         INPUT:
         - ``branch`` -- a branch of the small train track
-        - ``reversed_direction`` -- leave it as False; it is only used for the recursion
+        - ``reversed_direction`` -- leave it as False; it is only used for the
+        recursion
 
         """
         switch = self._small_tt.branch_endpoint(branch)
@@ -383,7 +404,8 @@ class CarryingMap(object):
                 yield -sw
 
     def small_hb_to_large_hb(self, small_branch):
-        """Return the image of a half-branch of the small train track in the large train track.
+        """Return the image of a half-branch of the small train track in the
+        large train track.
         """
         small_sw = self._small_tt.branch_endpoint(-small_branch)
         click = self.small_switch_to_click(small_sw)
@@ -401,7 +423,7 @@ class CarryingMap(object):
     # ----------------------------------------------------------------
     # UTILITY METHODS / SETTERS
     # ----------------------------------------------------------------
-    
+
     def append(self, typ1, append_to_num, typ2, appended_num,
                with_sign=1):
         """Append a branch or cusp path to another.
@@ -409,17 +431,17 @@ class CarryingMap(object):
         path1 = self.path_coordinates(typ1, append_to_num)
         path2 = self.path_coordinates(typ2, appended_num)
         path1 += with_sign*path2
-    
+
     def append_path(self, typ, append_to_num, path,
-               with_sign=1):
+                    with_sign=1):
         """Append a custom path to a branch or cusp path.
 
         """
         old_path = self.path_coordinates(typ, append_to_num)
         old_path += with_sign * path
 
-    def append_in_large(self, typ1, append_to_num, typ2, appended_num, 
-                                     with_sign=1):
+    def append_in_large(self, typ1, append_to_num, typ2, appended_num,
+                        with_sign=1):
         """Add the paths in a branch of the large train track to another branch.
         """
         x1 = self.paths_in_large_branch(add_to_branch)
@@ -445,7 +467,9 @@ class CarryingMap(object):
 
         INPUT:
         - ``interval`` -- the interval into which the new click is inserted
-        - ``new_interval_side`` -- LEFT or RIGHT, the side on which the new interval is created. ``interval`` becomes the interval on the other side
+        - ``new_interval_side`` -- LEFT or RIGHT, the side on which the new
+        interval is created. ``interval`` becomes the interval on the other
+        side
 
         OUTPUT:
         - the new interval and the new click
@@ -455,9 +479,12 @@ class CarryingMap(object):
         self.set_click_to_interval(click, (new_interval_side+1) % 2, interval)
         self.set_click_to_interval(click, new_interval_side, new_interval)
         right_click = self.interval_to_click(interval, new_interval_side)
-        self.set_interval_to_click(new_interval, new_interval_side, right_click)
-        self.set_click_to_interval(right_click, (new_interval_side+1) % 2, new_interval)
-        self.set_interval_to_click(new_interval, (new_interval_side+1) % 2, click)
+        self.set_interval_to_click(new_interval, new_interval_side,
+                                   right_click)
+        self.set_click_to_interval(right_click, (new_interval_side+1) % 2,
+                                   new_interval)
+        self.set_interval_to_click(new_interval, (new_interval_side+1) % 2,
+                                   click)
         self.set_interval_to_click(interval, new_interval_side, click)
         return new_interval, click
 
@@ -470,7 +497,9 @@ class CarryingMap(object):
     def delete_interval(self, interval):
         """Delete an interval.
 
-        This involves zeroing out all intersections and setting the neighboring clicks to 0.
+        This involves zeroing out all intersections and setting the neighboring
+        clicks to 0.
+
         """
         self.erase_interval_intersections(interval)
         for side in [LEFT, RIGHT]:
@@ -496,9 +525,11 @@ class CarryingMap(object):
             self.set_click_to_interval(click, side, 0)
 
     def insert_click_next_to_switch(self, small_switch, side):
-        """Insert a click in the interval on the specified side of a switch of the small train track.
+        """Insert a click in the interval on the specified side of a switch of
+        the small train track.
 
-        The new interval (the one without intersections) is the one between the newly created click and the click of the switch.
+        The new interval (the one without intersections) is the one between the
+        newly created click and the click of the switch.
 
         OUTPUT:
         - the new interval and the new click
@@ -506,7 +537,8 @@ class CarryingMap(object):
         click = self.small_switch_to_click(small_switch)
         interval = self.click_to_interval(click, side)
         return self.insert_click_in_interval(interval, (side+1)%2)
-        # TODO: This duplicates code of insert_click_in_interval() in order to retrieve offset.
+        # TODO: This duplicates code of insert_click_in_interval() in order to
+        # retrieve offset.
 
     def small_switch_to_large_switch(self, small_switch):
         """Return the image of a switch of the small train track in the large
@@ -520,7 +552,7 @@ class CarryingMap(object):
         """
         click = self.small_switch_to_click(small_switch)
         return self.click_to_interval(click, side)
- 
+
     def set_intersections_with_interval(self, interval, new_data):
         """Set the intersection data an interval to the specified data.
         """
@@ -536,8 +568,10 @@ class CarryingMap(object):
         idx = self._path_idx(b_c_typ, branch_or_cusp)
         x[idx] += with_sign
 
-    def add_intersection(self, b_c_typ, branch_or_cusp, b_i_typ, branch_or_interval, with_sign=1):
-        """Add to an intersection of a small branch or cusp with a large branch or interval (or subtract if ``with_sign`` is -1).
+    def add_intersection(self, b_c_typ, branch_or_cusp, b_i_typ,
+                         branch_or_interval, with_sign=1):
+        """Add to an intersection of a small branch or cusp with a large branch
+        or interval (or subtract if ``with_sign`` is -1).
         """
         x = self.get_intersections(b_i_typ, branch_or_interval)
         idx = self._path_idx(b_c_typ, branch_or_cusp)
@@ -561,12 +595,14 @@ class CarryingMap(object):
     def set_click_to_interval(self, click, side, interval):
         """Set the interval on the specified side of the click."""
         corrected_side = side if click > 0 else (side+1)%2
-        self._click_to_interval[corrected_side][abs(click)-1] = np.sign(click)*interval
+        self._click_to_interval[
+            corrected_side][abs(click)-1] = np.sign(click)*interval
 
     def set_interval_to_click(self, interval, side, click):
         """Set the click on the specified side of the interval."""
         corrected_side = side if interval > 0 else (side+1)%2
-        self._interval_to_click[corrected_side][abs(interval)-1] = np.sign(interval)*click
+        self._interval_to_click[corrected_side][
+            abs(interval)-1] = np.sign(interval)*click
 
     def paths_from_click(self, click):
         """Return the array of paths outgoing from a click.
@@ -585,8 +621,9 @@ class CarryingMap(object):
         return total
 
     def accumulate_intersections_at_large_switch(
-        self, large_switch, start_side):
-        """Iterator accumulating intersections with a switch of the large train track from the specified side.
+            self, large_switch, start_side):
+        """Iterator accumulating intersections with a switch of the large train
+        track from the specified side.
         """
         total = self._get_zero_intersection_array()
         interval = self.large_switch_to_extremal_interval(
@@ -600,7 +637,8 @@ class CarryingMap(object):
             interval = self.click_to_interval(click, (start_side+1) % 2)
         # yield (None, None, total)
 
-    def paths_left_or_right_of_click_or_interval(self, typ, click_or_interval, side):
+    def paths_left_or_right_of_click_or_interval(
+            self, typ, click_or_interval, side):
         """Return the array of outgoing paths to the left or right of the interval.
         """
         if typ == INTERVAL:
@@ -610,23 +648,27 @@ class CarryingMap(object):
         else:
             assert False
         prev_total = self._get_zero_intersection_array()
-        for (current_typ, current_num, total) in self.accumulate_intersections_at_large_switch(
-            large_switch, side):
+        for (current_typ, current_num, total) in \
+            self.accumulate_intersections_at_large_switch(
+                large_switch, side):
             if typ == current_typ and current_num == click_or_interval:
                 return prev_total
             prev_total = total
 
     def accumulate_outgoing_paths(self, large_switch, start_side):
-        """Iterator accumulating the outgoing paths from a switch of the large train track, along outgoing branches starting from the specified side.
+        """Iterator accumulating the outgoing paths from a switch of the large
+        train track, along outgoing branches starting from the specified side.
         """
         total = self._get_zero_intersection_array()
-        for lg_br in self._large_tt.outgoing_branches(large_switch, start_side):
+        for lg_br in self._large_tt.outgoing_branches(large_switch,
+        start_side):
             # TODO: collapsed cusp
             total += self.paths_in_large_branch(lg_br)
             yield (lg_br, total)
 
     def paths_left_or_right_of_large_branch(self, large_branch, side):
-        """Return the array of paths outgoing from a large switch on the specified side of an outgoing branch.
+        """Return the array of paths outgoing from a large switch on the
+        specified side of an outgoing branch.
         """
         large_switch = self._large_tt.branch_endpoint(-large_branch)
         for lg_br, total in self.accumulate_outgoing_paths(large_switch, side):
@@ -634,48 +676,61 @@ class CarryingMap(object):
             if lg_br == large_branch:
                 return total-self.get_intersections(BRANCH, large_branch)
 
-    def position_in_branch_to_large_switch(self, large_branch, paths_on_side, side):
-        """Convert the position on a branch of the large train track to position at the ending switch of the branch.
+    def position_in_branch_to_large_switch(self, large_branch, paths_on_side,
+                                           side):
+        """Convert the position on a branch of the large train track to
+        position at the ending switch of the branch.
         """
-        total = self.paths_left_or_right_of_large_branch(-large_branch, (side+1) % 2)
+        total = self.paths_left_or_right_of_large_branch(-large_branch,
+                                                         (side+1) % 2)
         # TODO: collapsed cusp
         return total + paths_on_side
 
     def position_in_large_switch_to_interval(self, large_switch, paths_on_side,
-    side):
-        """Convert the position at a switch of the large train track to position in an interval.
+                                             side):
+        """Convert the position at a switch of the large train track to
+        position in an interval.
         """
         # TODO: collapsed cusp
-        for (typ, num, interval_total) in self.accumulate_intersections_at_large_switch(
-            large_switch, side):
+        for (typ, num, interval_total) in \
+            self.accumulate_intersections_at_large_switch(
+                large_switch, side):
             if all(interval_total >= paths):
                 return typ, num, interval_total-paths
 
-    def position_in_interval_to_large_switch(self, interval, paths_on_side, side):
-        """Convert the position at an interval to position at the large switch."""
+    def position_in_interval_to_large_switch(self, interval, paths_on_side,
+                                             side):
+        """Convert the position at an interval to position at the large
+        switch."""
         # TODO: collapsed cusp
         total = self.paths_left_or_right_of_interval(interval, side)
         return paths_on_side + total
 
     def position_in_large_switch_to_branch(self, large_switch, paths_on_side,
-    side):
-        """Convert the position at a switch of the large train track to position in an outgoing large branch."""
+                                           side):
+        """Convert the position at a switch of the large train track to
+        position in an outgoing large branch.
+        """
         # TODO: collapsed cusp
-        for branch, total in self.accumulate_outgoing_paths(large_switch, side):
+        for branch, total in self.accumulate_outgoing_paths(large_switch,
+                                                            side):
             if all(total >= paths_on_side):
-                return paths_on_side-(total-self.get_intersections(BRANCH, branch))
+                return paths_on_side-(total-self.get_intersections(BRANCH,
+                                                                   branch))
 
     def find_interval_containing_large_cusp(self, large_cusp):
         """Find the interval containing a cusp of the large train track.
 
         Two things can happen:
-        - if a cusp of the small train track is pushed onto the large cusp, then the containing interval is not defined. This happens if and only if the cusp path corresponding to the large cusp is collapsed.
+        - if a cusp of the small train track is pushed onto the large cusp,
+        then the containing interval is not defined. This happens if and only
+        if the cusp path corresponding to the large cusp is collapsed.
         - Otherwise there is a containing interval.
 
         INPUT:
         - ``large_cusp`` -- a cusp of the large train track
 
-        OUTPUT: 
+        OUTPUT:
         If it is contained in an interval, then a 2-tuple is returned.
         - the interval
         - the intersection data in the right half of the interval
@@ -687,7 +742,8 @@ class CarryingMap(object):
 
         # count the total number of strands on the left of the cusp in the
         # branches of the large train track
-        for branch, total in self.accumulate_outgoing_paths(large_switch, LEFT):
+        for branch, total in self.accumulate_outgoing_paths(large_switch,
+                                                            LEFT):
             if large_tt.branch_next_to_cusp(large_cusp, LEFT) == branch:
                 break
 
@@ -701,7 +757,8 @@ class CarryingMap(object):
             if any(diff > 0):
                 raise ValueError("The large cusp is contained in a click, not in an interval!")
             else:
-                # otherwise the click is at the very beginning of the next interval
+                # otherwise the click is at the very beginning of the next
+                # interval
                 # TODO: collapsed cusp
                 click = num
                 return self.click_to_interval(click, RIGHT), diff
@@ -736,36 +793,44 @@ class CarryingMap(object):
                 self.add_intersection_with_interval(
                     CUSP, cusp_to_append_to, interval)
             else:
-                # If the large branch is not collapsed, but the small branch is, then our click breaks apart after the peeling.
+                # If the large branch is not collapsed, but the small branch
+                # is, then our click breaks apart after the peeling.
                 new_int, new_click = \
                     self.insert_click_next_to_switch(interval, RIGHT)
                 for sw in self.get_connected_switches(peeled_branch):
                     self.set_small_switch_to_click(sw, new_click)
 
-        # If the large branch is collapsed, there is nothing to do, because the peeling does not change how long the small branch is. If the small branch is also collapsed, the clicks still do not change.
+        # If the large branch is collapsed, there is nothing to do, because the
+        # peeling does not change how long the small branch is. If the small
+        # branch is also collapsed, the clicks still do not change.
 
     def fold_in_small(self, folded_branch, fold_onto_branch, fold_direction):
         """Perform a fold in the small train track is possible.
         """
-        # Trying to isotope the endpoint of ``fold_onto_branch`` as close to the start point as possible...
+        # Trying to isotope the endpoint of ``fold_onto_branch`` as close to
+        # the start point as possible...
         small_tt = self._small_tt
         end_sw = small_tt.branch_endpoint(fold_onto_branch)
         start_sw = small_tt.branch_endpoint(-fold_onto_branch)
         self.isotope_switch_recursively(end_sw, stop_switch=start_sw)
 
-        # ... and isotoping the endpoint of ``folded_branch`` as far as possible.
+        # ... and isotoping the endpoint of ``folded_branch`` as far as
+        # possible.
         folded_end_sw = small_tt.branch_endpoint(folded_branch)
         self.isotope_switch_recursively(-folded_end_sw)
 
-        # In order for the fold to be possible, after the isotopy, fold_onto_branch has to be shorter or equal than the cusp path between the folded and the fold_onto_branch. 
-        # Also, the folded_branch has to be at least as long as the fold_onto_branch.
+        # In order for the fold to be possible, after the isotopy,
+        # fold_onto_branch has to be shorter or equal than the cusp path
+        # between the folded and the fold_onto_branch. Also, the folded_branch
+        # has to be at least as long as the fold_onto_branch.
         cusp = small_tt.adjacent_cusp(folded_branch, fold_direction)
         cusp_path = self.path_coordinates(CUSP, cusp)
         fold_onto_path = self.path_coordinates(BRANCH, fold_onto_branch)
         folded_path = self.path_coordinates(BRANCH, folded_branch)
         if is_smaller_or_equal(fold_onto_path, cusp_path) and \
                 is_smaller_or_equal(fold_onto_path, folded_path):
-            self.append(BRANCH, folded_branch, BRANCH, fold_onto_branch, with_sign=-1)
+            self.append(BRANCH, folded_branch, BRANCH, fold_onto_branch,
+                        with_sign=-1)
             self.append(CUSP, cusp, BRANCH, fold_onto_branch, with_sign=-1)
 
             if not self.is_branch_collapsed(folded_branch):
@@ -779,22 +844,32 @@ class CarryingMap(object):
                     CUSP, cusp, interval, -1
                 )
             elif not self.self.is_branch_collapsed(fold_onto_branch):
-                # Just like in the case of peeling there is a scenario
-                # when clicks get merged. This happens when the folded and fold_onto branches where not collapsed but they had the same length.
+                # Just like in the case of peeling there is a scenario when
+                # clicks get merged. This happens when the folded and fold_onto
+                # branches where not collapsed but they had the same length.
                 fold_onto_click = self.small_switch_to_click(fold_onto_branch)
                 folded_click = self.small_switch_to_click(folded_branch)
                 for sw in self.get_connected_switches(folded_branch):
                     self.set_small_switch_to_click(sw, fold_onto_click)
                 self.delete_click_and_merge(folded_click, RIGHT)
         else:
-            raise FoldError("The folded small train track is not carried on the large train track!")
+            raise FoldError("The folded small train track is not carried on \
+            the large train track!")
 
     def peel_in_large(self, peeled_branch, peel_off_of, peeled_side):
         """Update the carrying map after peeling in the large train track.
 
-        The small train track has to be a measured train track. If there is a way to peel the large train track so that the small train track is carried, then the small train track is not changed. (In this case, the measure on the small train track does not play a role.) If there is no way to peel the large train track so that the small train track is carried, then the small train track is peeled according to the measure to make it carried. 
+        The small train track has to be a measured train track. If there is a
+        way to peel the large train track so that the small train track is
+        carried, then the small train track is not changed. (In this case, the
+        measure on the small train track does not play a role.) If there is no
+        way to peel the large train track so that the small train track is
+        carried, then the small train track is peeled according to the measure
+        to make it carried.
+
         """
-        # First we see if there is any obstruction for the peeling and if there is, we try to remove it by isotoping.
+        # First we see if there is any obstruction for the peeling and if there
+        # is, we try to remove it by isotoping.
         lg_cusp = self._large_tt.adjacent_cusp(peeled_branch, peeled_side)
         sm_cusp = self.large_cusp_to_small_cusp(lg_cusp)
         if self.is_cusp_collapsed(sm_cusp):
@@ -804,21 +879,24 @@ class CarryingMap(object):
             self.isotope_switch_recursively(-sm_sw)
 
         if self.is_cusp_collapsed(sm_cusp):
-            # If the the cusp path is still collapsed, then the small train track needs to be split.
+            # If the the cusp path is still collapsed, then the small train
+            # track needs to be split.
             # TODO: add splitting code
             pass
 
-        # If the cusp path is not collapsed, then we can peel.
-        # First we isotope all clicks the part of the large switch that is getting peeled off of the switch. Since this part is is going to be in a middle of a large branch, not at a switch, no switches are allowed here.
-        
-        # The interval finding should not return an error, since the cusp path is not collapsed, hence the large cusp must be in an interval.
+        # If the cusp path is not collapsed, then we can peel. First we isotope
+        # all clicks the part of the large switch that is getting peeled off of
+        # the switch. Since this part is is going to be in a middle of a large
+        # branch, not at a switch, no switches are allowed here.
+
+        # The interval finding should not return an error, since the cusp path
+        # is not collapsed, hence the large cusp must be in an interval.
         interval = self.find_interval_containing_large_cusp(lg_cusp)
         while True:
             click = self.interval_to_click(interval, (peeled_side+1) % 2)
             if click == None:
                 break
-            
-        
+
         lg_sw = self._large_tt.branch_endpoint(-peeled_branch)
 
         self.append_in_large(BRANCH, peel_off_of, BRANCH, peeled_branch, -1)
@@ -826,7 +904,7 @@ class CarryingMap(object):
     def fold_in_large(self, folded_branch, fold_onto_branch, fold_direction):
         """Perform a fold in the large train track.
         """
-        # Adding the intersections with the folded branch to fold_onto_branch.. 
+        # Adding the intersections with the folded branch to fold_onto_branch..
         self.append_in_large(BRANCH, fold_onto_branch, BRANCH, folded_branch)
         # ... and also the left- or rightmost interval at a switch
         lg_sw = self._large_tt.branch_endpoint(fold_onto_branch)
@@ -834,7 +912,8 @@ class CarryingMap(object):
             lg_sw, (fold_direction+1) % 2)
         self.append_in_large(INTERVAL, interval, BRANCH, folded_branch)
 
-        # Also add branch and interval intersection with a cusp path, since the cusp path at between the folded branches become longer.
+        # Also add branch and interval intersection with a cusp path, since the
+        # cusp path at between the folded branches become longer.
         lg_cusp = self._large_tt.adjacent_cusp(folded_branch, fold_direction)
         sm_cusp = self.large_cusp_to_small_cusp(lg_cusp)
         self.add_intersection(CUSP, sm_cusp, BRANCH, fold_onto_branch)
@@ -849,9 +928,9 @@ class CarryingMap(object):
         # do we need to do anything here?
         pass
 
-
     def begin_switch_isotopy(self, switch):
-        """Update clicks, intervals and intersections when after the initial part of a switch isotopy.
+        """Update clicks, intervals and intersections when after the initial
+        part of a switch isotopy.
 
         ---------------------------------------------------------------------
         Breaking up clicks at start
@@ -867,10 +946,12 @@ class CarryingMap(object):
         """
         large_switch = self.small_switch_to_large_switch(switch)
         if large_switch > 0:
-            # Small switch maps to large switch in an orientation-preserving way.
+            # Small switch maps to large switch in an orientation-preserving
+            # way.
             offset = 0
         else:
-            # Small switch maps to large switch in an orientation-reversing way.
+            # Small switch maps to large switch in an orientation-reversing
+            # way.
             offset = 1
 
         click = self.small_switch_to_click(switch)
@@ -878,11 +959,13 @@ class CarryingMap(object):
         backward_branches = self._small_tt.outgoing_branches(-switch)
 
         def add_intersections(start_idx, change, limit, interval):
-            # First iterating on the backward branches in reversed order (from left to right) until we find a collapsed branch.
+            # First iterating on the backward branches in reversed order (from
+            # left to right) until we find a collapsed branch.
             for i in range(start_idx, change, limit):
                 branch = backward_branches[i]
-                
-                # If we find a collapsed branch, we break out and iterate also start iterating from the other side.
+
+                # If we find a collapsed branch, we break out and iterate also
+                # start iterating from the other side.
                 if self.is_branch_collapsed(branch):
                     return i
 
@@ -900,13 +983,16 @@ class CarryingMap(object):
                     )
             return None
 
-        last_idx = add_intersections(len(backward_branches)-1, -1, -1, left_int)
+        last_idx = add_intersections(len(backward_branches)-1, -1, -1,
+                                     left_int)
 
-        if last_idx == None:
-            # If we did not find any collapsed branches, then we remove the click, delete the interval on the right and add its intersections to the interval on the left.
+        if last_idx is None:
+            # If we did not find any collapsed branches, then we remove the
+            # click, delete the interval on the right and add its intersections
+            # to the interval on the left.
             self.delete_click_and_merge(click, offset)
             return
-            
+
         right_int = self.click_to_interval(click, (RIGHT+offset) % 2)
         first_idx = add_intersections(0, 1, len(backward_branches), right_int)
 
@@ -930,13 +1016,16 @@ class CarryingMap(object):
         branch = backward_branches[first_idx]
         for sw in self.get_connected_switches(branch):
             self.set_small_switch_to_click(sw, click)
-        
-    def end_switch_isotopy(self, switch):
-        """Update clicks, intervals and intersections at the final part of a switch isotopy.
 
-        Like at the begin_switch_isotopy() method, this involves updating intersection numbers and creating and merging clicks.
+    def end_switch_isotopy(self, switch):
+        """Update clicks, intervals and intersections at the final part of a
+        switch isotopy.
+
+        Like at the begin_switch_isotopy() method, this involves updating
+        intersection numbers and creating and merging clicks.
         """
-        # First we need to find the switch of the large train track where the isotopy gets stuck.
+        # First we need to find the switch of the large train track where the
+        # isotopy gets stuck.
         small_tt = self._small_tt
         branches = small_tt.outgoing_branches(switch)
         for br in branches:
@@ -944,32 +1033,37 @@ class CarryingMap(object):
                 next_sw = small_tt.branch_endpoint(br)
                 large_switch = self.small_switch_to_large_switch(-next_sw)
                 if large_switch > 0:
-                    # switch maps to large_switch in an orientation-preserving way
+                    # switch maps to large_switch in an orientation-preserving
+                    # way
                     offset = 0
                 else:
-                    # switch maps to large_switch in an orientation-reversing way
+                    # switch maps to large_switch in an orientation-reversing
+                    # way
                     offset = 1
                 click = self.small_switch_to_click(next_sw)
                 collapsed_br = br
                 break
         else:
-            # There is no collapsed branch, so there must be a collapsed cusp path. This path has to be used to determine the position of
-            # the switch.
+            # There is no collapsed branch, so there must be a collapsed cusp
+            # path. This path has to be used to determine the position of the
+            # switch.
             for cusp in small_tt.outgoing_cusps(switch):
                 if cusp is not None and self.is_cusp_collapsed(cusp):
                     large_cusp = self.small_cusp_to_large_cusp(cusp)
                     interval, diff = self.find_interval_containing_large_cusp(
                         large_cusp
                     )
-                    new_left_int, click = self.insert_click_in_interval(interval, (LEFT+offset) % 2)
+                    new_left_int, click = self.insert_click_in_interval(
+                        interval, (LEFT+offset) % 2)
                     x = self.get_intersections_with_interval(interval)
                     self.set_intersections_with_interval(new_left_int, x-diff)
                     self.set_intersections_with_interval(interval, diff)
                     collapsed_cusp = cusp
                     break
-            
+
             current_interval = new_left_int
-            # updating interval intersections of the left and right side of the switch
+            # updating interval intersections of the left and right side of the
+            # switch
             for br in branches:
                 self.add_intersection_with_interval(
                     BRANCH, br, current_interval, with_sign=-1)
@@ -981,7 +1075,8 @@ class CarryingMap(object):
                     current_interval = interval
             return
 
-        # If we are here, then we have a collapsed branch. We still need to merge clicks and update the intersection data.
+        # If we are here, then we have a collapsed branch. We still need to
+        # merge clicks and update the intersection data.
 
         # Updating intersections on the left
         left_int = self.click_to_interval(click, (LEFT+offset) % 2)
@@ -992,7 +1087,7 @@ class CarryingMap(object):
             if not self.is_cusp_collapsed(cusp):
                 self.add_intersection_with_interval(CUSP, cusp, left_int, -1)
 
-        # Updating intersections on the right, 
+        # Updating intersections on the right,
         right_int = self.click_to_interval(click, (RIGHT+offset) % 2)
         for i in range(len(branches)-1, -1, -1):
             br = branches[i]
@@ -1014,7 +1109,8 @@ class CarryingMap(object):
             br = branches[i]
 
     def isotope_switch_a_little(self, switch):
-        """Isotope switch of the small train track in the positive direction through one branch.
+        """Isotope switch of the small train track in the positive direction
+        through one branch.
         """
         # Check if the isotopy is not possible
         for br in small_tt.outgoing_branches(switch):
@@ -1028,7 +1124,6 @@ class CarryingMap(object):
 
         small_tt = self._small_tt
         first_br = small_tt.outgoing_branch(switch, 0)
-
 
         for br in small_tt.outgoing_branches(-switch):
             self.add_intersection(BRANCH, br, )
@@ -1047,19 +1142,21 @@ class CarryingMap(object):
         small_tt = self._small_tt
 
         min_path = shortest_path(
-            [self.path_coordinates(BRANCH, br) 
-            for br in small_tt.outgoing_branches(switch)] +
-            [self.path_coordinates(CUSP, cusp) 
-            for cusp in small_tt.outgoing_cusps(switch)]
+            [self.path_coordinates(BRANCH, br)
+             for br in small_tt.outgoing_branches(switch)] +
+            [self.path_coordinates(CUSP, cusp)
+             for cusp in small_tt.outgoing_cusps(switch)]
         )
-        # We make a copy, otherwise subtracting a path from itself would make min_path the zero array.
+        # We make a copy, otherwise subtracting a path from itself would make
+        # min_path the zero array.
         min_path = min_path.copy()
 
         # If no isotopy can be performed, there is nothing to do
         if np.all(min_path == 0):
             return
 
-        # If there is non-trivial isotopy, then we begin by breaking up click at the beginning and updating the intersections.
+        # If there is non-trivial isotopy, then we begin by breaking up click
+        # at the beginning and updating the intersections.
         self.begin_switch_isotopy(switch)
 
         # ---------------------------------------------------------------------
@@ -1078,18 +1175,22 @@ class CarryingMap(object):
         self.end_switch_isotopy(switch)
 
     def isotope_switch_recursively(self, switch, stop_switch=None):
-        """Isotope a switch of the small train track as far as possible, by recursively isotoping other switches the original switch bumps into during the isotopy.
+        """Isotope a switch of the small train track as far as possible, by recursively
+isotoping other switches the original switch bumps into during the isotopy.
 
         INPUT:
         - ``switch`` -- the oriented switch which is isotoped forward
-        - ``stop_switch`` -- this switch is not allowed to be isotoped. If the recursive isotopy reaches this switch, the process stops.
+        - ``stop_switch`` -- this switch is not allowed to be isotoped. If the
+        recursive isotopy reaches this switch, the process stops.
+
         """
         self.isotope_switch_as_far_as_possible(switch)
         for cusp in self._small_tt.outgoing_cusps(switch):
             if self.is_cusp_collapsed(cusp):
                 # If a cusp is collapsed, there is no way to isotope further.
                 return
-        # If no cusp is collapsed, then we try to isotope the switches at the collapsed branches further.
+        # If no cusp is collapsed, then we try to isotope the switches at the
+        # collapsed branches further.
         for branch in self._small_tt.outgoing_branches(switch):
             if self.is_branch_collapsed(branch):
                 next_sw = -self._small_tt.branch_endpoint(branch)
@@ -1098,10 +1199,12 @@ class CarryingMap(object):
                     return
                 self.isotope_switch_recursively(self, next_sw)
 
-        # After all the switches are isotoped further, we isotope the original switch as far as possible one more time.
+        # After all the switches are isotoped further, we isotope the original
+        # switch as far as possible one more time.
         self.isotope_switch_as_far_as_possible(switch)
-        # TODO: Do we need to do more iterations? If so, is there a way to get stuck in an infinite loop?
- 
+        # TODO: Do we need to do more iterations? If so, is there a way to get
+        # stuck in an infinite loop?
+
 
 def is_smaller_or_equal(array1, array2):
     """Decide if all entries of the first array are less than or equal the
@@ -1130,7 +1233,7 @@ def shortest_path(paths):
     INPUT:
 
     - ``paths`` -- a list of paths (arrays of integers)
-    
+
     """
 
     for i in range(len(paths)):
