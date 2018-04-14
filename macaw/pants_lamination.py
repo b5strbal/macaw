@@ -20,6 +20,7 @@ AUTHORS:
 #                  http://www.gnu.org/licenses/
 # *****************************************************************************
 
+from __future__ import print_function
 import numpy as np
 from .train_tracks.dehn_thurston.dehn_thurston_tt import DehnThurstonTT
 from .constants import LEFT, RIGHT
@@ -95,11 +96,11 @@ class PantsLamination(object):
 
         """
         if debug:
-            print "----------------------------------"
-            print "BEGIN: PantsLamination.__init__():"
-            print "----------------------------------"
-            print "Pants decomposition", pants_decomposition
-            print "Coordinates", coordinates
+            print("----------------------------------")
+            print("BEGIN: PantsLamination.__init__():")
+            print("----------------------------------")
+            print("Pants decomposition", pants_decomposition)
+            print("Coordinates", coordinates)
 
         if pants_decomposition is None:
             # creating empty object, just for the copy() method
@@ -122,13 +123,13 @@ class PantsLamination(object):
 
     def __eq__(self, other):
         if not isinstance(other, PantsLamination):
-            # print 'a'
+            # print('a')
             return False
         # if self.pants_decomposition() != other.pants_decomposition():
         #     # TODO: PantsDecomposition.__eq__ not yet implemented.
-        #     print 'b'
+        #     print('b')
         #     return False
-        # print 'c'
+        # print('c')
         return all(self.to_vector() == other.to_vector())
 
     def __lt__(self, other):
@@ -154,11 +155,11 @@ class PantsLamination(object):
         """
         debug = False
         if debug:
-            print "-------------------------"
-            print "BEGIN: from_pants_curve()"
-            print "-------------------------"
-            print "PantsDecomposition", pants_decomposition
-            print "Pants curve", pants_curve
+            print("-------------------------")
+            print("BEGIN: from_pants_curve()")
+            print("-------------------------")
+            print("PantsDecomposition", pants_decomposition)
+            print("Pants curve", pants_curve)
         p = pants_decomposition
         l = []
         for c in p.inner_pants_curves():
@@ -172,11 +173,11 @@ class PantsLamination(object):
     def from_transversal(cls, pants_decomposition, pants_curve):
         debug = False
         if debug:
-            print "-------------------------"
-            print "BEGIN: from_transversal()"
-            print "-------------------------"
-            print "PantsDecomposition", pants_decomposition
-            print "Pants curve", pants_curve
+            print("-------------------------")
+            print("BEGIN: from_transversal()")
+            print("-------------------------")
+            print("PantsDecomposition", pants_decomposition)
+            print("Pants curve", pants_curve)
         p = pants_decomposition
         l = []
         typ = p.elementary_move_type(pants_curve)
@@ -245,18 +246,18 @@ class PantsLamination(object):
         return np.array(ls)
 
     def apply_elementary_move(self, pants_curve, inverse=False, debug=False):
-        # print debug
+        # print(debug)
         tt = self._tt
         if debug:
-            print "-------------------------------"
-            print "BEGIN: apply_elementary_move()"
-            print "-------------------------------"
-            print "Gluing list:", tt._gluing_list
-            print "Measure:", tt.measure()
-            print "pants_curve", pants_curve
+            print("-------------------------------")
+            print("BEGIN: apply_elementary_move()")
+            print("-------------------------------")
+            print("Gluing list:", tt._gluing_list)
+            print("Measure:", tt.measure())
+            print("pants_curve", pants_curve)
         typ = tt.elem_move_type(pants_curve)
         if debug:
-            print "Type: ", typ
+            print("Type: ", typ)
         if typ == 1:
             tt.unzip_fold_first_move(pants_curve, inverse=inverse, debug=debug)
         elif typ == 2:

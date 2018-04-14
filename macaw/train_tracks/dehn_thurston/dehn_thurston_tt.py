@@ -101,11 +101,11 @@ class DehnThurstonTT(TrainTrack):
 
         for pant in range(p.num_pants()):
             if debug:
-                print "---------------------------------"
-                print "Moving on to pants number ", pant
-                print "Current gluing_list:", gluing_list
-                print "Current measure", measure
-                print "Coordinates", coordinates
+                print("---------------------------------")
+                print("Moving on to pants number ", pant)
+                print("Current gluing_list:", gluing_list)
+                print("Current measure", measure)
+                print("Coordinates", coordinates)
 
             # the three pants curves bounding the pair of pants
             # the number of the switch on each pants curve coincides with the
@@ -130,9 +130,9 @@ class DehnThurstonTT(TrainTrack):
                 raise ValueError("The specified coordinates do not result in an integral lamination.")
             pairs = map(lambda x: x/2, pairs)
             if debug:
-                print "m:", m
-                print "self_conn:", self_conn
-                print "pairs:", pairs
+                print("m:", m)
+                print("self_conn:", self_conn)
+                print("pairs:", pairs)
 
             # NOT_DECIDED = -2
             # NO_SELF_CONN = -1
@@ -152,7 +152,7 @@ class DehnThurstonTT(TrainTrack):
             if self_conn_idx == -1:
                 for i in range(3):
                     if debug:
-                        print i, c
+                        print(i, c)
                     if pairs[(i+1) % 3] == 0 and abs(c) in ipc and \
                        p.elementary_move_type(c) == 2:
                         # if the type is first move, then the self-connecting
@@ -161,7 +161,7 @@ class DehnThurstonTT(TrainTrack):
                         break
 
             if debug:
-                print "self_conn_idx:", self_conn_idx
+                print("self_conn_idx:", self_conn_idx)
 
             added_branches = []
 
@@ -172,16 +172,16 @@ class DehnThurstonTT(TrainTrack):
                 c2 = curves[(i+1) % 3]
                 if debug:
                     print
-                    print "Adding pairing branches..."
-                    print "i:", i
-                    print "c1:", c1
-                    print "c2:", c2
+                    print("Adding pairing branches...")
+                    print("i:", i)
+                    print("c1:", c1)
+                    print("c2:", c2)
                 if c1 in bpc or c2 in bpc or self_conn_idx != -1 and \
                    i == (self_conn_idx+1) % 3:
                     # no branches if one of the curves in a boundary or there
                     # is a blocking self-connecting branch
                     if debug:
-                        print "Not adding it."
+                        print("Not adding it.")
                     continue
 
                 if coordinates[abs(c1)][1] >= 0:
@@ -206,7 +206,7 @@ class DehnThurstonTT(TrainTrack):
             if self_conn_idx != -1:
                 if debug:
                     print
-                    print "Adding self-connecting branch..."
+                    print("Adding self-connecting branch...")
                 c = curves[self_conn_idx]
                 switch = np.sign(c)*(ipc.index(abs(c))+1)
                 if coordinates[abs(c)][1] >= 0:
@@ -229,8 +229,8 @@ class DehnThurstonTT(TrainTrack):
                 measure.append(abs(self_conn[self_conn_idx]))
 
         if debug:
-            print "Gluing list", gluing_list
-            print "Measure", measure
+            print("Gluing list", gluing_list)
+            print("Measure", measure)
 
         return cls(gluing_list, measure, range(1, n+1))
 
@@ -458,33 +458,33 @@ class DehnThurstonTT(TrainTrack):
 
         if debug:
             print
-            print "----------------------------------------"
-            print "BEGIN: unzip_fold_general_twist()"
-            print "----------------------------------------"
-            print "Turning: ", 'LEFT' if turning == LEFT else 'RIGHT'
-            print "Switch: ", switch
-            print "Branches on left: ", nleft
-            print "Branches on right: ", nright
-            print "Branches on fixed side: ", nfixed_side
-            print "Branches on other side: ", nother_side
-            print "Number of rotations: ", num_rotations
-            print "Twists on left (original): ", twists_on_left
-            print "Twists on right (original): ", twists_on_right
-            print "Good twists on fixed side: ", good_twists_on_fixed_side
-            print "Good twists on other side: ", good_twists_on_other_side
+            print("----------------------------------------")
+            print("BEGIN: unzip_fold_general_twist()")
+            print("----------------------------------------")
+            print("Turning: ", 'LEFT' if turning == LEFT else 'RIGHT')
+            print("Switch: ", switch)
+            print("Branches on left: ", nleft)
+            print("Branches on right: ", nright)
+            print("Branches on fixed side: ", nfixed_side)
+            print("Branches on other side: ", nother_side)
+            print("Number of rotations: ", num_rotations)
+            print("Twists on left (original): ", twists_on_left)
+            print("Twists on right (original): ", twists_on_right)
+            print("Good twists on fixed side: ", good_twists_on_fixed_side)
+            print("Good twists on other side: ", good_twists_on_other_side)
 
         # doing folds on the fixed side
         for i in range(good_twists_on_fixed_side):
-            # print "Fold fixed side"
+            # print("Fold fixed side")
             if debug:
-                print i, self.gluing_list()
-                print i, self.measure()
+                print(i, self.gluing_list())
+                print(i, self.measure())
 
             self.fold(-switch, 1, 0, start_side=turning)
 
         if debug:
-            print "After folding on fixed side:", self.gluing_list()
-            print "After folding on fixed side:", self.measure()
+            print("After folding on fixed side:", self.gluing_list())
+            print("After folding on fixed side:", self.measure())
 
         # doing folds or unzips on the other side. This involves the positive
         # direction of ``switch``.
@@ -497,8 +497,8 @@ class DehnThurstonTT(TrainTrack):
 
             while good_twists_on_other_side < 0:
                 if debug:
-                    print self.gluing_list()
-                    print self.measure()
+                    print(self.gluing_list())
+                    print(self.measure())
 
                 pants_branch = self.outgoing_branch(-switch, 0,
                                                     start_side=turning)
@@ -509,11 +509,11 @@ class DehnThurstonTT(TrainTrack):
                                         debug=debug)
                 good_twists_on_other_side += 1
                 if debug:
-                    print "After peeling:"
-                    print self.gluing_list()
-                    print self.measure()
-                    print "Peeled side:", peeled_side
-                    print "Remaining bad twist:", -good_twists_on_other_side
+                    print("After peeling:")
+                    print(self.gluing_list())
+                    print(self.measure())
+                    print("Peeled side:", peeled_side)
+                    print("Remaining bad twist:", -good_twists_on_other_side)
 
                 if peeled_side == turning:
                     # we unzipped into the pants curve, there is nothing to do
@@ -523,10 +523,10 @@ class DehnThurstonTT(TrainTrack):
                     # we unzip into a branch on the other side
 
                     if debug:
-                        print self.gluing_list()
-                        print self.measure()
-                        print self._branch_endpoint
-                        print side_branch, pants_branch
+                        print(self.gluing_list())
+                        print(self.measure())
+                        print(self._branch_endpoint)
+                        print(side_branch, pants_branch)
                     self.fold_by_branch_labels(-side_branch, pants_branch)
                     for i in range(-good_twists_on_other_side):
                         self.fold(switch, 1, 0, start_side=(turning+1) % 2)
@@ -698,13 +698,13 @@ class DehnThurstonTT(TrainTrack):
         switch = self.orientation_of_switch_first_move(switch)
         # debug = True
         if debug:
-            print "--------------------------------"
-            print "BEGIN: unzip_fold_first_move()"
-            print "--------------------------------"
-            print "Initial gluing list:", self.gluing_list()
-            print "Measure:", self.measure()
-            print "Switch:", switch
-            print "Inverse:", inverse
+            print("--------------------------------")
+            print("BEGIN: unzip_fold_first_move()")
+            print("--------------------------------")
+            print("Initial gluing list:", self.gluing_list())
+            print("Measure:", self.measure())
+            print("Switch:", switch)
+            print("Inverse:", inverse)
         turning = self.get_turning(switch)
         twist_sign = -1 if inverse else 1
         bdy_switch = self.torus_boundary_switch(switch)
@@ -712,24 +712,24 @@ class DehnThurstonTT(TrainTrack):
         lamb23 = len(self.outgoing_branches(switch)) == 3
 
         if debug:
-            print "Turning:", "LEFT" if turning == LEFT else "RIGHT"
-            print "Lambda_23" if lamb23 else "Lambda_11"
-            print "bdy_switch", bdy_switch
+            print("Turning:", "LEFT" if turning == LEFT else "RIGHT")
+            print("Lambda_23" if lamb23 else "Lambda_11")
+            print("bdy_switch", bdy_switch)
 
         peeled_side = self.peel(switch, side=(turning+1) % 2, debug=debug)
         if debug:
-            print "Peeled side:", "LEFT" if peeled_side == LEFT else "RIGHT"
+            print("Peeled side:", "LEFT" if peeled_side == LEFT else "RIGHT")
         if peeled_side == (turning+1) % 2:
             self.peel(switch, side=(turning+1) % 2, debug=debug,
                       preferred_peeled_side=turning)
 
         if debug:
-            print "Gluing list:", self.gluing_list()
-            print "Measure:", self.measure()
-            print "Outgoing branches in positive direction:", \
-                self.outgoing_branches(switch)
-            print "Outgoing branches in negative direction:", \
-                self.outgoing_branches(-switch)
+            print("Gluing list:", self.gluing_list())
+            print("Measure:", self.measure())
+            print("Outgoing branches in positive direction:",
+                  self.outgoing_branches(switch))
+            print("Outgoing branches in negative direction:",
+                  self.outgoing_branches(-switch))
 
         # The inverse works in cases A, B, E
         # Doesn't work for C, D, F, G, and probably H
@@ -738,63 +738,63 @@ class DehnThurstonTT(TrainTrack):
             if lamb23:
                 if (turning == LEFT) == (not inverse):
                     if debug:
-                        print "A"
+                        print("A")
                     self.fold(-switch, 1, 2, start_side=turning)
                 else:
                     if debug:
-                        print "B"
+                        print("B")
                     self.fold(switch, 1, 0, (turning+1) % 2)
                     self.unzip_fold_general_twist(bdy_switch, twist_sign, 0)
             else:
                 if (turning == LEFT) == (not inverse):
                     if debug:
-                        print "C"
-                        print "Gluing list:", self.gluing_list()
-                        print "Measure:", self.measure()
+                        print("C")
+                        print("Gluing list:", self.gluing_list())
+                        print("Measure:", self.measure())
                     self.unzip_fold_general_twist(bdy_switch, twist_sign, 0)
                     if debug:
-                        print "Gluing list:", self.gluing_list()
-                        print "Measure:", self.measure()
+                        print("Gluing list:", self.gluing_list())
+                        print("Measure:", self.measure())
                     self.fold_left_of_pants_curve(bdy_switch, 0, 1, inverse)
                     self.fold_left_of_pants_curve(bdy_switch, 2, 1, inverse)
                 else:
                     if debug:
-                        print "D"
+                        print("D")
                     self.unzip_fold_general_twist(bdy_switch, 2*twist_sign, 0)
                     if debug:
-                        print self.gluing_list()
+                        print(self.gluing_list())
                     self.fold_left_of_pants_curve(bdy_switch, 3, 2, inverse)
                     if debug:
-                        print self.gluing_list()
+                        print(self.gluing_list())
                     self.fold_left_of_pants_curve(bdy_switch, 0, 1, inverse)
                     if debug:
-                        print self.gluing_list()
+                        print(self.gluing_list())
 
         else:
             if lamb23:
                 if (turning == LEFT) == (not inverse):
                     if debug:
-                        print "E"
+                        print("E")
                     self.fold(-switch, 0, 1, turning)
                 else:
                     if debug:
-                        print "F"
+                        print("F")
                     self.fold(switch, 1, 0, (turning+1) % 2)
                     self.unzip_fold_general_twist(bdy_switch, twist_sign, 0)
             else:
                 if (turning == LEFT) == (not inverse):
                     if debug:
-                        print "G"
+                        print("G")
                     self.unzip_fold_general_twist(bdy_switch, twist_sign, 0)
                     self.fold_left_of_pants_curve(bdy_switch, 0, 1, inverse)
                     self.fold_left_of_pants_curve(bdy_switch, 3, 2, inverse)
                 else:
                     if debug:
-                        print "H"
+                        print("H")
                     self.unzip_fold_general_twist(bdy_switch, 2*twist_sign, 0)
                     if debug:
-                        print "Gluing list:", self.gluing_list()
-                        print "Measure:", self.measure()
+                        print("Gluing list:", self.gluing_list())
+                        print("Measure:", self.measure())
 
                     self.fold_left_of_pants_curve(bdy_switch, 4, 3, inverse)
                     self.fold_left_of_pants_curve(bdy_switch, 0, 1, inverse)
@@ -819,9 +819,9 @@ class DehnThurstonTT(TrainTrack):
             self.fold(bdy_switch, folded_branch_index, fold_onto_index,
                       start_side)
         else:
-            # print self.outgoing_branches(-bdy_switch)
-            # print self.outgoing_branch(-bdy_switch, folded_branch_index+1)
-            # print self.outgoing_branch(-bdy_switch, fold_onto_index+1)
+            # print(self.outgoing_branches(-bdy_switch))
+            # print(self.outgoing_branch(-bdy_switch, folded_branch_index+1))
+            # print(self.outgoing_branch(-bdy_switch, fold_onto_index+1))
             self.fold(-bdy_switch, folded_branch_index+1, fold_onto_index+1,
                       start_side)
 
@@ -868,13 +868,13 @@ class DehnThurstonTT(TrainTrack):
             else:
                 side_branches = side_branches[:-1]
 
-            # print "--------------------------"
-            # print "pants branches", self._pants_branches
-            # print "side", side
-            # print "turning", turning
-            # print "or_switch", or_switch
-            # print "side_branches", side_branches
-            # print "--------------------------"
+            # print("--------------------------")
+            # print("pants branches", self._pants_branches)
+            # print("side", side)
+            # print("turning", turning)
+            # print("or_switch", or_switch)
+            # print("side_branches", side_branches)
+            # print("--------------------------")
             if len(side_branches) == 4:
                 # type 1
                 branch_to_standard[side_branches[0]] = -(3+6*side)
@@ -930,27 +930,27 @@ class DehnThurstonTT(TrainTrack):
         curves
         """
         if debug:
-            print "-------------------------------"
-            print "BEGIN: construct_general_twist_data()"
-            print "-------------------------------"
+            print("-------------------------------")
+            print("BEGIN: construct_general_twist_data()")
+            print("-------------------------------")
         ret = {}
         for branch, direction in boundary_folds:
             switch = self.branch_endpoint(-branch)
             turning = self.get_turning(switch)
             if debug:
-                print "Branch:", branch
-                print "Direction:", direction
-                print "switch:", switch
-                print "turning:", turning
+                print("Branch:", branch)
+                print("Direction:", direction)
+                print("switch:", switch)
+                print("turning:", turning)
             if abs(switch) not in ret.keys():
                 ret[abs(switch)] = [0, 0]
             if (switch > 0) == (turning == RIGHT):
                 if debug:
-                    print "twisting added on the left"
+                    print("twisting added on the left")
                 ret[abs(switch)][LEFT] += direction
             else:
                 if debug:
-                    print "twisting added on the right"
+                    print("twisting added on the right")
                 ret[abs(switch)][RIGHT] += direction
         return ret
 
@@ -1008,16 +1008,16 @@ class DehnThurstonTT(TrainTrack):
         assert self.elem_move_type(switch) == 2
         branch_to_standard = self.standardize_neighboring_branches(switch)
         if debug:
-            print "branch_to_standard:", branch_to_standard
+            print("branch_to_standard:", branch_to_standard)
         turning = self.get_turning(switch)
 
         bm = BranchMap(branch_to_standard.keys())
         if debug:
-            print "Turning: ", "LEFT" if turning == LEFT else "RIGHT"
-            print "Branch map:", bm._branch_map
+            print("Turning: ", "LEFT" if turning == LEFT else "RIGHT")
+            print("Branch map:", bm._branch_map)
         bm.standardize_values(branch_to_standard)
         if debug:
-            print "Branch map:", bm._branch_map
+            print("Branch map:", bm._branch_map)
 
         # first we unzip once on the left and once on the right if the switch
         # is left-turning to reveal any tricky branches
@@ -1033,82 +1033,82 @@ class DehnThurstonTT(TrainTrack):
         for step in [0, 1]:
             current_switch = switch if step == 0 else -switch
             if debug:
-                print "Step:", step
-                print "current_switch", current_switch
+                print("Step:", step)
+                print("current_switch", current_switch)
             while True:
                 b1 = self.outgoing_branch(current_switch, 0, turning)
                 b2 = self.outgoing_branch(-current_switch, 0, (turning+1) % 2)
 
                 if debug:
-                    print "Branches to compare:", b1, b2
-                    print "They start to sides:", bm.which_side_to_start(b1), \
-                        bm.which_side_to_start(b2)
+                    print("Branches to compare:", b1, b2)
+                    print("They start to sides:", bm.which_side_to_start(b1),
+                          bm.which_side_to_start(b2))
 
                 if bm.which_side_to_start(b1) != step or \
                    bm.which_side_to_start(b2) != step:
                     if debug:
-                        print "We have finished unzipping on this side."
+                        print("We have finished unzipping on this side.")
                         if step == 0:
-                            print "Moving on to Step 1."
+                            print("Moving on to Step 1.")
                         else:
-                            print "Unzipping completed!"
+                            print("Unzipping completed!")
                     break
 
                 if debug:
-                    print "Peeling..."
+                    print("Peeling...")
                 self.peel(current_switch, turning, bm, debug=debug)
                 if debug:
-                    print "Gluing list after peeling:", self.gluing_list()
-                    print "Measure after peeling:", self.measure()
+                    print("Gluing list after peeling:", self.gluing_list())
+                    print("Measure after peeling:", self.measure())
 
         bm.chop_paths(debug)
         if debug:
-            print "Branch map after chopping paths:", bm._branch_map
+            print("Branch map after chopping paths:", bm._branch_map)
         bm.transform(debug)
         if debug:
-            print "Branch map after transforming (isotopy):", bm._branch_map
+            print("Branch map after transforming (isotopy):", bm._branch_map)
         folds = bm.find_boundary_folds()
         if debug:
-            print "Boundary folds:", folds
+            print("Boundary folds:", folds)
         general_twist_data = self.construct_general_twist_data(folds, debug)
         if debug:
-            print general_twist_data
-            print "Gluing list before folding boundaries:", self.gluing_list()
-            print "Measure before folding boundaries:", self.measure()
+            print(general_twist_data)
+            print("Gluing list before folding boundaries:", self.gluing_list())
+            print("Measure before folding boundaries:", self.measure())
         for sw in general_twist_data.keys():
             left_twists, right_twists = general_twist_data[sw]
             if debug:
-                print "Switch:", sw
-                print "Left twists:", left_twists
-                print "Right twists:", right_twists
+                print("Switch:", sw)
+                print("Left twists:", left_twists)
+                print("Right twists:", right_twists)
             self.unzip_fold_general_twist(sw, left_twists, right_twists,
                                           debug=debug)
             if debug:
-                print "Gluing list after folding boundaries:",\
-                    self.gluing_list()
-                print "Measure after folding boundaries:", self.measure()
+                print("Gluing list after folding boundaries:",
+                      self.gluing_list())
+                print("Measure after folding boundaries:", self.measure())
         # make replacements in type 2 and type 3 cases
         bm.replace_type_2_3()
 
         while True:
             if debug:
-                print "---------------------"
-                print "Finding folds"
-                print "---------------------"
-                print "Branch map before folding", bm._branch_map
-                print "Gluing list:", self.gluing_list()
+                print("---------------------")
+                print("Finding folds")
+                print("---------------------")
+                print("Branch map before folding", bm._branch_map)
+                print("Gluing list:", self.gluing_list())
             success = pop_fold(self, bm, debug)
             if success is False:
                 if debug:
-                    print "No fold found."
-                    print "Stopping..."
+                    print("No fold found.")
+                    print("Stopping...")
                 break
             # self.fold_by_branch_labels(folded_branch, fold_onto_branch)
             if debug:
-                print "Gluing list after fold:", self.gluing_list()
-                print "Measure after fold:", self.measure()
-                print "Branch map after folding", bm._branch_map
-                print "---------------------"
+                print("Gluing list after fold:", self.gluing_list())
+                print("Measure after fold:", self.measure())
+                print("Branch map after folding", bm._branch_map)
+                print("---------------------")
 
         for b in bm._branch_map.keys():
             if bm.branch_list(b) == [13, -19] or\
@@ -1134,17 +1134,17 @@ def pop_fold(train_track, branch_map, debug=False):
                 for sb2 in [b2, -b2]:
                     if branch_map.is_subpath(sb2, sb1):
                         if debug:
-                            print sb2, " is a subpath of ", sb1
+                            print(sb2, " is a subpath of ", sb1)
                         try:
                             train_track.fold_by_branch_labels(sb1, sb2)
                             branch_map.subtract(sb1, sb2)
                             if debug:
-                                print "Folded branch:", sb1
-                                print "Folding onto:", sb2
+                                print("Folded branch:", sb1)
+                                print("Folding onto:", sb2)
                             return True
                         except FoldError as err:
                             if debug:
-                                print err
-                                print sb1, "cannot be folded on", sb2
+                                print(err)
+                                print(sb1, "cannot be folded on", sb2)
                             pass
     return False

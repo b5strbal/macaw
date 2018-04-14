@@ -21,6 +21,7 @@ AUTHORS:
 # *****************************************************************************
 
 
+from __future__ import print_function
 from .train_track1 import TrainTrack as TrainTrack1
 from .train_track0 import DeleteSwitchError
 from macaw.constants import LEFT, RIGHT, BRANCH, CUSP
@@ -104,15 +105,15 @@ class TrainTrack(TrainTrack1):
                              preferred_peeled_side=preferred_peeled_side)
 
         if debug:
-            print "-------------------------------"
-            print "BEGIN: peel()"
-            print "-------------------------------"
-            print "Gluing list at beginning", self.gluing_list()
-            print "Measure at beginning", self.measure()
+            print("-------------------------------")
+            print("BEGIN: peel()")
+            print("-------------------------------")
+            print("Gluing list at beginning", self.gluing_list())
+            print("Measure at beginning", self.measure())
             if branch_map is not None:
-                print "Branch map at the beginning", branch_map._branch_map
-            print "Switch:", switch
-            print "Preferred side:", preferred_peeled_side
+                print("Branch map at the beginning", branch_map._branch_map)
+            print("Switch:", switch)
+            print("Preferred side:", preferred_peeled_side)
 
         branches = [self.outgoing_branch(-switch, 0, start_side=RIGHT),
                     self.outgoing_branch(switch, 0)]
@@ -138,7 +139,7 @@ class TrainTrack(TrainTrack1):
             sm_idx = preferred_peeled_side
 
         if debug:
-            print "Peeled side:", "LEFT" if sm_idx == LEFT else "RIGHT"
+            print("Peeled side:", "LEFT" if sm_idx == LEFT else "RIGHT")
 
         lg_idx = (sm_idx+1) % 2
         # or_switch = -switch if sm_idx == LEFT else switch
@@ -148,8 +149,8 @@ class TrainTrack(TrainTrack1):
                                          -branches[lg_idx],
                                          start_side=lg_idx)
         if debug:
-            print "Peeling branch", branches[sm_idx], "off of",\
-                branches[lg_idx]
+            print("Peeling branch", branches[sm_idx], "off of",
+                  branches[lg_idx])
 
         self.reglue_endpoint(-branches[sm_idx], bottom_switch, idx,
                              start_side=lg_idx)
@@ -167,13 +168,13 @@ class TrainTrack(TrainTrack1):
             branch_map.append(-branches[sm_idx], branches[lg_idx])
 
         if debug:
-            print "Gluing list at the end", self.gluing_list()
-            print "Measure at the end", self.measure()
+            print("Gluing list at the end", self.gluing_list())
+            print("Measure at the end", self.measure())
             if branch_map is not None:
-                print "Branch map at the end", branch_map._branch_map
-            print "-------------------------------"
-            print "END: peel()"
-            print "-------------------------------"
+                print("Branch map at the end", branch_map._branch_map)
+            print("-------------------------------")
+            print("END: peel()")
+            print("-------------------------------")
 
         for cm in carrying_maps_self_small:
             cm.peel_in_small(peeled_branch=branches[sm_idx],
@@ -246,13 +247,13 @@ class TrainTrack(TrainTrack1):
         """
 
         n = self.num_outgoing_branches(switch)
-        # print "--------------------------------"
-        # print "TrainTrack.fold()"
-        # print "--------------------------------"
-        # print "Start side:", start_side
-        # print "Switch:", switch
-        # print "Folded branch index:", folded_branch_index
-        # print "Fold onto branch index:", fold_onto_index
+        # print("--------------------------------")
+        # print("TrainTrack.fold()")
+        # print("--------------------------------")
+        # print("Start side:", start_side)
+        # print("Switch:", switch)
+        # print("Folded branch index:", folded_branch_index)
+        # print("Fold onto branch index:", fold_onto_index)
 
         if start_side == RIGHT:
             self.fold(switch, n-1-folded_branch_index, n-1-fold_onto_index)
@@ -271,18 +272,18 @@ class TrainTrack(TrainTrack1):
         else:
             raise FoldError("Only two adjacent branches can be folded")
 
-        # print "Next switch: ", next_sw
-        # print "Fold start side: ", fold_start_side
-        # # print self.outgoing_branch(next_sw, 0, fold_start_side)
-        # print "Fold onto branch:", fold_onto_br
-        # print "--------------------------------"
-        # print "TrainTrack.fold() end"
-        # print "--------------------------------"
+        # print("Next switch: ", next_sw)
+        # print("Fold start side: ", fold_start_side)
+        # # print(self.outgoing_branch(next_sw, 0, fold_start_side))
+        # print("Fold onto branch:", fold_onto_br)
+        # print("--------------------------------")
+        # print("TrainTrack.fold() end")
+        # print("--------------------------------")
 
         if self.outgoing_branch(next_sw, 0, (side+1) % 2) != -fold_onto_br:
             raise FoldError("The fold is not possible, because there is "
                             "a blocking backward branch.")
-        # print -folded_br
+        # print(-folded_br)
         # print(-next_sw)
         # print(side)
 
@@ -359,7 +360,7 @@ class TrainTrack(TrainTrack1):
     #         new_branch = unzip_branch_sign*(self._current_max_branch + 1)
     #         end_switch = self.branch_endpoint(unzip_branch)
     #         s = self._a(end_switch)
-    #         # print end_switch
+    #         # print(end_switch)
     #         end_index = self.gluing_list()[s].index(-unzip_branch)
     #         self.gluing_list()[s].insert(end_index+1, -new_branch)
     #         if switch == end_switch and pos >= end_index:
@@ -374,11 +375,11 @@ class TrainTrack(TrainTrack1):
     #     neg_index = self._a(-switch)
     #     pos_index_new = self._a(new_switch)
     #     neg_index_new = self._a(-new_switch)
-    #     # print pos_index, neg_index, pos_index_new, neg_index_new
+    #     # print(pos_index, neg_index, pos_index_new, neg_index_new)
 
     #     self.gluing_list().extend([[], []]) # add new switch
-    #     # print self.gluing_list()
-    #     # print "Branch endpoint", self._branch_endpoint
+    #     # print(self.gluing_list())
+    #     # print("Branch endpoint", self._branch_endpoint)
     #     # dividing the branches on the top to two set
     #     pos_left = self.gluing_list()[pos_index][:pos+1]
     #     pos_right = self.gluing_list()[pos_index][pos+1:]
@@ -386,7 +387,7 @@ class TrainTrack(TrainTrack1):
     #     self.gluing_list()[pos_index_new] = pos_right
     #     for branch in pos_right:
     #         self._set_endpoint(-branch, new_switch)
-    #     # print self.gluing_list()
+    #     # print(self.gluing_list())
 
     #     # divide the branches on the bottom into two sets
     #     if not central_split:
@@ -401,8 +402,8 @@ class TrainTrack(TrainTrack1):
     #     for branch in neg_left:
     #         self._set_endpoint(-branch, -new_switch)
 
-    #     # print "Pos right:", pos_right
-    #     # print "Neg left:", neg_left
+    #     # print("Pos right:", pos_right)
+    #     # print("Neg left:", neg_left)
     #     if not central_split:
     #         self._current_max_branch += 1
     #         self._num_branches += 1
@@ -569,14 +570,14 @@ class TrainTrack(TrainTrack1):
             typ = CENTRAL_SPLIT
 
         if typ == RIGHT_SPLIT or typ == CENTRAL_SPLIT:
-            # print "A", top_switch
+            # print("A", top_switch)
             self.peel(
                 -top_switch, LEFT,
                 carrying_maps_self_large=carrying_maps_self_large,
                 carrying_maps_self_small=carrying_maps_self_small
             )
-            # print self.gluing_list()
-            # print self.measure()
+            # print(self.gluing_list())
+            # print(self.measure())
             self.peel(
                 -bottom_switch, LEFT, preferred_peeled_side=RIGHT,
                 carrying_maps_self_large=carrying_maps_self_large,

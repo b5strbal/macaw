@@ -135,7 +135,7 @@ class BranchMap(object):
         """
         ls = self.branch_list(branch)
         if debug:
-            print "Branch map of branch:", ls
+            print("Branch map of branch:", ls)
 
         if ls == [10, 19, -13, -4] or ls == [4, 13, -19, -10]:
             # These branch paths describe the new pants curve, so they should
@@ -193,10 +193,10 @@ class BranchMap(object):
                     continue
             self._branch_map[b] = new_ls
         if debug:
-            print "Branch map before cancellations:", self._branch_map
+            print("Branch map before cancellations:", self._branch_map)
         self.perform_cancellations(debug)
         if debug:
-            print "Branch map after cancellations:", self._branch_map
+            print("Branch map after cancellations:", self._branch_map)
 
     def perform_cancellations(self, debug=False):
         for b in self._branch_map.keys():
@@ -206,7 +206,7 @@ class BranchMap(object):
                 if ls[i] == -ls[i+1]:
                     # remove the cancellation
                     if debug:
-                        print "perform_cancellation(): remove", ls[i], ls[i+1]
+                        print("perform_cancellation(): remove", ls[i], ls[i+1])
                     ls.pop(i)
                     ls.pop(i)
                     # step back one
@@ -254,13 +254,13 @@ class BranchMap(object):
         right side of the pants curve.
         """
         if debug:
-            print "------------------"
-            print "BEGIN: chop_paths()"
-            print "------------------"
+            print("------------------")
+            print("BEGIN: chop_paths()")
+            print("------------------")
 
         for b in self._branch_map.keys():
             if debug:
-                print "Branch:", b
+                print("Branch:", b)
             ls = self._branch_map[b]
             if len(ls) == 1:
                 self._branch_map[b] = [tuple(ls)]
@@ -269,28 +269,28 @@ class BranchMap(object):
             path = []
             for i in range(len(ls)):
                 if len(path) == 0:
-                    # print "A"
+                    # print("A")
                     path.append(ls[i])
                     prev_side = self._branch_side(ls[i])
                     if debug:
-                        print "Side:", prev_side
+                        print("Side:", prev_side)
                 else:
                     current_side = self._branch_side(ls[i])
                     if debug:
-                        print "Side:", current_side
+                        print("Side:", current_side)
                     if current_side == prev_side:
-                        # print "B"
+                        # print("B")
                         path.append(ls[i])
                     else:
-                        # print "C"
+                        # print("C")
                         new_ls.append(tuple(path))
                         if debug:
-                            print "Path:", path
+                            print("Path:", path)
                         path = [ls[i]]
                     prev_side = current_side
 
             if debug:
-                print "Path:", path
+                print("Path:", path)
             new_ls.append(tuple(path))
             self._branch_map[b] = new_ls
 
