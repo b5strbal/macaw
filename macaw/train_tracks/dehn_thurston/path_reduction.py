@@ -131,7 +131,7 @@ class PathReduction(object):
         Input: [2,-,-,3,-,+,1];
         output: [2,-,+,1];
 
-        >>> from path_reduction import PathReduction
+        >>> from macaw.train_tracks.dehn_thurston.path_reduction import PathReduction
         >>> foo = PathReduction(['2', '-', '-', '3', '-', '+', '1'])
         >>> foo.reduce()
         >>> print(foo.path)
@@ -168,7 +168,7 @@ class PathReduction(object):
         Input: [2,-,-,3,L,3,-,-,2];
         Output: [2, L3R, 2];
 
-        >>> from path_reduction import PathReduction
+        >>> from macaw.train_tracks.dehn_thurston.path_reduction import PathReduction
         >>> foo = PathReduction(['2','-','-','3','L','3','-','-','2'])
         >>> foo.reduce()
         >>> print(foo.path)
@@ -210,7 +210,7 @@ class PathReduction(object):
         Input: [3, -, -, 2, L, 2, -, -, 3]
         Output: [3, R, 3, R1L, 3]
 
-        >>> from path_reduction import PathReduction
+        >>> from macaw.train_tracks.dehn_thurston.path_reduction import PathReduction
         >>> foo = PathReduction(['3','-','-','2','L','2','-','-','3'])
         >>> foo.reduce()
         >>> print(foo.path)
@@ -258,7 +258,7 @@ class PathReduction(object):
         Input: [3,-,-,2,L,2,-,+,1];
         Output: [3,R,3,-,+,1,R,1];
 
-        >>> from path_reduction import PathReduction
+        >>> from macaw.train_tracks.dehn_thurston.path_reduction import PathReduction
         >>> foo = PathReduction(['3','-','-','2','L','2','-','+','1'])
         >>> foo.reduce()
         >>> print(foo.path)
@@ -303,7 +303,7 @@ class PathReduction(object):
         Input: [1,+,-,2,R,2,R3L,2];
         Output: [1,L,1,+,-,2];
 
-        >>> from path_reduction import PathReduction
+        >>> from macaw.train_tracks.dehn_thurston.path_reduction import PathReduction
         >>> foo = PathReduction(['1','+','-','2','R','2','R3L','2'])
         >>> foo.reduce()
         >>> print(foo.path)
@@ -355,7 +355,7 @@ class PathReduction(object):
         Input: [1,+,-,2,R1L,2];
         Output: [1,R,1,+,-,2];
 
-        >>> from path_reduction import PathReduction
+        >>> from macaw.train_tracks.dehn_thurston.path_reduction import PathReduction
         >>> foo = PathReduction(['1','+','-','2','R1L','2'])
         >>> foo.reduce()
         >>> print(foo.path)
@@ -377,7 +377,7 @@ class PathReduction(object):
         Input: [2,+,-,1,R3L,1];
         Output: [2,L,2,+,-,1,L,1];
 
-        >>> from path_reduction import PathReduction
+        >>> from macaw.train_tracks.dehn_thurston.path_reduction import PathReduction
         >>> foo = PathReduction(['2','+','-','1','R3L','1'])
         >>> foo.reduce()
         >>> print (foo.path)
