@@ -1,5 +1,5 @@
 import numpy as np
-from train_tracks.dehn_thurston.numpy_list import NumpyList
+from .train_tracks.dehn_thurston.numpy_list import NumpyList
 
 class PathReduction(object):
     """An representation of topological paths that can be reduced

@@ -1,4 +1,4 @@
 #!/bin/sh
 
-pytest --doctest-modules macaw
-
+python -m pytest --doctest-modules macaw
+python3 -m pytest --doctest-modules macaw

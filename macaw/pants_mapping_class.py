@@ -153,6 +153,7 @@ class PantsMappingClass(MappingClass):
         twists = self._pants_twists * abs(k)
 
         try:
+            # print(self.action_on_homology())
             ah = self.action_on_homology() ** k
         except NotImplementedError:
             ah = None

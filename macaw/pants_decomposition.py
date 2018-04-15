@@ -386,7 +386,7 @@ class PantsDecomposition(Surface):
         """
         Return the numbers of the pairs of pants of the pants decomposition.
         """
-        return range(self.num_pants())
+        return list(range(self.num_pants()))
 
     def pants_curves(self):
         """
@@ -406,7 +406,7 @@ class PantsDecomposition(Surface):
             [1, 2, 3, 4, 5, 6]
 
         """
-        return range(1, len(self._pants_curve_to_pants)+1)
+        return list(range(1, len(self._pants_curve_to_pants)+1))
 
     def inner_pants_curves(self):
         """
@@ -429,7 +429,7 @@ class PantsDecomposition(Surface):
         def is_inner(c):
             a = self.pants_curve_to_pants(c)
             return len(a[0]) + len(a[1]) == 2
-        return filter(is_inner, self.pants_curves())
+        return list(filter(is_inner, self.pants_curves()))
 
     def index_of_inner_pants_curve(self, pants_curve):
         return self._index_of_inner_pants_curve[abs(pants_curve)]
@@ -528,8 +528,8 @@ class PantsDecomposition(Surface):
         - ``pant`` -- the pair of pants in the decompositions when twising occurs
         - ``bdy_idx`` -- the index of the boundary curve (0, 1 or 2) which is fixed. The other two boundaries get interchanged.
         """
-        ls = self._gluing_list[pant] 
-        ls[(bdy_idx+1)%3], ls[(bdy_idx+2)%3] = ls[(bdy_idx+2)%3], ls[(bdy_idx+1)%3] 
+        ls = self._gluing_list[pant]
+        ls[(bdy_idx+1)%3], ls[(bdy_idx+2)%3] = ls[(bdy_idx+2)%3], ls[(bdy_idx+1)%3]
 
     def apply_elementary_move(self, pants_curve):
         """Create a new pants decomposition by changing one pants curve.

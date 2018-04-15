@@ -118,7 +118,7 @@ class DehnThurstonTT(TrainTrack):
                          in range(3)]
             if any(x % 2 == 1 for x in self_conn):
                 raise ValueError("The specified coordinates do not result in an integral lamination.")
-            self_conn = map(lambda x: x/2, self_conn)
+            self_conn = list(map(lambda x: x//2, self_conn))
             # take out the self-connecting strands, now the triangle ineq. is
             # satisfied
             m = [m[i] - 2*self_conn[i] for i in range(3)]
@@ -128,7 +128,7 @@ class DehnThurstonTT(TrainTrack):
                      range(3)]
             if any(x % 2 == 1 for x in pairs):
                 raise ValueError("The specified coordinates do not result in an integral lamination.")
-            pairs = map(lambda x: x/2, pairs)
+            pairs = list(map(lambda x: x//2, pairs))
             if debug:
                 print("m:", m)
                 print("self_conn:", self_conn)
@@ -910,7 +910,8 @@ class DehnThurstonTT(TrainTrack):
                 assert False
 
         # extend with negatives
-        for b in branch_to_standard.keys():
+        branch_list = list(branch_to_standard.keys())
+        for b in branch_list:
             branch_to_standard[-b] = -branch_to_standard[b]
         return branch_to_standard
 

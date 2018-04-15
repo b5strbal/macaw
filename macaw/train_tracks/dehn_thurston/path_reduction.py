@@ -1,4 +1,4 @@
-from numpy_list import NumpyList
+from .numpy_list import NumpyList
 
 # Use NumpyList to do the path reductions...
 # Hopefully the view() and replace_interval() methods are sufficient for all purposes.

@@ -132,7 +132,7 @@ class Surface(object):
                         'There is no surface with the specified number of '
                         'punctures and Euler characteristic.')
                 else:
-                    self._genus /= 2
+                    self._genus //= 2
 
         if is_orientable and self._genus < 0:
             raise ValueError('The genus of an orientable surface '

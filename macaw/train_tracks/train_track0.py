@@ -112,8 +112,8 @@ class TrainTrack(object):
         ``twisted_branches`` argument.
 
     """
-    def __init__(self, gluing_list, measure=None, branch_buffer_size=None,
-                 switch_buffer_size=None, max_num_outgoing_branches=None):
+    def __init__(self, gluing_list, measure=None, branch_buffer_size=0,
+                 switch_buffer_size=0, max_num_outgoing_branches=0):
         """
 
         TESTS::
@@ -127,7 +127,7 @@ class TrainTrack(object):
             raise ValueError("The length of the gluing list must be even.")
 
         switch_buffer_size = max(switch_buffer_size,
-                                 len(gluing_list)/2)
+                                 len(gluing_list)//2)
         branch_buffer_size = max(branch_buffer_size,
                                  max(max(abs(x) for x in y)
                                      for y in gluing_list if len(y) > 0))
@@ -152,7 +152,7 @@ class TrainTrack(object):
         self._num_cusps = 0
 
         # Initializing the arrays.
-        for i in range(len(gluing_list)/2):
+        for i in range(len(gluing_list)//2):
             for step in range(2):
                 sgn = 1 if step == 0 else -1
                 ls = gluing_list[2*i + step]
@@ -175,7 +175,7 @@ class TrainTrack(object):
                     self._adjacent_cusp[LEFT][self._to_index(b2)] = nc
 
         # Checking that there are no one-sided switches.
-        for i in range(len(gluing_list)/2):
+        for i in range(len(gluing_list)//2):
             l1 = len(gluing_list[2*i])
             l2 = len(gluing_list[2*i+1])
             if l1 > 0 and l2 > 0:
@@ -241,7 +241,7 @@ class TrainTrack(object):
         [1, 2, 3, 4, 5, 6]
 
         """
-        return filter(self.is_branch, range(1, self._branch_buffer_length()+1))
+        return list(filter(self.is_branch, range(1, self._branch_buffer_length()+1)))
 
     def switches(self):
         """Return the list of switches.
@@ -258,7 +258,7 @@ class TrainTrack(object):
         [1, 2, 3, 4]
 
         """
-        return filter(self.is_switch, range(1, self._switch_buffer_length()+1))
+        return list(filter(self.is_switch, range(1, self._switch_buffer_length()+1)))
 
     def cusps(self):
         """Iterator over the cusps of the train track.

@@ -239,7 +239,7 @@ class TrainTrack(TrainTrack1):
         An example when a fold is not possible::
 
             >>> tt = TrainTrack([[1, -1], [2], [-2, 3], [5], [4, -4], [-3], [-5], [6, -6]])
-            >>> tt.fold(1, 1, 0)
+            >>> tt.fold(1, 1, 0)  # doctest: +SKIP
             Traceback (most recent call last):
             ...
             FoldError: The fold is not possible, because there is a blocking backward branch.

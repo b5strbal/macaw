@@ -26,7 +26,7 @@ from .pants_mapping_class import PantsMappingClass, PantsTwist
 
 
 def elementary_matrix(size, row, col, entry):
-    mat = numpy.matlib.identity(size, dtype=object)
+    mat = numpy.matlib.identity(size, dtype=numpy.float64)
     mat[row, col] = entry
     return mat
 
@@ -108,7 +108,7 @@ def humphries_generators(genus, right_most_included=False):
         # curve is homologous to minus the sum of the A-curves. Since the
         # intersection is from the right, that cancels out this minus sign and the
         # matrix has positive entries.
-        mat = np.identity(2*g, dtype=object)
+        mat = np.identity(2*g, dtype=numpy.float64)
         for i in range(g):
             mat[i, 2*g-1] = 1
         A.append(PantsMappingClass(p, [PantsTwist([], 3*g-3)], mat))
