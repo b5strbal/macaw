@@ -15,7 +15,7 @@ from the directory containing the `setup.py` file. Without root access you can r
 
 ## Dependencies
 
-The program currently runs under Python 2.7, and requires the Numpy and NetworkX packages. It does not require Sage.
+The program currently run both under Python 2.7 and Python 3, and requires the Numpy and NetworkX packages. It does not require Sage.
 
 ## Current functionality
 
