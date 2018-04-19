@@ -24,7 +24,7 @@ EXAMPLES::
 #                  http://www.gnu.org/licenses/
 # *****************************************************************************
 
-from .train_tracks.train_track import TrainTrack
+# from .train_tracks.train_track import TrainTrack
 from .constants import LEFT, RIGHT
 
 
@@ -32,7 +32,8 @@ PATH_LEGAL = -1
 
 
 class Edge(object):
-    def __init__(self, start_vertex, end_vertex, start_gate, end_gate, direction):
+    def __init__(self, start_vertex, end_vertex, start_gate, end_gate,
+                 direction):
         pass
 
     def reversed(self):
@@ -40,23 +41,6 @@ class Edge(object):
         Return the reversed edge.
         """
         pass
-
-
-def replace_backtrack(path):
-    if path.length() != 2:
-        return PATH_LEGAL
-    if path[0] == path[1].reversed():
-        return EdgePath()
-    return PATH_LEGAL
-
-
-def replace_simple(path):
-    if path.length() != 2:
-        return PATH_LEGAL
-    if path[0].end_gate == path[1].start_gate:
-        return EdgePath(path[0].start_vertex, path[1].end_vertex,
-                        path[0].start_gate, path[1].end_gate)
-    return PATH_LEGAL
 
 
 class EdgePath(object):
@@ -74,8 +58,9 @@ class EdgePath(object):
 
 
 class Template(object):
-    """
-    A graph with legal and illegal paths and replacement rules for illegal paths.
+    """A graph with legal and illegal paths and replacement rules for illegal
+    paths.
+
     """
     def __init__(self, replacement_functions):
         pass
@@ -83,9 +68,171 @@ class Template(object):
     def replace_path(self, edge_path):
         pass
 
+    def replace_backtracking(self, path):
+        """
+        Simplify a backtracking.
+        """
+        if path.length() != 2 or path[0] != path[1].reversed():
+            return PATH_LEGAL
+        return EdgePath()
+
+    def replace_simple(self, path):
+        """Simplify a path of length 2 that goes from to a boundary and bounces back,
+        but is not a backtracking.
+        """
+        # FIGURE 1
+        if path.length() != 2 or path[0].end_gate != path[1].start_gate \
+           or path[0].start_gate == path[1].end_gate:
+            # we need the third case to rule out backtrackings.
+            return PATH_LEGAL
+        edge = Edge(path[0].start_vertex, path[1].end_vertex,
+                    path[0].start_gate, path[1].end_gate)
+        return EdgePath([edge])
+
+
 
 class PolygonTemplate(object):
     pass
+
+
+class PantsTemplate(Template):
+    def replace_self_connect_inwards(self, path):
+        if path.length() != 2:
+            return PATH_LEGAL
+        if not self.is_self_connecting(path[0]) or \
+           not self.is_bridge(path[1]) or \
+           path[0].end_gate != path[1].start_gate:
+            return PATH_LEGAL
+        v0 = path[0].start_vertex
+        g0 = path[0].start_gate
+        v1 = path[0].end_vertex
+        g1 = path[0].end_gate
+        v2 = path[1].end_vertex
+        g2 = path[1].end_gate
+
+        # deciding if inward on outward
+        if self.is_bridge_forward(path[1]):
+            # inward: FIGURE 2, 4
+            direction = path[0].self_connecting_direction()
+            edge1 = Edge(v0, v2, g0, g2)
+            edge2 = self.construct_pants_edge(
+                v2, direction=direction,
+                looking_from_gate=path[1].end_gate)
+            return EdgePath([edge1, edge2])
+        else:
+            # outward
+            if path[0].self_connecting_direction() == RIGHT:
+                # FIGURE 4.5
+                return PATH_LEGAL
+            # FIGURE 3
+            edge1 = self.construct_pants_edge(
+                v0, direction=LEFT,
+                looking_from_gate=path[0].start_gate)
+            edge2 = Edge(v0, v2, g0, g2)
+            edge3 = self.construct_pants_edge(
+                v2, direction=LEFT,
+                looking_from_gate=g2)
+            return EdgePath([edge1, edge2, edge3])
+
+    def replace_3_bridge(self, path):
+        if path.length != 3 or not self.is_bridge(path[0]) or \
+           not self.is_pants_curve(path[1]) or\
+           not self.is_bridge(path[2]) or\
+           path[0].end_gate != path[2].start_gate:
+            return PATH_LEGAL
+        # FIGURE 5, 6, 7
+
+        v0 = path[0].start_vertex
+        g0 = path[0].start_gate
+        v1 = path[0].end_vertex
+        g1 = path[0].end_gate
+        v2 = path[1].end_vertex
+        g2 = path[1].end_gate
+
+
+        start_pair = (path[0].start_vertex, path[0].start_gate)
+        # middle_pair = (path[0].end_vertex, path[0].end_gate)
+        end_pair = (path[2].end_vertex, path[2].end_gate)
+        if start_pair != end_pair:
+            # Figure 5: V-shape (same result as for Figure 3)
+            edge1 = self.construct_pants_edge(
+                path[0].start_vertex, direction=LEFT,
+                looking_from_gate=path[0].start_gate)
+            edge2 = Edge(path[0].start_vertex, path[2].end_vertex,
+                         path[0].start_gate, path[2].end_gate)
+            edge3 = self.construct_pants_edge(
+                path[0].start_vertex, direction=LEFT,
+                looking_from_gate=path[2].end_gate)
+            return EdgePath([edge1, edge2, edge3])
+        else:
+            if self.is_bridge_forward(path[0]):
+                # FIGURE 6
+                edge = self.construct_self_conn_edge(
+                    path[0].start_vertex,
+                    path[0].start_gate,
+                    direction = self.direction_of_pants_edge(
+                        path[1],
+                        looking_from_gate=path[0].end_gate)
+                )
+                return EdgePath([edge])
+
+            else:
+                # FIGURE 7
+                edge1 = self.construct_self_conn_edge(v0, g0, LEFT)
+                edge2 = self.construct_pants_edge(v0, g0, LEFT)
+                return EdgePath([edge1, edge2])
+
+    def replace_3_self_conn(self, path):
+        if path.length != 3 or not self.is_bridge(path[0]) or \
+           not self.is_pants_curve(path[1]) or\
+           not self.is_self_connecting(path[2]) or\
+           path[0].end_gate != path[2].start_gate:
+            return PATH_LEGAL
+
+        if not self.is_bridge_forward(path[0]):
+            # FIGURE 8.1, 8.2
+            return PATH_LEGAL
+
+        if path[2].direction == LEFT:
+            # FIGURE 8.3
+            return PATH_LEGAL
+
+        # FIGURE 8
+        edge1 = self.construct_pants_edge(v0, g0, LEFT)
+        return EdgePath([edge1, path[0]])
+
+    def construct_self_conn_edge(self, start_vertex, start_gate,
+                                 direction):
+        pass
+
+    def direction_of_pants_edge(self, pants_edge, looking_from_gate):
+        pass
+
+    def is_pants_curve(self, edge):
+        pass
+
+    def is_self_connecting(self, edge):
+        pass
+
+    def is_bridge(self, edge):
+        """
+        Decide if an edge is a bridge: connecting different boundaries of a
+        pair of pants.
+        """
+        pass
+
+    def is_bridge_forward(self, edge):
+        """
+        Decide if a bridge goes from boundary i to i+1 (forward) or i+1 to i
+        (backward).
+        """
+        pass
+
+    def construct_pants_edge(self, vertex, looking_from_gate, direction):
+        """
+        Construct an edge along a pants curve.
+        """
+
 # class Edge:
 #     def __init__(self, starting_gate, ending_gate, orientation=None,
 #                  is_neutral=False):
@@ -182,4 +329,3 @@ class PolygonTemplate(object):
 #
 #
 #
-
