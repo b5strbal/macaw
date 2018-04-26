@@ -25,11 +25,12 @@ EXAMPLES::
 # *****************************************************************************
 
 # from .train_tracks.train_track import TrainTrack
-from .constants import LEFT, RIGHT
+from .constants import LEFT, RIGHT, FORWARD, BACKWARD
 
 
 PATH_LEGAL = -1
 NEUTRAL = 0
+
 
 class Edge(object):
     def __init__(self, start_vertex, start_gate, end_vertex, end_gate):
@@ -237,10 +238,29 @@ class PantsTemplate(Template):
         """
         Construct an edge along a pants curve.
         """
-        pass
+        p = self._pants_decomposition
+        pants_curve = vertex
+        side = looking_from_gate
+
+        if direction == side:
+            # we turn right and we are on the right side of the curve or we
+            # turn left and we are on the left side of the curve
+            wrap_direction = FORWARD
+        else:
+            wrap_direction = BACKWARD
+        if p.is_orientation_matching(pants_curve, side):
+            wrap_direction = (wrap_direction + 1) % 2
+
+        return PantsEdge(vertex, NEUTRAL, vertex, NEUTRAL, wrap_direction)
 
     def direction_of_pants_edge(self, pants_edge, looking_from_gate):
-        pass
+        for direction in [LEFT, RIGHT]:
+            edge = self.construct_pants_edge(pants_edge.start_vertex,
+                                             looking_from_gate,
+                                             direction)
+            if edge == pants_edge:
+                return direction
+        assert(False)
 
     def is_bridge_forward(self, edge):
         """
@@ -248,7 +268,22 @@ class PantsTemplate(Template):
         (backward).
         """
         assert(edge.is_bridge())
-        pass
+        p = self._pants_decomposition
+        idx1 = p.bdy_index_next_to_pants_curve(
+            pants_curve=edge.start_vertex,
+            side=edge.start_gate)
+        idx2 = p.bdy_index_next_to_pants_curve(
+            pants_curve=edge.end_vertex,
+            side=edge.end_gate)
+        assert(p.pant_next_to_pants_curve(pants_curve=edge.start_vertex,
+                                          side=edge.start_gate) ==
+               p.pant_next_to_pants_curve(pants_curve=edge.end_vertex,
+                                          side=edge.end_gate))
+        if idx2 == (idx1 + 1) % 2:
+            return True
+        if idx1 == (idx2 + 1) % 2:
+            return False
+        assert(False)
 
 
 # class Edge:
