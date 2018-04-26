@@ -49,6 +49,10 @@ class PantsDecomposition(Surface):
     value would be glued in the orientable direction while punctures
     who are binary complement would be glued in opposite direction.
 
+    If a boundary component is encoded by a positive/negative integer, then the
+    it is oriented so that the surface is on the left/right side of the
+    boundary curve.
+
     INPUT:
 
     - ``gluing_list`` -- a list of lists with three nonzero integers.
@@ -299,6 +303,13 @@ class PantsDecomposition(Surface):
 
         """
         return self.pants_curve_to_pants(pants_curve)[LEFT][0][BDY_IDX]
+
+    def bdy_index_next_to_pants_curve(self, pants_curve, side):
+        return self.bdy_index_left_of_pants_curve(pants_curve if side == LEFT
+                                                  else -pants_curve)
+
+    def pant_next_to_pants_curve(self, pants_curve, side):
+        return self.pants_curve_to_pants(pants_curve)[side][0][PANT]
 
     def pants_curve_to_pants(self, pants_curve):
         """

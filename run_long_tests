@@ -1,4 +1,5 @@
 #!/bin/sh
 
-pytest testing -v
+python -m pytest testing -v
+python3 -m pytest testing -v
 
