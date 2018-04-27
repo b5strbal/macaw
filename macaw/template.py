@@ -26,74 +26,23 @@ EXAMPLES::
 
 # from .train_tracks.train_track import TrainTrack
 from .constants import LEFT, RIGHT, FORWARD, BACKWARD
+from collections import namedtuple
 
 
 PATH_LEGAL = -1
 NEUTRAL = -1000
 
 
-class Edge(object):
-    def __init__(self, start_vertex, start_gate, end_vertex, end_gate):
-        self.start_vertex = start_vertex
-        self.start_gate = start_gate
-        self.end_vertex = end_vertex
-        self.end_gate = end_gate
-
-    def __eq__(self, other):
-        return self.start_vertex == other.start_vertex and\
-            self.start_gate == other.start_gate and\
-            self.end_vertex == other.end_vertex and\
-            self.end_gate == other.end_gate
-
-    def __ne__(self, other):
-        return not self == other
-
-    def __repr__(self):
-        return repr((self.start_vertex, self.start_gate, self.end_vertex,
-                     self.end_gate))
-
-    def reversed(self):
-        """
-        Return the reversed edge.
-        """
-        return Edge(self.end_vertex, self.end_gate,
-                    self.start_vertex, self.start_gate)
+Edge = namedtuple('Edge', 'start_vertex, start_gate, '
+                  'end_vertex, end_gate, direction')
+Edge.__new__.__defaults__ = (NEUTRAL,)  # making direction an optional argument
 
 
-class PantsEdge(Edge):
-    def __init__(self, start_vertex, start_gate, end_vertex, end_gate,
-                 direction):
-        super(PantsEdge, self).__init__(start_vertex, start_gate,
-                                        end_vertex, end_gate)
-        self.direction = direction
-
-    def __eq__(self, other):
-        return super(PantsEdge, self).__eq__(other) and \
-            self.direction == other.direction
-
-    def __ne__(self, other):
-        return not self == other
-
-    def __repr__(self):
-        return repr((self.start_vertex, self.start_gate, self.end_vertex,
-                     self.end_gate, self.direction))
-
-    def reversed(self):
-        return PantsEdge(self.end_vertex, self.end_gate,
-                         self.start_vertex, self.start_gate,
-                         (self.direction+1) % 2)
-
-
-
-# class EdgePath(object):
-#     def __init__(self, template, edge_list):
-#         pass
-
-    # def replace_subpath(self, start_idx, end_idx):
-    #     """
-    #     Replace an illegal subpath by a legal subpath. If the subpath is not
-    #     illegal, nothing happens.
-    #     """
+def reversed(edge):
+    new_dir = NEUTRAL if edge.direction == NEUTRAL else (edge.direction+1) % 2
+    return Edge(edge.end_vertex, edge.end_gate,
+                edge.start_vertex, edge.start_gate,
+                new_dir)
 
 
 class Template(object):
@@ -144,7 +93,7 @@ class Template(object):
         True
 
         """
-        if len(path) != 2 or path[0] != path[1].reversed():
+        if len(path) != 2 or path[0] != reversed(path[1]):
             return PATH_LEGAL
         return []
 
@@ -179,7 +128,8 @@ class PolygonTemplate(Template):
 
 
 def is_bridge(edge):
-    return not isinstance(edge, PantsEdge)
+    return (edge.start_vertex, edge.start_gate) != \
+        (edge.end_vertex, edge.end_gate)
 
 
 def is_pants_curve(edge):
@@ -205,6 +155,9 @@ def is_self_connecting(edge):
         edge.start_gate != NEUTRAL
 
 
+def reversed_path(path):
+    return [reversed(edge) for edge in reversed(path)]
+
 # def is_bridge(self):
 #     """
 #     Decide if an edge is a bridge: connecting different boundaries of a
@@ -223,6 +176,25 @@ class PantsTemplate(Template):
                 self.simplify_pants_path]
 
     def simplify_pants_path(self, path):
+        """
+        Simplify a path.
+        """
+        simpl = self.simplify_pants_path_one_way(path)
+        if simpl != PATH_LEGAL:
+            # if simplicifacation happened, return the simplicied path
+            return simpl
+        # if not, try to simplify the reversed path
+        rev_path = reversed_path(path)
+        simpl = self.simplify_pants_path_one_way(rev_path)
+        if simpl != PATH_LEGAL:
+            return reversed_path(simpl)
+        else:
+            return PATH_LEGAL
+
+    def simplify_pants_path_one_way(self, path):
+        """
+        Simplify a path if it is oriented in the right way.
+        """
         if len(path) == 2:
             v0 = path[0].start_vertex
             g0 = path[0].start_gate
@@ -313,7 +285,7 @@ class PantsTemplate(Template):
 
     def construct_self_conn_edge(self, start_vertex, start_gate,
                                  direction):
-        return PantsEdge(start_vertex, start_gate, start_vertex, start_gate,
+        return Edge(start_vertex, start_gate, start_vertex, start_gate,
                          direction)
 
     def construct_pants_edge(self, vertex, looking_from_gate, direction):
@@ -335,7 +307,7 @@ class PantsTemplate(Template):
         # if p.is_orientation_matching(pants_curve, side):
         #     wrap_direction = (wrap_direction + 1) % 2
 
-        return PantsEdge(vertex, NEUTRAL, vertex, NEUTRAL, wrap_direction)
+        return Edge(vertex, NEUTRAL, vertex, NEUTRAL, wrap_direction)
 
     def direction_of_pants_edge(self, pants_edge, looking_from_gate):
         for direction in [LEFT, RIGHT]:

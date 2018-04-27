@@ -1,5 +1,5 @@
 from macaw.template import Edge, Template, PATH_LEGAL,\
-    PantsTemplate, PantsEdge, NEUTRAL
+    PantsTemplate, NEUTRAL
 from macaw.pants_decomposition import PantsDecomposition
 from macaw.constants import LEFT, RIGHT, FORWARD, BACKWARD
 import pytest
@@ -54,84 +54,84 @@ def test_simplify_backtracking():
 def test_figure2(pants_template):
     t = pants_template
     assert(t.simplify_pants_path([
-        PantsEdge(1, LEFT, 1, LEFT, RIGHT),
+        Edge(1, LEFT, 1, LEFT, RIGHT),
         Edge(1, LEFT, 2, LEFT)]) ==
            [Edge(1, LEFT, 2, LEFT),
-            PantsEdge(2, NEUTRAL, 2, NEUTRAL, BACKWARD)])
+            Edge(2, NEUTRAL, 2, NEUTRAL, BACKWARD)])
     assert(t.simplify_pants_path([
-        PantsEdge(3, RIGHT, 3, RIGHT, RIGHT),
+        Edge(3, RIGHT, 3, RIGHT, RIGHT),
         Edge(3, RIGHT, 2, RIGHT)]) ==
            [Edge(3, RIGHT, 2, RIGHT),
-            PantsEdge(2, NEUTRAL, 2, NEUTRAL, FORWARD)])
+            Edge(2, NEUTRAL, 2, NEUTRAL, FORWARD)])
 
 
 def test_figure3(pants_template):
     t = pants_template
     assert(t.simplify_pants_path([
-        PantsEdge(1, LEFT, 1, LEFT, RIGHT),
+        Edge(1, LEFT, 1, LEFT, RIGHT),
         Edge(1, LEFT, 3, LEFT)]) ==
-           [PantsEdge(1, NEUTRAL, 1, NEUTRAL, FORWARD),
+           [Edge(1, NEUTRAL, 1, NEUTRAL, FORWARD),
             Edge(1, LEFT, 3, LEFT),
-            PantsEdge(3, NEUTRAL, 3, NEUTRAL, FORWARD)])
+            Edge(3, NEUTRAL, 3, NEUTRAL, FORWARD)])
     assert(t.simplify_pants_path([
-        PantsEdge(2, RIGHT, 2, RIGHT, RIGHT),
+        Edge(2, RIGHT, 2, RIGHT, RIGHT),
         Edge(2, RIGHT, 3, RIGHT)]) ==
-           [PantsEdge(2, NEUTRAL, 2, NEUTRAL, BACKWARD),
+           [Edge(2, NEUTRAL, 2, NEUTRAL, BACKWARD),
             Edge(2, RIGHT, 3, RIGHT),
-            PantsEdge(3, NEUTRAL, 3, NEUTRAL, BACKWARD)])
+            Edge(3, NEUTRAL, 3, NEUTRAL, BACKWARD)])
 
 
 def test_figure4(pants_template):
     t = pants_template
     assert(t.simplify_pants_path([
-        PantsEdge(1, LEFT, 1, LEFT, LEFT),
+        Edge(1, LEFT, 1, LEFT, LEFT),
         Edge(1, LEFT, 2, LEFT)]) ==
            [Edge(1, LEFT, 2, LEFT),
-            PantsEdge(2, NEUTRAL, 2, NEUTRAL, FORWARD)])
+            Edge(2, NEUTRAL, 2, NEUTRAL, FORWARD)])
     assert(t.simplify_pants_path([
-        PantsEdge(3, RIGHT, 3, RIGHT, LEFT),
+        Edge(3, RIGHT, 3, RIGHT, LEFT),
         Edge(3, RIGHT, 2, RIGHT)]) ==
            [Edge(3, RIGHT, 2, RIGHT),
-            PantsEdge(2, NEUTRAL, 2, NEUTRAL, BACKWARD)])
+            Edge(2, NEUTRAL, 2, NEUTRAL, BACKWARD)])
 
 
 def test_figure5(pants_template):
     t = pants_template
     assert(t.simplify_pants_path([
         Edge(2, LEFT, 3, LEFT),
-        PantsEdge(3, NEUTRAL, 3, NEUTRAL, BACKWARD),
+        Edge(3, NEUTRAL, 3, NEUTRAL, BACKWARD),
         Edge(3, LEFT, 1, LEFT)]) ==
-           [PantsEdge(2, NEUTRAL, 2, NEUTRAL, FORWARD),
+           [Edge(2, NEUTRAL, 2, NEUTRAL, FORWARD),
             Edge(2, LEFT, 1, LEFT),
-            PantsEdge(1, NEUTRAL, 1, NEUTRAL, FORWARD)])
+            Edge(1, NEUTRAL, 1, NEUTRAL, FORWARD)])
 
 
 def test_figure6(pants_template):
     t = pants_template
     assert(t.simplify_pants_path([
         Edge(2, LEFT, 3, LEFT),
-        PantsEdge(3, NEUTRAL, 3, NEUTRAL, BACKWARD),
+        Edge(3, NEUTRAL, 3, NEUTRAL, BACKWARD),
         Edge(3, LEFT, 2, LEFT)]) ==
-           [PantsEdge(2, LEFT, 2, LEFT, RIGHT)])
+           [Edge(2, LEFT, 2, LEFT, RIGHT)])
 
 
 def test_figure7(pants_template):
     t = pants_template
     assert(t.simplify_pants_path([
         Edge(2, LEFT, 1, LEFT),
-        PantsEdge(1, NEUTRAL, 1, NEUTRAL, BACKWARD),
+        Edge(1, NEUTRAL, 1, NEUTRAL, BACKWARD),
         Edge(1, LEFT, 2, LEFT)]) ==
-           [PantsEdge(2, LEFT, 2, LEFT, LEFT),
-            PantsEdge(2, NEUTRAL, 2, NEUTRAL, FORWARD)])
+           [Edge(2, LEFT, 2, LEFT, LEFT),
+            Edge(2, NEUTRAL, 2, NEUTRAL, FORWARD)])
 
 
 def test_figure8(pants_template):
     t = pants_template
     assert(t.simplify_pants_path([
         Edge(2, LEFT, 3, LEFT),
-        PantsEdge(3, NEUTRAL, 3, NEUTRAL, BACKWARD),
-        PantsEdge(3, LEFT, 3, LEFT, RIGHT)]) ==
-           [PantsEdge(2, NEUTRAL, 2, NEUTRAL, FORWARD),
+        Edge(3, NEUTRAL, 3, NEUTRAL, BACKWARD),
+        Edge(3, LEFT, 3, LEFT, RIGHT)]) ==
+           [Edge(2, NEUTRAL, 2, NEUTRAL, FORWARD),
             Edge(2, LEFT, 3, LEFT)])
 
 
