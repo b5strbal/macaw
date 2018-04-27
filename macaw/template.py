@@ -25,8 +25,11 @@ EXAMPLES::
 # *****************************************************************************
 
 # from .train_tracks.train_track import TrainTrack
-from .constants import LEFT, RIGHT, FORWARD, BACKWARD
+from .constants import LEFT, RIGHT
 from collections import namedtuple
+
+FORWARD = 0
+BACKWARD = 1
 
 
 PATH_LEGAL = -1
@@ -38,7 +41,13 @@ Edge = namedtuple('Edge', 'start_vertex, start_gate, '
 Edge.__new__.__defaults__ = (NEUTRAL,)  # making direction an optional argument
 
 
-def reversed(edge):
+def new_repr(self):
+    return repr((self.start_vertex, self.start_gate, self.end_vertex, self.end_gate,
+            self.direction))
+Edge.__repr__ = new_repr
+
+
+def reversed_edge(edge):
     new_dir = NEUTRAL if edge.direction == NEUTRAL else (edge.direction+1) % 2
     return Edge(edge.end_vertex, edge.end_gate,
                 edge.start_vertex, edge.start_gate,
@@ -62,18 +71,23 @@ class Template(object):
             change_occurred = False
             for i in range(len(edge_path)-1):
                 for length in [2, 3]:
-                    path = edge_path[i:i+length]
+                    sub_path = edge_path[i:i+length]
                     for simplify in self.simplifying_methods():
-                        new_path = simplify(path)
-                        if new_path == PATH_LEGAL:
+                        new_sub_path = simplify(sub_path)
+                        if new_sub_path == PATH_LEGAL:
                             continue
-                        edge_path[i:i+length] = new_path
+                        print("Subpath replaced:", sub_path)
+                        edge_path[i:i+length] = new_sub_path
                         change_occurred = True
+                        print("New subpath:", new_sub_path)
+                        print("Updated path:", edge_path)
+                        print()
                         break
                     if change_occurred:
                         break
                 if change_occurred:
                     break
+        print("Final path:", edge_path)
         return edge_path
 
     def simplifying_methods(self):
@@ -93,7 +107,7 @@ class Template(object):
         True
 
         """
-        if len(path) != 2 or path[0] != reversed(path[1]):
+        if len(path) != 2 or path[0] != reversed_edge(path[1]):
             return PATH_LEGAL
         return []
 
@@ -113,12 +127,19 @@ class Template(object):
 
         """
         # FIGURE 1
+        # print("simplify_simple:", path)
         if len(path) != 2 or path[0].end_gate != path[1].start_gate \
-           or path[0].start_gate == path[1].end_gate:
+           or (path[0].start_vertex, path[0].start_gate) ==\
+           (path[1].end_vertex, path[1].end_gate) or \
+           not is_bridge(path[0]) or not is_bridge(path[1]):
             # we need the third case to rule out backtrackings.
+            # print("Not simplified.")
+            # print()
             return PATH_LEGAL
         edge = Edge(path[0].start_vertex, path[0].start_gate,
                     path[1].end_vertex, path[1].end_gate)
+        # print("Simplified to ", [edge])
+        # print()
         return [edge]
 
 
@@ -156,7 +177,7 @@ def is_self_connecting(edge):
 
 
 def reversed_path(path):
-    return [reversed(edge) for edge in reversed(path)]
+    return [reversed_edge(edge) for edge in reversed(path)]
 
 # def is_bridge(self):
 #     """
@@ -177,7 +198,7 @@ class PantsTemplate(Template):
 
     def simplify_pants_path(self, path):
         """
-        Simplify a path.
+        Simplify a path of length two or three.
         """
         simpl = self.simplify_pants_path_one_way(path)
         if simpl != PATH_LEGAL:
@@ -192,8 +213,8 @@ class PantsTemplate(Template):
             return PATH_LEGAL
 
     def simplify_pants_path_one_way(self, path):
-        """
-        Simplify a path if it is oriented in the right way.
+        """Simplify a path of length two or three if it is oriented in the right way.
+
         """
         if len(path) == 2:
             v0 = path[0].start_vertex
