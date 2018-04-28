@@ -4,7 +4,7 @@ Define templates that are used to guide train tracks.
 
 AUTHORS:
 
-- BALAZS STRENNER (2017-05-02): initial version
+- BALAZS STRENNER (2018-04-15): initial version
 
 EXAMPLES::
 
@@ -42,8 +42,10 @@ Edge.__new__.__defaults__ = (NEUTRAL,)  # making direction an optional argument
 
 
 def new_repr(self):
-    return repr((self.start_vertex, self.start_gate, self.end_vertex, self.end_gate,
-            self.direction))
+    return repr((self.start_vertex, self.start_gate, self.end_vertex,
+                 self.end_gate, self.direction))
+
+
 Edge.__repr__ = new_repr
 
 
@@ -52,6 +54,42 @@ def reversed_edge(edge):
     return Edge(edge.end_vertex, edge.end_gate,
                 edge.start_vertex, edge.start_gate,
                 new_dir)
+
+
+def is_bridge(edge):
+    return (edge.start_vertex, edge.start_gate) != \
+        (edge.end_vertex, edge.end_gate)
+
+
+def is_pants_curve(edge):
+    """
+    Decide if the edge is a pants curve.
+    """
+    if is_bridge(edge):
+        return False
+    if edge.start_gate == NEUTRAL:
+        assert(edge.end_gate) == NEUTRAL
+        return True
+    return False
+
+
+def is_self_connecting(edge):
+    """
+    Decide is an edge is self-connecting.
+    """
+    if is_bridge(edge):
+        return False
+    return edge.start_vertex == edge.end_vertex and \
+        edge.start_gate == edge.end_gate and \
+        edge.start_gate != NEUTRAL
+
+
+def pants_edge(vertex, direction):
+    return Edge(vertex, NEUTRAL, vertex, NEUTRAL, direction)
+
+
+def self_conn_edge(vertex, gate, direction):
+    return Edge(vertex, gate, vertex, gate, direction)
 
 
 class Template(object):
@@ -148,32 +186,6 @@ class PolygonTemplate(Template):
         return [self.simplify_backtracking, self.simplify_simple]
 
 
-def is_bridge(edge):
-    return (edge.start_vertex, edge.start_gate) != \
-        (edge.end_vertex, edge.end_gate)
-
-
-def is_pants_curve(edge):
-    """
-    Decide if the edge is a pants curve.
-    """
-    if is_bridge(edge):
-        return False
-    if edge.start_gate == NEUTRAL:
-        assert(edge.end_gate) == NEUTRAL
-        return True
-    return False
-
-
-def is_self_connecting(edge):
-    """
-    Decide is an edge is self-connecting.
-    """
-    if is_bridge(edge):
-        return False
-    return edge.start_vertex == edge.end_vertex and \
-        edge.start_gate == edge.end_gate and \
-        edge.start_gate != NEUTRAL
 
 
 def reversed_path(path):
@@ -274,11 +286,11 @@ class PantsTemplate(Template):
                         # FIGURE 6
                         direction = self.direction_of_pants_edge(
                             path[1], looking_from_gate=g1)
-                        edge = self.construct_self_conn_edge(v0, g0, direction)
+                        edge = self_conn_edge(v0, g0, direction)
                         edgelist = [edge]
                     else:
                         # FIGURE 7
-                        edge1 = self.construct_self_conn_edge(v0, g0, LEFT)
+                        edge1 = self_conn_edge(v0, g0, LEFT)
                         edge2 = self.construct_pants_edge(v0, g0, LEFT)
                         edgelist = [edge1, edge2]
 
@@ -304,11 +316,6 @@ class PantsTemplate(Template):
 
         return edgelist
 
-    def construct_self_conn_edge(self, start_vertex, start_gate,
-                                 direction):
-        return Edge(start_vertex, start_gate, start_vertex, start_gate,
-                         direction)
-
     def construct_pants_edge(self, vertex, looking_from_gate, direction):
         """
         Construct an edge along a pants curve.
@@ -328,7 +335,7 @@ class PantsTemplate(Template):
         # if p.is_orientation_matching(pants_curve, side):
         #     wrap_direction = (wrap_direction + 1) % 2
 
-        return Edge(vertex, NEUTRAL, vertex, NEUTRAL, wrap_direction)
+        return pants_edge(vertex, wrap_direction)
 
     def direction_of_pants_edge(self, pants_edge, looking_from_gate):
         for direction in [LEFT, RIGHT]:
@@ -363,7 +370,148 @@ class PantsTemplate(Template):
         assert(False)
 
 
-# class Edge:
+def update_edge_after_second_move(pants_template, pants_curve, edge):
+    """
+    Update an edge after an elementary move of the pants_decomposition.
+    """
+    p = pants_template._pants_decomposition
+    middle_vertex = pants_curve
+    second_pair = [0, 0]
+    third_pair = [0, 0]
+    for side in [LEFT, RIGHT]:
+        second_pair[side] = p.next_curve_neighborhood(pants_curve, side)
+        third_pair[side] = p.next_curve_neighborhood(second_pair[side])
+
+    for side in [LEFT, RIGHT]:
+        # bridges
+        if edge == Edge(middle_vertex, side, *second_pair[side]):
+            return [Edge(middle_vertex, side, *second_pair[side])]
+        if edge == Edge(middle_vertex, side, *third_pair[side]):
+            return [Edge(middle_vertex, (side + 1) % 2, *third_pair[side])]
+        if edge == Edge(*chain(second_pair[side], third_pair[side])):
+            return [Edge(*second_pair[side], end_vertex=middle_vertex,
+                         end_gate=side),
+                    Edge(middle_vertex, (side + 1) % 2, *third_pair[side])]
+
+        # self-connects
+        if edge == Edge(middle_vertex, side, middle_vertex, side, LEFT):
+            return [self_conn_edge(middle_vertex, (BACKWARD + side) % 2),
+                    Edge(middle_vertex, side, middle_vertex, side, RIGHT)]
+        if edge == self_conn_edge(*second_pair[side], direction=LEFT):
+            return [Edge(*second_pair[side], end_vertex=middle_vertex,
+                         end_gate=side),
+                    self_conn_edge(middle_vertex, (side + 1) % 2, LEFT),
+                    Edge(middle_vertex, side, *second_pair[side])]
+        if edge == self_conn_edge(*third_pair[side], direction=LEFT):
+            return [Edge(*third_pair[side], end_vertex=middle_vertex,
+                         end_gate=(side+1) % 2),
+                    self_conn_edge(middle_vertex, side, LEFT),
+                    pants_edge(middle_vertex, (FORWARD + side) % 2),
+                    Edge(middle_vertex, (side+1) % 2, *third_pair[side])]
+
+        # pants edge
+        if edge == self_conn_edge(middle_vertex, FORWARD):
+            return [self_conn_edge(middle_vertex, LEFT, LEFT),
+                    pants_edge(middle_vertex, FORWARD),
+                    self_conn_edge(middle_vertex, RIGHT, RIGHT)]
+
+    return [edge]
+
+
+def update_edge_after_first_move(pants_template, pants_curve, edge):
+    """
+    Update an edge after a first elementary move of the pants_decomposition.
+    """
+    p = pants_template._pants_decomposition
+    vertex = pants_curve
+    for side in [LEFT, RIGHT]:
+        pair = p.next_curve_neighborhood(pants_curve, side)
+        if pair[0] == vertex:
+            continue
+        else:
+            boundary_pair = pair
+
+            # Whether the LEFT or RIGHT side of the pants_curve is
+            # before the boundary curve in the cyclic order
+            side_before_boundary = side
+            break
+    else:
+        assert(False)
+
+    side_before_boundary = RIGHT
+
+    if edge == Edge(vertex, LEFT, vertex, RIGHT):
+        return [pants_edge(vertex, FORWARD)]
+
+    if edge == Edge(vertex, (side_before_boundary+1) % 2, *boundary_pair):
+        return [pants_edge(vertex, (BACKWARD + side_before_boundary) % 2),
+                Edge(vertex, (side_before_boundary+1) % 2, *boundary_pair)]
+
+    if edge == Edge(vertex, side_before_boundary, *boundary_pair):
+        return [Edge(vertex, (side_before_boundary+1) % 2, *boundary_pair)]
+
+    if edge == pants_edge(vertex, FORWARD):
+        return [Edge(vertex, RIGHT, vertex, LEFT)]
+
+    if edge == self_conn_edge(*boundary_pair, direction=LEFT):
+        pants_dir = pants_template.direction_of_pants_edge(*boundary_pair)
+        return [pants_edge(boundary_pair[0], FORWARD if pants_dir == LEFT else
+                           BACKWARD),
+                Edge(*boundary_pair, end_vertex=vertex,
+                     end_gate=side_before_boundary),
+                Edge(vertex, (side_before_boundary+1) % 2, *boundary_pair)]
+
+
+def update_edge_after_first_move_inv(pants_template, pants_curve, edge):
+    # do half-twist about boundary curve and do first move.
+    pass
+
+
+def update_edge_after_half_twist(pants_template, pants_curve, edge,
+                                 twist_direction):
+    """
+    Left- or right-handed half-twist on the marking of the right side of pants_curve.
+    """
+    p = pants_template._pants_decomposition
+    next_pair = p.next_curve_neighborhood(pants_curve, RIGHT)
+    other_pair = next_pair if twist_direction == LEFT else \
+                 p.next_curve_neighborhood(*next_pair)
+
+    if edge == Edge(pants_curve, RIGHT, *other_pair):
+        return [pants_edge(pants_curve, BACKWARD if twist_direction == LEFT
+                           else FORWARD),
+                Edge(pants_curve, RIGHT, *other_pair)]
+
+    if edge == self_conn_edge(pants_curve, RIGHT, LEFT):
+        return [self_conn_edge(pants_curve, RIGHT, RIGHT),
+                pants_edge(pants_curve, FORWARD if twist_direction == LEFT
+                           else BACKWARD)]
+
+
+def update_edge_after_twist(pants_template, pants_curve, edge,
+                            twist_direction):
+    """
+    Left- or right-handed Dehn twist on the marking of the right side of pants_curve.
+    """
+    p = pants_template._pants_decomposition
+    second_pair = p.next_curve_neighborhood(pants_curve, RIGHT)
+    third_pair = p.next_curve_neighborhood(*second_pair)
+
+    for pair in [second_pair, third_pair]:
+        if edge == Edge(pants_curve, RIGHT, *pair):
+            return [pants_edge(pants_curve, BACKWARD if twist_direction == LEFT
+                               else FORWARD),
+                    Edge(pants_curve, RIGHT, *pair)]
+
+    if edge == self_conn_edge(pants_curve, RIGHT, LEFT):
+        return [pants_edge(pants_curve, BACKWARD if twist_direction == LEFT
+                           else FORWARD),
+                self_conn_edge(pants_curve, RIGHT, LEFT),
+                pants_edge(pants_curve, FORWARD if twist_direction == LEFT
+                           else BACKWARD)]
+
+
+    # class Edge:
 #     def __init__(self, starting_gate, ending_gate, orientation=None,
 #                  is_neutral=False):
 #         self.starting_gate = starting_gate
